@@ -1,0 +1,52 @@
+# SpineDoc Git Ignore Contract
+
+# 1. 虚拟环境与依赖
+.venv/
+venv/
+ENV/
+bin/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 2. 缓存与运行态噪音
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# 3. 环境变量与机密 (神圣契约)
+.env
+.env.*
+!.env.template
+
+# 4. 数据库与存储
+storage/
+temp_uploads/
+*.db
+*.sqlite3
+
+# 5. 测试数据与大文件 (保持仓库轻量)
+ceshi_ocr/*.pdf
+backups/
+temp_ocr_*.jpg
+image.png
+image copy *.png
+gemini-clip/

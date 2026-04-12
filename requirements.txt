@@ -1,0 +1,38 @@
+# Core Framework
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic-settings
+aiofiles
+aiohttp
+uvloop
+mcp[cli]
+
+# Database
+sqlmodel
+sqlalchemy[asyncio]
+asyncpg
+pgvector
+redis[hiredis]>=5.0.0
+celery>=5.3.0
+
+# LLM / API / Orchestration
+openai
+langgraph
+langchain
+langchain-openai
+langchain-community
+
+# Retrieval (Lightweight)
+sentence-transformers==5.3.0
+rank-bm25>=0.2.2
+jieba>=0.42.1  # 中文分词与关键词提取
+
+# Scientific Computing
+numpy>=1.24.0
+scikit-learn>=1.3.0
+
+# Testing
+pytest
+pytest-asyncio
+zai-sdk==0.2.2

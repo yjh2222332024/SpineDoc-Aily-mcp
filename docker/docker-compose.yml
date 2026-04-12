@@ -1,0 +1,112 @@
+version: '3.8'
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: spinedoc
+      POSTGRES_PASSWORD: spinedoc123
+      POSTGRES_DB: spinedoc
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spinedoc"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 🚀 [V18.0 生产专家层] GLM-OCR 算力集群 (本地模型版)
+  glm-ocr:
+    build:
+      context: .
+      dockerfile: Dockerfile.ocr
+    environment:
+      - VLLM_DISABLE_COMPILE_CACHE=1
+      - VLLM_USE_V1=0
+    command: >
+      --model /model
+      --trust-remote-code
+      --enforce-eager
+      --gpu-memory-utilization 0.7
+      --max-model-len 2048
+    ports:
+      - "30000:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ipc: host
+    restart: unless-stopped
+    volumes:
+      - E:/ai_models/GLM-OCR/ZhipuAI/GLM-OCR:/model
+
+  # 🧠 [V18.0 SLM 精炼层] Qwen2.5-1.5B 逻辑精炼引擎 (低功耗模式)
+  slm:
+    image: vllm/vllm-openai:latest
+    environment:
+      - VLLM_DISABLE_COMPILE_CACHE=1
+      - VLLM_USE_V1=0
+    command: >
+      --model /app/models/qwen-1.5b
+      --trust-remote-code
+      --enforce-eager
+      --gpu-memory-utilization 0.1
+      --max-model-len 1024
+      --max-num-seqs 1
+    ports:
+      - "30001:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ipc: host
+    restart: unless-stopped
+    volumes:
+      - E:/ai_models/Qwen2.5-1.5B-Instruct:/app/models/qwen-1.5b
+      - C:/Users/qiuqiu/.cache/modelscope:/root/.cache/modelscope
+      
+
+#  backend:
+#    build:
+#      context: ..
+#      dockerfile: docker/Dockerfile
+#    environment:
+#      DATABASE_URL: postgresql+asyncpg://spinedoc:spinedoc123@db:5432/spinedoc
+#      REDIS_URL: redis://redis:6379/0
+#      # 🏛️ 架构师：后端动态连接 glm-ocr 推理集群
+#      OCR_API_URL: http://glm-ocr:30000/v1/chat/completions
+#      # 🧠 SLM 逻辑精炼引擎
+#      SLM_API_URL: http://slm:8000/v1
+#    ports:
+#      - "8000:8000"
+#    depends_on:
+#      db:
+#        condition: service_healthy
+#      redis:
+#        condition: service_healthy
+#      glm-ocr:
+#        condition: service_started
+#      slm:
+#        condition: service_started
+#    restart: unless-stopped
+
+volumes:
+  postgres_data:
