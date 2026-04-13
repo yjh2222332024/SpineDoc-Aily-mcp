@@ -73,19 +73,24 @@ class BodyAlchemist:
 
     async def run_full_pipeline(self, file_path: str, toc_items: List[Dict[str, Any]],
                                 total_pages: int, router: Any = None,
-                                limit_pages: Optional[int] = None) -> Tuple[List[Dict[str, Any]], Dict[int, str]]:
-        # 🚀 [V45.2] 强制硬限制：如果 limit_pages 存在，必须在所有逻辑前截断
+                                limit_pages: Optional[int] = None,
+                                skip_pages: Optional[List[int]] = None) -> Tuple[List[Dict[str, Any]], Dict[int, str]]:
+        # 🚀 [V45.2] 强制硬限制
         if limit_pages and limit_pages < total_pages:
             total_pages = limit_pages
             print(f"🛑 [Pipeline] 强制截断流水线，仅处理前 {total_pages} 页")
             
         checkpoint_path = f"{file_path}.ocr_cache.json"
-        
-        # 🚀 [V44.4] 无状态化：仅加载进度，不缓存全文
         page_markdowns = self._load_checkpoint(checkpoint_path)
         
         target_pages = self._collect_target_pages(toc_items, total_pages)
         if not target_pages: target_pages = list(range(total_pages))
+        
+        # 🚀 [V48.0] TOC Bypass：从采样队列中剔除已跳过的页面
+        if skip_pages:
+            print(f"⏩ [Pipeline] TOC Bypass: 跳过 {len(skip_pages)} 页目录 OCR")
+            target_pages = [p for p in target_pages if (p + 1) not in skip_pages]
+            
         target_pages = [p for p in target_pages if str(p) not in page_markdowns]
         if not target_pages: return toc_items, {int(k): v for k, v in page_markdowns.items()}
 
@@ -120,10 +125,18 @@ class BodyAlchemist:
     def _collect_target_pages(self, toc_items: List[Dict], total_pages: int) -> List[int]:
         if not toc_items: return []
         target_pages = []
-        sorted_toc = sorted(toc_items, key=lambda x: x["page"])
+        
+        # 🏛️ 稳健性增强：统一转为 dict 以支持 SpineNode 对象
+        toc_dicts = [it.model_dump() if hasattr(it, "model_dump") else it for it in toc_items]
+        
+        # 🏛️ 对齐脊梁契约：优先使用 logical_page
+        def get_p(it): return it.get("logical_page") or it.get("page", 0)
+        
+        sorted_toc = sorted(toc_dicts, key=get_p)
         for i, it in enumerate(sorted_toc):
-            start = it["page"]
-            next_start = sorted_toc[i+1]["page"] if i+1 < len(sorted_toc) else total_pages + 1
+            start = get_p(it)
+            if start <= 0: continue
+            next_start = get_p(sorted_toc[i+1]) if i+1 < len(sorted_toc) else total_pages + 1
             for p in range(start, next_start):
                 if p <= total_pages: target_pages.append(p - 1)
-        return target_pages
+        return list(dict.fromkeys(target_pages))

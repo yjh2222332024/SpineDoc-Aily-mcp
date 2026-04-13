@@ -2,8 +2,11 @@ import asyncio
 # 🔥 修复 Python 路径问题（Windows 专用）
 import sys
 from pathlib import Path
-project_root = Path(__file__).parent.parent.parent  # 跳到项目根目录
-sys.path.append(str(project_root))
+# 🏛️ 顶级架构师：必须精准回退 5 级才能到达项目根目录 (E:\study\code\spine-close\Spine-close)
+project_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
 import os
 import re
 import uuid
@@ -13,8 +16,7 @@ import base64
 import numpy as np
 from typing import List, Dict, Any, Optional
 from backend.app.services.toc.base import SpineNode
-from concurrent.futures import ProcessPoolExecutor
-from ..ocr_process_utils import render_page_standard, get_adaptive_ocr_worker
+from backend.app.services.ocr.ocr_process_utils import render_page_standard, get_adaptive_ocr_worker
 
 def safe_int(val, default=0):
     if isinstance(val, int): return val
@@ -28,13 +30,15 @@ def safe_int(val, default=0):
 
 class ArchitectVisualParser:
     """
-    SpineDoc 架构师级视觉目录解析器 (V33.0 归一化版)
-    职责：仅负责目录的视觉识别与逻辑重构。算力由统一中心调度。
+    SpineDoc 架构师级视觉目录解析器 (V34.7 资源敏感版)
+    职责：
+    1. 针对 Windows 环境，采用单句柄顺序渲染。
+    2. 严格遵循全局单例 Worker，消灭幽灵实例。
     """
     def __init__(self, mode="auto", **kwargs):
-        print("🚀 [System] ArchitectVisualParser V33.0 (Hardened) 启动...")
-        self.worker = None # 懒加载
-        self.queue = asyncio.Queue(maxsize=32)
+        print("🚀 [System] ArchitectVisualParser V34.7 (Ready) 启动...")
+        self.worker = None 
+        self.queue = asyncio.Queue(maxsize=64)
         self.semaphore = asyncio.Semaphore(16)
 
     async def _ensure_worker(self):
@@ -60,14 +64,13 @@ class ArchitectVisualParser:
                     nparr = np.frombuffer(img_bytes, np.uint8)
                     import cv2
                     img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                    # 🚀 [V1.4.0] 关键分流：目录页启用 high_precision
                     md_content = await worker.ocr_to_markdown(img_np, high_precision=high_precision)
                     raw_texts[page_idx] = md_content
-                    print(f"📄 [TOC-Sense] 页面 P{page_idx+1} 识别完成 ({'VLM' if high_precision else 'GLM'})")
+                    mode_tag = "VLM" if high_precision else "GLM"
+                    print(f"📄 [TOC-Sense] 页面 P{page_idx+1} 识别完成 ({mode_tag})")
                     
-                    # 🚀 [V1.2.8] 云端强制冷却，防止 429
                     if high_precision:
-                        await asyncio.sleep(1.0)
+                        await asyncio.sleep(1.0) # 冷却
                         
                 except Exception as e:
                     print(f"⚠️ Page {page_idx+1} OCR 异常: {e}")
@@ -75,7 +78,7 @@ class ArchitectVisualParser:
 
     async def _structure_toc_with_agent(self, page_texts: Dict[int, str], allowed_pages: Optional[List[int]]) -> List[Dict[str, Any]]:
         from openai import AsyncOpenAI
-        from app.core.config import settings
+        from backend.app.core.config import settings
         import json
 
         client = AsyncOpenAI(api_key=settings.LLM_API_KEY, base_url=settings.LLM_BASE_URL)
@@ -86,19 +89,20 @@ class ArchitectVisualParser:
                 if (p_idx + 1) not in allowed_pages: return []
             if not text or not text.strip(): return []
             
-            prompt = """你是一个全能的【文档逻辑架构师】。你的任务是从 OCR 文本中提取文档的【逻辑骨架/目录】。
-            
-            ✅ 泛化规则：
-            1. **多语种支持**：准确识别中文（章/节/项）、英文（Chapter/Section）、甚至无编号但加粗的标题。
-            2. **视觉层级判定**：字号较大、独立成行、位于页面中心或左侧的内容通常是潜在标题。
-            3. **逻辑一致性**：提取后的标题应能构成文档的导航索引。
-            
-            ⚠️ 严禁提取：
-            - 正文叙述段落。
-            - 脚注、页码注释、作者介绍。
-            - 图表内部的标注文字。
-            
-            输出格式：JSON 数组，如 [{"title": "标题内容", "page": 逻辑页码, "level": 1(主标题)/2(副标题)}]
+            if text.strip().startswith("[") and text.strip().endswith("]"):
+                try:
+                    data = json.loads(text)
+                    valid_items = []
+                    for it in data:
+                        if isinstance(it, dict) and "title" in it:
+                            it["logical_page"] = safe_int(it.get("logical_page") or it.get("page", 0))
+                            it["level"] = safe_int(it.get("level", 1))
+                            valid_items.append(it)
+                    return valid_items
+                except: pass
+
+            prompt = """你是一个全能的【文档逻辑架构师】。提取目录中的章节标题及其对应的页码。
+            输出格式：JSON 数组，如 [{"title": "标题", "logical_page": 1, "level": 1}]
             OCR 文本：\n%s""" % text
 
             try:
@@ -111,15 +115,11 @@ class ArchitectVisualParser:
                 json_match = re.search(r'\[.*\]', content.replace("```json","").replace("```",""), re.DOTALL)
                 if not json_match: return []
                 data = json.loads(json_match.group(0))
-                if isinstance(data, dict): data = [data]
-                
                 valid_items = []
-                for it in data:
+                for it in (data if isinstance(data, list) else [data]):
                     if isinstance(it, dict) and "title" in it:
-                        it["page"] = safe_int(it.get("page", 0))
+                        it["logical_page"] = safe_int(it.get("logical_page") or it.get("page", 0))
                         it["level"] = safe_int(it.get("level", 1))
-                        # 🚀 [Fix] physical_page = page (都是指正文所在的物理页码)
-                        it["physical_page"] = p_idx + 1 
                         valid_items.append(it)
                 return valid_items
             except Exception as e:
@@ -130,9 +130,6 @@ class ArchitectVisualParser:
         print(f"🧠 [Agent] 正在重构主权逻辑地图...")
         results = await asyncio.gather(*tasks)
         
-        from backend.app.services.toc.base import SpineNode
-        import uuid
-
         all_toc_items = []
         for r in results:
             for it in r:
@@ -140,87 +137,96 @@ class ArchitectVisualParser:
                     id=uuid.uuid4(),
                     title=it.get("title", "").strip(),
                     level=safe_int(it.get("level", 1)),
-                    logical_page=safe_int(it.get("page", 1)),
-                    source="ocr_agent"
+                    logical_page=safe_int(it.get("logical_page", 1)),
+                    source="ocr_vlm"
                 )
                 all_toc_items.append(n)
         
-        if not all_toc_items:
-            return [SpineNode(title="Main Content", logical_page=1, level=1)]
-            
-        final_toc = []
-        seen_titles = set()
-        for i, n in enumerate(all_toc_items):
-            if not n.title or n.title in seen_titles: continue
-            n.index = i
-            final_toc.append(n)
-            seen_titles.add(n.title)
-        return final_toc
+        return all_toc_items
 
     async def rebuild_spine_concurrently(self, file_path: str,
                                          max_sniff_pages: int = 0,
-                                         manual_range: Optional[List[int]] = None) -> List[SpineNode]:
+                                         manual_range: Optional[List[int]] = None,
+                                         is_toc_task: bool = False) -> List[SpineNode]:
         """
-        🚀 全文 OCR + LLM 语义分析提取 TOC
-        
-        Args:
-            max_sniff_pages: 扫描页数 (0=扫描全文，>0=扫描指定页数)
-            manual_range: 用户手动指定的页码范围
+        🚀 [V34.7] 资源敏感型流式识别入口
         """
         start_time = time.time()
         try:
-            # 🚀 [V33.1] 智能探测：先找目录位置
-            if manual_range is None:
-                # 用户没有指定范围 → 智能探测目录位置
-                toc_location = await self._find_toc_location(file_path)
-                if toc_location:
-                    print(f"🔍 [SmartScan] 探测到目录在 P{toc_location+1}")
-                    # 从目录页开始，扫描后 45 页
-                    target_indices = list(range(toc_location, min(len(fitz.open(file_path)), toc_location + max_sniff_pages)))
-                else:
-                    # 未找到目录 → 扫描全文 (max_sniff_pages=0) 或前 45 页
-                    total_pages = len(fitz.open(file_path))
-                    if max_sniff_pages == 0:
-                        target_indices = list(range(total_pages))  # 🚀 扫描全文
-                        print(f"🔍 [SmartScan] 未找到目录位置，扫描全文 {total_pages} 页")
-                    else:
-                        target_indices = list(range(min(total_pages, max_sniff_pages)))
-                        print(f"🔍 [SmartScan] 未找到目录位置，扫描前 {max_sniff_pages} 页")
-            else:
-                # 用户指定了范围
+            if manual_range:
                 target_indices = sorted([p - 1 for p in manual_range])
-
-            toc_offset = int(max(manual_range)) if manual_range else 0
-            print(f"⚖️ [Commander] 锁定物理偏移 Offset = {toc_offset}")
+            else:
+                with fitz.open(file_path) as doc:
+                    total = len(doc)
+                target_indices = list(range(min(total, max_sniff_pages or 5)))
 
             raw_page_texts = {}
-            # 🚀 [V1.2.8] 极致限速：云端仅开启单线模式
-            worker = await self._ensure_worker()
-            num_workers = 1 if worker and "Zhipu" in str(type(worker)) else 16
+            num_workers = 1 if is_toc_task else 4 
 
-            workers = [asyncio.create_task(self._ocr_consumer(raw_page_texts)) for _ in range(num_workers)]
+            workers = [asyncio.create_task(self._ocr_consumer(raw_page_texts, high_precision=is_toc_task)) for _ in range(num_workers)]
 
-            loop = asyncio.get_running_loop()
-            max_render_workers = min(os.cpu_count() // 2, 4)
-            with ProcessPoolExecutor(max_workers=max_render_workers) as executor:
-                render_tasks = [loop.run_in_executor(executor, render_page_standard, file_path, i, 1.2) for i in target_indices]
-                for coro in asyncio.as_completed(render_tasks):
-                    p_idx, img_bytes = await coro
-                    await self.queue.put((p_idx, img_bytes))
+            try:
+                with fitz.open(file_path) as doc:
+                    for i in target_indices:
+                        if i >= len(doc): continue
+                        page = doc[i]
+                        pix = page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5))
+                        img_bytes = pix.tobytes("jpg")
+                        del pix
+                        await self.queue.put((i, img_bytes))
+                        import gc
+                        gc.collect()
+            except Exception as e:
+                print(f"❌ [Render] 流式渲染中断: {e}")
 
             for _ in range(num_workers): await self.queue.put(None)
             await asyncio.gather(*workers)
-            await self.queue.join()
 
             final_toc = await self._structure_toc_with_agent(raw_page_texts, allowed_pages=manual_range)
-            for item in final_toc:
-                item.logical_page = item.logical_page + toc_offset
-
-            print(f"✅ [V33.0-Done] 逻辑脊梁重构完成 | 耗时: {time.time()-start_time:.2f}s")
             return final_toc
         except Exception as e:
-            print(f"🚨 [V33.0-Critical] 流程崩溃：{e}")
+            print(f"🚨 [Critical] 系统级崩溃：{e}")
             return [SpineNode(title="Full Document", logical_page=1, level=1)]
 
+    async def harvest_text_async(self, file_path: str, page_range: List[int]) -> str:
+        """
+        🚀 [V1.5.0] 纯净收割：仅提取文本流，为语义分片提供原材料。
+        """
+        start_time = time.time()
+        target_indices = sorted([p - 1 for p in page_range])
+        raw_page_texts = {}
+        
+        num_workers = 4 
+        workers = [asyncio.create_task(self._ocr_consumer(raw_page_texts, high_precision=False)) for _ in range(num_workers)]
+
+        try:
+            with fitz.open(file_path) as doc:
+                for i in target_indices:
+                    if i >= len(doc): continue
+                    page = doc[i]
+                    pix = page.get_pixmap(matrix=fitz.Matrix(1.2, 1.2))
+                    img_bytes = pix.tobytes("jpg")
+                    del pix
+                    await self.queue.put((i, img_bytes))
+                    import gc
+                    gc.collect()
+        except Exception as e:
+            print(f"❌ [Harvest] 渲染异常: {e}")
+
+        for _ in range(num_workers): await self.queue.put(None)
+        await asyncio.gather(*workers)
+
+        full_text = ""
+        for i in target_indices:
+            if i in raw_page_texts:
+                page_text = raw_page_texts[i] or ""
+                if re.search(r'(\d+\.){5,}', page_text):
+                    print(f"⚠️ [Sanitizer] 检测到 P{i+1} 产生复读幻觉，执行拦截清洗。")
+                    page_text = re.sub(r'(\d+\.){5,}.*', ' [检测到 OCR 幻觉，已自动清理] ', page_text)
+                full_text += f"\n【物理页码：P{i+1}】\n" + page_text
+        
+        print(f"✅ [Harvest-Done] 范围 P{min(page_range)}-P{max(page_range)} 收割完成 | 耗时: {time.time()-start_time:.2f}s")
+        return full_text
+
     def extract_toc_async(self, file_path: str, manual_range: Optional[List[int]] = None):
-        return self.rebuild_spine_concurrently(file_path, manual_range=manual_range)
+        return self.rebuild_spine_concurrently(file_path, manual_range=manual_range, is_toc_task=True)

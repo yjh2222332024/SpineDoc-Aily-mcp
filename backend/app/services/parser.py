@@ -54,11 +54,21 @@ class HybridParser:
             total_pages = len(doc)
 
         # 1. 📂 [分支一] 物理/视觉强制模式 (OCR 优先)
-        if force_ocr or manual_range:
-            mode_msg = "强制 OCR" if force_ocr else f"指定目录范围 {manual_range}"
-            print(f"📸 [Parser] 进入【视觉收割】模式 ({mode_msg})...")
-            # 🚀 [V33.0+] 已经返回 List[SpineNode]
-            raw_toc = await self.visual_parser.rebuild_spine_concurrently(file_path, manual_range=manual_range)
+        if manual_range:
+            # 🏛️ 只有显式指定目录范围时，才动用昂贵的云端 VLM
+            if len(manual_range) == 2:
+                actual_range = list(range(manual_range[0], manual_range[1] + 1))
+            else:
+                actual_range = manual_range
+            
+            print(f"📸 [Parser] 目录闭区间 {min(actual_range)}-{max(actual_range)}：启用高精度 VLM...")
+            # 🚀 [V46.6] 修正：显式调用针对 TOC 优化的接口
+            raw_toc = await self.visual_parser.extract_toc_async(file_path, manual_range=actual_range)
+            
+        elif force_ocr:
+            print(f"📸 [Parser] 强制 OCR 模式：启用本地引擎快速嗅探...")
+            # 🚀 [V46.6] 修正：不传 manual_range，走本地全量嗅探
+            raw_toc = await self.visual_parser.rebuild_spine_concurrently(file_path, is_toc_task=False)
 
         # 2. 📄 [分支二] 数字原生模式 (Metadata 优先)
         if not raw_toc:

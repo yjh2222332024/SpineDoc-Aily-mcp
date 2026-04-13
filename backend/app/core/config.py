@@ -76,6 +76,9 @@ class Settings(BaseSettings):
     # --- 🚀 [V43.7] 全局统一 API 接口 (SiliconFlow 核心) ---
     # 架构师指令：所有的云端能力（VLM, Embedding）统一共用此 Key
     EMBEDDING_API_KEY: Optional[str] = None
+    EMBEDDING_BASE_URL: str = "https://api.siliconflow.cn/v1"
+    EMBEDDING_MODEL_NAME: str = "BAAI/bge-m3"
+    EMBEDDING_DIMENSION: int = 1024
     
     # VLM 配置 (Qwen3 高精度视觉专家)
     VLM_BASE_URL: str = "https://api.siliconflow.cn/v1"
@@ -100,6 +103,7 @@ class Settings(BaseSettings):
     
     STORAGE_ROOT: str = str(BACKEND_ROOT / "storage")
     TEMP_UPLOADS: str = str(BACKEND_ROOT / "temp_uploads")
+    CACHE_DIR: str = "E:/ai_models"
     
     # 4. 环境与调试
     DEV_MODE: bool = True
