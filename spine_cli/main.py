@@ -7,7 +7,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich.tree import Tree
-from spine_cli.core.engine import SpineEngine
+from backend.app.services.spine_engine import SpineEngine
 
 app = typer.Typer(help="🛡️ SpineDoc (阅脊) - 逻辑刺客级文档审计引擎", no_args_is_help=True)
 console = Console()
@@ -160,21 +160,6 @@ def tree(doc_id: str = typer.Argument(..., help="文档 ID 前缀或完整 ID"))
         console.print("\n")
         console.print(Panel(spine_tree, title="SpineDoc ISR 透视", border_style="cyan"))
         console.print("\n")
-    asyncio.run(_run())
-
-@app.command()
-def nuke():
-    """☢️ 一键炸库：清空所有文档、切片与向量索引 (慎用!)"""
-    confirm = typer.confirm("⚠️ 确定要彻底清空数据库与物理存储吗？此操作不可逆！")
-    if not confirm:
-        console.print("[yellow]操作已取消。[/yellow]")
-        return
-    
-    engine = SpineEngine()
-    async def _run():
-        with console.status("[bold red]正在执行核打击...[/bold red]"):
-            await engine.nuke_database()
-        console.print("✅ [bold green]清理完成。星系已回归尘埃。[/bold green]")
     asyncio.run(_run())
 
 @app.command()

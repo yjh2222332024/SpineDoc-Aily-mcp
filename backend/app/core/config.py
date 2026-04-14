@@ -78,6 +78,7 @@ class Settings(BaseSettings):
     EMBEDDING_API_KEY: Optional[str] = None
     EMBEDDING_BASE_URL: str = "https://api.siliconflow.cn/v1"
     EMBEDDING_MODEL_NAME: str = "BAAI/bge-m3"
+    EMBEDDING_MODEL_PATH: str = r"E:\ai_models\models--BAAI--bge-m3\snapshots\5617a9f61b028005a4858fdac845db406aefb181"
     EMBEDDING_DIMENSION: int = 1024
     
     # VLM 配置 (Qwen3 高精度视觉专家)

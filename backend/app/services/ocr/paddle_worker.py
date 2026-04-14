@@ -15,9 +15,17 @@ from rapidocr_onnxruntime import RapidOCR
 
 class PaddleWorker:
     def __init__(self):
-        # 🏛️ 极致压缩：使用 ONNX 版本，显存占用极低
-        self.engine = RapidOCR()
-        print("🔍 [OCR-Paddle] 确定性感知工兵已就绪 (RapidOCR-ONNX)")
+        # 🚀 [V50.2] 算力自适应：优先使用 GPU，拒绝 CPU 磨洋工
+        import torch
+        use_gpu = torch.cuda.is_available()
+        
+        self.engine = RapidOCR(
+            det_use_cuda=use_gpu, 
+            cls_use_cuda=use_gpu, 
+            rec_use_cuda=use_gpu
+        )
+        mode_tag = "CUDA" if use_gpu else "CPU"
+        print(f"🔍 [OCR-Paddle] 确定性感知工兵已就绪 (RapidOCR-ONNX | Device: {mode_tag})")
 
     async def ocr_with_layout(self, image_np: np.ndarray) -> List[Dict[str, Any]]:
         """

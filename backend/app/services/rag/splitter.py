@@ -40,7 +40,7 @@ class StructuralSplitter:
                 logger.warning(f"⚠️ 语义切片器加载失败，降级为固定字数切分：{e}")
                 self.semantic_splitter = None
 
-    def _split_by_semantic(self, text: str, min_chunk_len: int = 300) -> List[str]:
+    async def _split_by_semantic(self, text: str, min_chunk_len: int = 300) -> List[str]:
         """
         使用语义切片（优先）
         """
@@ -48,7 +48,8 @@ class StructuralSplitter:
             return self._split_by_fixed_size(text)
         
         try:
-            chunks = self.semantic_splitter.split_text(text, min_chunk_len=min_chunk_len)
+            # 🚀 补上缺失的 await
+            chunks = await self.semantic_splitter.split_text(text, min_chunk_len=min_chunk_len)
             # 过滤太短的 chunk
             return [c for c in chunks if len(c) >= 30]
         except Exception as e:
@@ -102,7 +103,8 @@ class StructuralSplitter:
 
             # 2. 一次性执行语义切分
             print(f"  ↳ 🧠 正在执行章节级语义切分...")
-            raw_sub_texts = self._split_by_semantic(chapter_text, min_chunk_len=300)
+            # 🚀 补上缺失的 await
+            raw_sub_texts = await self._split_by_semantic(chapter_text, min_chunk_len=300)
 
             for sub_text in raw_sub_texts:
                 clean_text = sub_text.strip()
@@ -156,7 +158,8 @@ class StructuralSplitter:
             # 每 5 页或最后一页，进行语义切片
             if (p_idx + 1) % buffer_size == 0 or (p_idx + 1) == total_pages:
                 if buffer_text:
-                    chunks = self._split_by_semantic(buffer_text, min_chunk_len=300)
+                    # 🚀 补上缺失的 await
+                    chunks = await self._split_by_semantic(buffer_text, min_chunk_len=300)
                     
                     current_page = buffer_start_page
                     for chunk in chunks:

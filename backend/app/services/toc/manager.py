@@ -75,8 +75,13 @@ class TOCManager:
         for current in sorted_nodes:
             while stack and stack[-1].level >= current.level:
                 closed = stack.pop()
+                # 🚀 [V48.8] 只有当 current 在 closed 之后开始时，才划定界限
+                # 如果 current 和 closed 同页开始（父子关系），closed 保持 open
                 if current.physical_start > closed.physical_start:
-                    closed.physical_end = max(closed.physical_start, current.physical_start - 1)
+                    closed.physical_end = current.physical_start - 1
+                else:
+                    # 如果同页开始，closed 的终点暂时跟随 current，直到被更高层级闭合
+                    closed.physical_end = current.physical_start 
             
             stack.append(current)
             
@@ -85,6 +90,7 @@ class TOCManager:
             remaining = stack.pop()
             remaining.physical_end = total_pages
             
+        # 重新分配 index 确保有序
         for i, n in enumerate(sorted_nodes):
             n.index = i
             

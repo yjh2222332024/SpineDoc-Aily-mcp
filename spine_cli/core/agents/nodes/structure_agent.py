@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from spine_cli.core.agents.state import DocumentState
+from backend.app.services.agents.state import DocumentState
 from backend.app.services.toc.manager import TOCManager
 
 def structure_agent_node(state: DocumentState) -> Dict[str, Any]:

@@ -1,0 +1,1864 @@
+{
+  "document": {
+    "id": "87d2d2c2-f4dd-4044-a4d5-73a251a82027",
+    "filename": "1.pdf",
+    "total_pages": 406,
+    "page_offset": 17
+  },
+  "spine_nodes": [
+    {
+      "id": "b286b382-08bd-4a34-b003-c073f061bc22",
+      "title": "[Introductory Material]",
+      "level": 1,
+      "logical_page": 0,
+      "physical_start": 1,
+      "physical_end": 15,
+      "parent_id": null
+    },
+    {
+      "id": "3954c579-8072-4c75-ab2f-648f3d212229",
+      "title": "[Introductory Material]",
+      "level": 1,
+      "logical_page": 0,
+      "physical_start": 16,
+      "physical_end": 17,
+      "parent_id": null
+    },
+    {
+      "id": "74e715ba-c768-4e1e-ab30-f0060629f8a3",
+      "title": "第一篇 基础知识",
+      "level": 1,
+      "logical_page": 1,
+      "physical_start": 18,
+      "physical_end": 63,
+      "parent_id": null
+    },
+    {
+      "id": "72a7e6a1-e44e-4c17-9fd4-9de178a834c2",
+      "title": "第1章 信息安全概论",
+      "level": 2,
+      "logical_page": 3,
+      "physical_start": 20,
+      "physical_end": 32,
+      "parent_id": null
+    },
+    {
+      "id": "d069e26c-ba0d-4a16-b436-01ca02a412e7",
+      "title": "1.1 信息安全是信息时代永恒的需求",
+      "level": 3,
+      "logical_page": 3,
+      "physical_start": 20,
+      "physical_end": 20,
+      "parent_id": null
+    },
+    {
+      "id": "cd730d19-b484-41eb-aeae-02241d4f9806",
+      "title": "1.2 信息安全的一些基本原则",
+      "level": 3,
+      "logical_page": 3,
+      "physical_start": 20,
+      "physical_end": 22,
+      "parent_id": null
+    },
+    {
+      "id": "b64fe7d8-7071-4282-89b1-326312a5d84b",
+      "title": "1.3 密码技术是信息安全的关键技术",
+      "level": 3,
+      "logical_page": 6,
+      "physical_start": 23,
+      "physical_end": 27,
+      "parent_id": null
+    },
+    {
+      "id": "84ed0d6d-f83a-4fa5-9ab8-b71a39472f50",
+      "title": "1.4 我国的密码法和商用密码标准",
+      "level": 3,
+      "logical_page": 11,
+      "physical_start": 28,
+      "physical_end": 30,
+      "parent_id": null
+    },
+    {
+      "id": "3c15b06d-e067-458d-a2ba-b2319eb84c8d",
+      "title": "1.4.1 中华人民共和国密码法",
+      "level": 4,
+      "logical_page": 11,
+      "physical_start": 28,
+      "physical_end": 28,
+      "parent_id": null
+    },
+    {
+      "id": "f93363c2-b128-42c2-8b0d-bd48b729d523",
+      "title": "1.4.2 我国的商用密码标准",
+      "level": 4,
+      "logical_page": 12,
+      "physical_start": 29,
+      "physical_end": 30,
+      "parent_id": null
+    },
+    {
+      "id": "946c2d09-8df8-46b4-b60d-6caa79be278f",
+      "title": "1.5 推荐阅读",
+      "level": 3,
+      "logical_page": 14,
+      "physical_start": 31,
+      "physical_end": 31,
+      "parent_id": null
+    },
+    {
+      "id": "b5d553cf-6178-4162-afc1-6c7e7f92da43",
+      "title": "习题",
+      "level": 3,
+      "logical_page": 15,
+      "physical_start": 32,
+      "physical_end": 32,
+      "parent_id": null
+    },
+    {
+      "id": "92325432-0a5b-49bd-b3b0-2225078dae02",
+      "title": "第2章 密码学的基本概念",
+      "level": 2,
+      "logical_page": 16,
+      "physical_start": 33,
+      "physical_end": 63,
+      "parent_id": null
+    },
+    {
+      "id": "d293b474-b3d7-48a7-afce-eb2eb81ac927",
+      "title": "2.1.1 密码体制",
+      "level": 4,
+      "logical_page": 18,
+      "physical_start": 35,
+      "physical_end": 37,
+      "parent_id": null
+    },
+    {
+      "id": "c87791f8-e51e-488d-b6d3-4d14707fd3fc",
+      "title": "2.1.2 密码分析",
+      "level": 4,
+      "logical_page": 21,
+      "physical_start": 38,
+      "physical_end": 39,
+      "parent_id": null
+    },
+    {
+      "id": "79f04a7a-eaeb-40fd-b176-598e753dd277",
+      "title": "2.1.3 密码学的理论基础",
+      "level": 4,
+      "logical_page": 23,
+      "physical_start": 40,
+      "physical_end": 42,
+      "parent_id": null
+    },
+    {
+      "id": "4639bba0-848d-4749-a594-14ea516112b5",
+      "title": "2.2 古典密码",
+      "level": 3,
+      "logical_page": 26,
+      "physical_start": 43,
+      "physical_end": 52,
+      "parent_id": null
+    },
+    {
+      "id": "9187fc20-478a-4ce8-b5cd-ae606a99b71d",
+      "title": "2.2.1 置换密码",
+      "level": 4,
+      "logical_page": 26,
+      "physical_start": 43,
+      "physical_end": 43,
+      "parent_id": null
+    },
+    {
+      "id": "de9f66b8-bc9a-4a8d-8058-7c44f64f54af",
+      "title": "2.2.2 代替密码",
+      "level": 4,
+      "logical_page": 27,
+      "physical_start": 44,
+      "physical_end": 50,
+      "parent_id": null
+    },
+    {
+      "id": "ba9f929f-97c1-4e35-b9a0-ff99b1c57968",
+      "title": "2.2.3 代数密码",
+      "level": 4,
+      "logical_page": 34,
+      "physical_start": 51,
+      "physical_end": 52,
+      "parent_id": null
+    },
+    {
+      "id": "a0278d5a-40b0-4013-a636-edf98a12995d",
+      "title": "2.3 古典密码的统计分析",
+      "level": 3,
+      "logical_page": 36,
+      "physical_start": 53,
+      "physical_end": 56,
+      "parent_id": null
+    },
+    {
+      "id": "b74ba433-a47f-4245-b9ba-479568e08215",
+      "title": "2.3.1 语言的统计特性",
+      "level": 4,
+      "logical_page": 36,
+      "physical_start": 53,
+      "physical_end": 54,
+      "parent_id": null
+    },
+    {
+      "id": "aa3e2abc-3140-4814-aa46-52155007cdf2",
+      "title": "2.3.2 古典密码分析",
+      "level": 4,
+      "logical_page": 38,
+      "physical_start": 55,
+      "physical_end": 56,
+      "parent_id": null
+    },
+    {
+      "id": "c8849968-4e84-4a8f-8609-135e4cf4c026",
+      "title": "2.4 SuperBase密码的破译",
+      "level": 3,
+      "logical_page": 40,
+      "physical_start": 57,
+      "physical_end": 59,
+      "parent_id": null
+    },
+    {
+      "id": "1287648a-7536-4598-a699-d449f40a6b7a",
+      "title": "2.5 推荐阅读",
+      "level": 3,
+      "logical_page": 43,
+      "physical_start": 60,
+      "physical_end": 60,
+      "parent_id": null
+    },
+    {
+      "id": "c07f975b-16eb-4040-bfab-955d744c9d83",
+      "title": "习题与实验研究",
+      "level": 3,
+      "logical_page": 43,
+      "physical_start": 60,
+      "physical_end": 63,
+      "parent_id": null
+    },
+    {
+      "id": "674466b8-ebbe-4c16-8f12-51023d73564a",
+      "title": "第二篇 对称密码",
+      "level": 1,
+      "logical_page": 47,
+      "physical_start": 64,
+      "physical_end": 111,
+      "parent_id": null
+    },
+    {
+      "id": "5fd6b997-5740-44fe-88fe-6b883772ee4f",
+      "title": "第3章 分组密码",
+      "level": 2,
+      "logical_page": 47,
+      "physical_start": 64,
+      "physical_end": 75,
+      "parent_id": null
+    },
+    {
+      "id": "e625dc0e-d9b8-4722-8651-e953ec6f3c27",
+      "title": "3.1 数据加密标准(DES)",
+      "level": 3,
+      "logical_page": 47,
+      "physical_start": 64,
+      "physical_end": 64,
+      "parent_id": null
+    },
+    {
+      "id": "d98533be-d00f-4793-82ab-a1cca67f0f18",
+      "title": "3.1.1 DES 的加密过程",
+      "level": 3,
+      "logical_page": 47,
+      "physical_start": 64,
+      "physical_end": 65,
+      "parent_id": null
+    },
+    {
+      "id": "35c8c5a4-7603-4bad-9034-b049daa88a0a",
+      "title": "3.1.2 DES 的算法细节",
+      "level": 3,
+      "logical_page": 49,
+      "physical_start": 66,
+      "physical_end": 71,
+      "parent_id": null
+    },
+    {
+      "id": "b60389aa-b165-44fb-824f-397b0b1e10fa",
+      "title": "3.1.3 DES 的解密过程",
+      "level": 3,
+      "logical_page": 55,
+      "physical_start": 72,
+      "physical_end": 72,
+      "parent_id": null
+    },
+    {
+      "id": "de870df0-9c92-4b1e-8bd0-a4252a642677",
+      "title": "3.1.4 DES 的安全性",
+      "level": 3,
+      "logical_page": 56,
+      "physical_start": 73,
+      "physical_end": 74,
+      "parent_id": null
+    },
+    {
+      "id": "192c9745-8862-49a3-bc0a-fa1f514bbb2f",
+      "title": "3.1.5 3DES",
+      "level": 3,
+      "logical_page": 58,
+      "physical_start": 75,
+      "physical_end": 75,
+      "parent_id": null
+    },
+    {
+      "id": "7f7a9bf0-a376-416d-ab6f-d681173685cf",
+      "title": "3.1.6 DES 的历史回顾",
+      "level": 3,
+      "logical_page": 59,
+      "physical_start": 76,
+      "physical_end": 76,
+      "parent_id": null
+    },
+    {
+      "id": "d514c6ab-597d-46eb-b52c-012c2082722f",
+      "title": "3.2 高级数据加密标准 (AES)",
+      "level": 2,
+      "logical_page": 59,
+      "physical_start": 76,
+      "physical_end": 91,
+      "parent_id": null
+    },
+    {
+      "id": "10ebe064-60b3-4670-be16-d00484154308",
+      "title": "3.2.1 数学基础",
+      "level": 3,
+      "logical_page": 60,
+      "physical_start": 77,
+      "physical_end": 77,
+      "parent_id": null
+    },
+    {
+      "id": "45cffb40-3d86-459e-ad06-9ddf857cc3cb",
+      "title": "3.2.2 RIJNDAEL 加密算法",
+      "level": 3,
+      "logical_page": 61,
+      "physical_start": 78,
+      "physical_end": 83,
+      "parent_id": null
+    },
+    {
+      "id": "b370f4ec-dedb-4135-b64b-1d52424cd241",
+      "title": "3.2.3 RIJNDAEL 解密算法",
+      "level": 3,
+      "logical_page": 67,
+      "physical_start": 84,
+      "physical_end": 85,
+      "parent_id": null
+    },
+    {
+      "id": "52c3b094-c112-4f8e-a22e-dc1a124807e1",
+      "title": "3.2.4 算法的实现",
+      "level": 3,
+      "logical_page": 69,
+      "physical_start": 86,
+      "physical_end": 90,
+      "parent_id": null
+    },
+    {
+      "id": "ee513a28-fb62-4177-9cf6-b5aa168dbd96",
+      "title": "3.2.5 RIJNDAEL 的安全性",
+      "level": 3,
+      "logical_page": 74,
+      "physical_start": 91,
+      "physical_end": 91,
+      "parent_id": null
+    },
+    {
+      "id": "7c5e083b-a794-48be-9bbe-cf54711ee8f3",
+      "title": "3.3 中国商用密码算法 SM4",
+      "level": 2,
+      "logical_page": 75,
+      "physical_start": 92,
+      "physical_end": 101,
+      "parent_id": null
+    },
+    {
+      "id": "37b70c7e-b5ff-46ef-8fc9-3c78977ae483",
+      "title": "3.3.1 SM4 算法描述",
+      "level": 3,
+      "logical_page": 75,
+      "physical_start": 92,
+      "physical_end": 96,
+      "parent_id": null
+    },
+    {
+      "id": "5b48065b-e53c-4c12-9b74-51e6560bc93f",
+      "title": "3.3.2 SM4 的可逆性和对合性",
+      "level": 3,
+      "logical_page": 80,
+      "physical_start": 97,
+      "physical_end": 99,
+      "parent_id": null
+    },
+    {
+      "id": "77ca0638-68e5-4d59-80ec-7b860c098ca0",
+      "title": "3.3.3 SM4 的安全性",
+      "level": 3,
+      "logical_page": 83,
+      "physical_start": 100,
+      "physical_end": 100,
+      "parent_id": null
+    },
+    {
+      "id": "2a2301cf-4c02-42b6-9116-fb76c1b20335",
+      "title": "3.3.4 示例",
+      "level": 3,
+      "logical_page": 84,
+      "physical_start": 101,
+      "physical_end": 101,
+      "parent_id": null
+    },
+    {
+      "id": "a43e5536-2d20-4f6a-a3c1-a6b5526049ad",
+      "title": "3.4 分组密码的应用技术",
+      "level": 2,
+      "logical_page": 85,
+      "physical_start": 102,
+      "physical_end": 109,
+      "parent_id": null
+    },
+    {
+      "id": "25b45000-fa24-4bc3-bf33-d2f9a1dcafdf",
+      "title": "3.4.1 分组密码的工作模式",
+      "level": 3,
+      "logical_page": 85,
+      "physical_start": 102,
+      "physical_end": 107,
+      "parent_id": null
+    },
+    {
+      "id": "eb2687f1-1b42-40c6-a054-ca52e76a9e43",
+      "title": "3.4.2 分组密码的短块加密",
+      "level": 3,
+      "logical_page": 91,
+      "physical_start": 108,
+      "physical_end": 109,
+      "parent_id": null
+    },
+    {
+      "id": "300eed01-7b94-40e8-be49-f6706c62d007",
+      "title": "3.5 推荐阅读",
+      "level": 2,
+      "logical_page": 93,
+      "physical_start": 110,
+      "physical_end": 110,
+      "parent_id": null
+    },
+    {
+      "id": "f31198b7-21e6-4dba-b4aa-782aef591033",
+      "title": "习题与实验研究",
+      "level": 2,
+      "logical_page": 93,
+      "physical_start": 110,
+      "physical_end": 111,
+      "parent_id": null
+    },
+    {
+      "id": "f682de12-b063-470f-989c-e3ff57cdad2b",
+      "title": "第 4 章 序列密码",
+      "level": 1,
+      "logical_page": 95,
+      "physical_start": 112,
+      "physical_end": 139,
+      "parent_id": null
+    },
+    {
+      "id": "dcfecddd-4a36-48ee-8764-55ea52f32084",
+      "title": "4.1 序列密码的概念",
+      "level": 2,
+      "logical_page": 95,
+      "physical_start": 112,
+      "physical_end": 112,
+      "parent_id": null
+    },
+    {
+      "id": "7b8f1e03-34b9-4db8-92de-666d28b1fe9c",
+      "title": "4.2 随机序列的安全性",
+      "level": 2,
+      "logical_page": 96,
+      "physical_start": 113,
+      "physical_end": 115,
+      "parent_id": null
+    },
+    {
+      "id": "f915364c-c58d-41ce-92de-a9f852dd79f0",
+      "title": "4.3 线性移位寄存器序列",
+      "level": 2,
+      "logical_page": 99,
+      "physical_start": 116,
+      "physical_end": 120,
+      "parent_id": null
+    },
+    {
+      "id": "b3a2ede0-684f-437e-b25e-e44072f3ec1b",
+      "title": "4.4 非线性序列",
+      "level": 2,
+      "logical_page": 104,
+      "physical_start": 121,
+      "physical_end": 122,
+      "parent_id": null
+    },
+    {
+      "id": "4817bb61-02fb-4134-8583-889a1b67f33b",
+      "title": "4.5 祖冲之密码",
+      "level": 2,
+      "logical_page": 106,
+      "physical_start": 123,
+      "physical_end": 137,
+      "parent_id": null
+    },
+    {
+      "id": "da3a9f20-ec2c-4eeb-a989-750f66ff9b8c",
+      "title": "4.5.2 基于祖冲之密码的机密性算法 128-EEA3",
+      "level": 3,
+      "logical_page": 113,
+      "physical_start": 130,
+      "physical_end": 131,
+      "parent_id": null
+    },
+    {
+      "id": "e987e093-8c71-46e5-b7c0-1f776c915564",
+      "title": "4.5.3 基于祖冲之密码的完整性算法 128-EIA3",
+      "level": 3,
+      "logical_page": 115,
+      "physical_start": 132,
+      "physical_end": 134,
+      "parent_id": null
+    },
+    {
+      "id": "10b00026-8eaf-4ade-a165-ebf8d50c6040",
+      "title": "4.5.4 示例",
+      "level": 3,
+      "logical_page": 118,
+      "physical_start": 135,
+      "physical_end": 137,
+      "parent_id": null
+    },
+    {
+      "id": "9128f7ee-1c89-447b-835a-333226e020a9",
+      "title": "4.6 推荐阅读",
+      "level": 2,
+      "logical_page": 121,
+      "physical_start": 138,
+      "physical_end": 138,
+      "parent_id": null
+    },
+    {
+      "id": "b0d65642-b77d-4eae-9feb-6fe8064e5349",
+      "title": "习题与实验研究",
+      "level": 2,
+      "logical_page": 121,
+      "physical_start": 138,
+      "physical_end": 139,
+      "parent_id": null
+    },
+    {
+      "id": "d7e44673-8f72-4749-9d05-3198a017e770",
+      "title": "第 5 章 密码学 Hash 函数",
+      "level": 1,
+      "logical_page": 123,
+      "physical_start": 140,
+      "physical_end": 175,
+      "parent_id": null
+    },
+    {
+      "id": "6cd7f035-7158-46e0-94e6-2f24385f91e3",
+      "title": "5.2 密码学 Hash 函数的安全性",
+      "level": 2,
+      "logical_page": 123,
+      "physical_start": 140,
+      "physical_end": 142,
+      "parent_id": null
+    },
+    {
+      "id": "2d6f4d5d-1a12-4236-a13d-8fa76d712ea9",
+      "title": "5.3 密码学 Hash 函数的一般结构",
+      "level": 2,
+      "logical_page": 126,
+      "physical_start": 143,
+      "physical_end": 144,
+      "parent_id": null
+    },
+    {
+      "id": "c0037b91-c225-4715-826c-574874cb7f34",
+      "title": "5.3.2 密码学 Hash 函数的类型",
+      "level": 3,
+      "logical_page": 127,
+      "physical_start": 144,
+      "physical_end": 144,
+      "parent_id": null
+    },
+    {
+      "id": "437649a0-1ee5-45a3-847e-c9e009b0f936",
+      "title": "5.4 中国商用密码杂凑算法 SM3",
+      "level": 2,
+      "logical_page": 128,
+      "physical_start": 145,
+      "physical_end": 153,
+      "parent_id": null
+    },
+    {
+      "id": "efecfed0-644d-4f71-8711-4ec55cb7848c",
+      "title": "5.4.2 SM3 示例",
+      "level": 3,
+      "logical_page": 131,
+      "physical_start": 148,
+      "physical_end": 153,
+      "parent_id": null
+    },
+    {
+      "id": "438cde37-b61b-48a8-950b-1d16849cec3d",
+      "title": "5.5 美国密码 Hash 函数算法 SHA-3",
+      "level": 2,
+      "logical_page": 137,
+      "physical_start": 154,
+      "physical_end": 169,
+      "parent_id": null
+    },
+    {
+      "id": "5492e04b-f454-40cf-b2a9-9f4ccae445be",
+      "title": "5.5.1 海绵结构",
+      "level": 3,
+      "logical_page": 138,
+      "physical_start": 155,
+      "physical_end": 157,
+      "parent_id": null
+    },
+    {
+      "id": "965ccc8a-80f4-41f7-b53a-fa60ac2b5dbd",
+      "title": "5.5.2 SHA-3",
+      "level": 3,
+      "logical_page": 141,
+      "physical_start": 158,
+      "physical_end": 169,
+      "parent_id": null
+    },
+    {
+      "id": "e6ec2d7c-1dc6-421d-8546-fa17be28a6ce",
+      "title": "5.6 推荐阅读",
+      "level": 2,
+      "logical_page": 153,
+      "physical_start": 170,
+      "physical_end": 170,
+      "parent_id": null
+    },
+    {
+      "id": "723bbfcb-c6bd-462b-831b-f48f917c4236",
+      "title": "习题与实验研究",
+      "level": 2,
+      "logical_page": 153,
+      "physical_start": 170,
+      "physical_end": 175,
+      "parent_id": null
+    },
+    {
+      "id": "2c5037ec-4527-4ab4-ba9d-dba4e5c00a24",
+      "title": "第 6 章 公开密钥密码",
+      "level": 1,
+      "logical_page": 159,
+      "physical_start": 176,
+      "physical_end": 209,
+      "parent_id": null
+    },
+    {
+      "id": "3f77c853-c4f1-412b-9174-828abae0b38a",
+      "title": "6.1 公开密钥密码的基本概念",
+      "level": 2,
+      "logical_page": 159,
+      "physical_start": 176,
+      "physical_end": 178,
+      "parent_id": null
+    },
+    {
+      "id": "114dc750-2c60-4063-ab54-ed65d71d4e38",
+      "title": "6.1.2 公开密钥密码的基本工作方式",
+      "level": 3,
+      "logical_page": 160,
+      "physical_start": 177,
+      "physical_end": 178,
+      "parent_id": null
+    },
+    {
+      "id": "bc6fd7a9-7656-43d9-b9b8-ddcad5ac0c12",
+      "title": "6.2 RSA 密码",
+      "level": 2,
+      "logical_page": 162,
+      "physical_start": 179,
+      "physical_end": 185,
+      "parent_id": null
+    },
+    {
+      "id": "722f4be3-0fa2-4edc-8dac-7a86b1e86c7d",
+      "title": "6.2.1 RSA 加解密算法",
+      "level": 3,
+      "logical_page": 162,
+      "physical_start": 179,
+      "physical_end": 180,
+      "parent_id": null
+    },
+    {
+      "id": "b4fb6fbd-6634-4fb3-9379-fbc73c8184d3",
+      "title": "6.2.2 RSA 密码的安全性",
+      "level": 3,
+      "logical_page": 164,
+      "physical_start": 181,
+      "physical_end": 183,
+      "parent_id": null
+    },
+    {
+      "id": "cd9fca73-4467-456f-b7fe-3e3fa4d61268",
+      "title": "6.2.3 RSA 的应用",
+      "level": 3,
+      "logical_page": 167,
+      "physical_start": 184,
+      "physical_end": 185,
+      "parent_id": null
+    },
+    {
+      "id": "83001728-a0db-4a39-8d9f-64665d0b93e5",
+      "title": "6.3 ElGamal 密码",
+      "level": 2,
+      "logical_page": 169,
+      "physical_start": 186,
+      "physical_end": 191,
+      "parent_id": null
+    },
+    {
+      "id": "d61dbde6-60a2-40df-98c6-a26c57e751c7",
+      "title": "6.3.1 离散对数问题",
+      "level": 3,
+      "logical_page": 169,
+      "physical_start": 186,
+      "physical_end": 186,
+      "parent_id": null
+    },
+    {
+      "id": "6a449401-c985-4104-ac7d-e7bffd742a3d",
+      "title": "6.3.2 ElGamal 密码",
+      "level": 3,
+      "logical_page": 170,
+      "physical_start": 187,
+      "physical_end": 187,
+      "parent_id": null
+    },
+    {
+      "id": "300e4ecd-18e2-43bc-8e75-81e3d53a3bb5",
+      "title": "6.3.3 实现技术",
+      "level": 3,
+      "logical_page": 171,
+      "physical_start": 188,
+      "physical_end": 190,
+      "parent_id": null
+    },
+    {
+      "id": "a583a413-925c-470a-b031-217c31fb55ee",
+      "title": "6.3.4 ElGamal 密码的应用",
+      "level": 3,
+      "logical_page": 174,
+      "physical_start": 191,
+      "physical_end": 191,
+      "parent_id": null
+    },
+    {
+      "id": "a630ad05-988e-458b-b553-665d222d0a13",
+      "title": "6.4 椭圆曲线密码",
+      "level": 2,
+      "logical_page": 175,
+      "physical_start": 192,
+      "physical_end": 207,
+      "parent_id": null
+    },
+    {
+      "id": "420055c2-b087-4978-9ea5-7b2ba33fcfe6",
+      "title": "6.4.2 椭圆曲线密码",
+      "level": 3,
+      "logical_page": 181,
+      "physical_start": 198,
+      "physical_end": 201,
+      "parent_id": null
+    },
+    {
+      "id": "d034c565-4c4b-4fa0-aaa1-b7f38acaf242",
+      "title": "6.4.3 中国商用密码 SM2 椭圆曲线公钥密码加密算法",
+      "level": 3,
+      "logical_page": 185,
+      "physical_start": 202,
+      "physical_end": 206,
+      "parent_id": null
+    },
+    {
+      "id": "080fd2e2-46bd-4c55-9eaf-aa57a1e03b27",
+      "title": "6.4.4 示例",
+      "level": 3,
+      "logical_page": 190,
+      "physical_start": 207,
+      "physical_end": 207,
+      "parent_id": null
+    },
+    {
+      "id": "8001106e-606b-42b1-93f8-e07fdb83e168",
+      "title": "6.5 推荐阅读",
+      "level": 2,
+      "logical_page": 191,
+      "physical_start": 208,
+      "physical_end": 208,
+      "parent_id": null
+    },
+    {
+      "id": "4672d024-2bae-45cd-ac13-7b6dc5abff44",
+      "title": "习题与实验研究",
+      "level": 2,
+      "logical_page": 192,
+      "physical_start": 209,
+      "physical_end": 209,
+      "parent_id": null
+    },
+    {
+      "id": "4cf09ad7-e0c0-49a1-a79e-65ecd988d867",
+      "title": "第 7 章 数字签名",
+      "level": 1,
+      "logical_page": 193,
+      "physical_start": 210,
+      "physical_end": 229,
+      "parent_id": null
+    },
+    {
+      "id": "5e2e6f1c-8825-4009-9515-91075c116904",
+      "title": "7.1 数字签名的概念",
+      "level": 2,
+      "logical_page": 194,
+      "physical_start": 211,
+      "physical_end": 213,
+      "parent_id": null
+    },
+    {
+      "id": "2b960f11-92dc-49a0-aa6a-e449ee7e50a1",
+      "title": "7.2 利用公开密钥密码实现数字签名",
+      "level": 2,
+      "logical_page": 197,
+      "physical_start": 214,
+      "physical_end": 218,
+      "parent_id": null
+    },
+    {
+      "id": "f6acfeaa-61ee-4419-9b81-19892d65fc9a",
+      "title": "7.2.1 利用 RSA 密码实现数字签名",
+      "level": 3,
+      "logical_page": 197,
+      "physical_start": 214,
+      "physical_end": 214,
+      "parent_id": null
+    },
+    {
+      "id": "c2e20987-69ab-4e66-8baa-a33484a66b14",
+      "title": "7.2.2 利用 ElGamal 密码实现数字签名",
+      "level": 3,
+      "logical_page": 198,
+      "physical_start": 215,
+      "physical_end": 216,
+      "parent_id": null
+    },
+    {
+      "id": "fe81cc91-4a40-4e69-87a1-f59401da770d",
+      "title": "7.2.3 利用椭圆曲线密码实现数字签名",
+      "level": 3,
+      "logical_page": 200,
+      "physical_start": 217,
+      "physical_end": 218,
+      "parent_id": null
+    },
+    {
+      "id": "92c64fb5-bc75-4844-ade2-4c2e972e2513",
+      "title": "7.3 中国商用密码 SM2 椭圆曲线公钥密码数字签名算法",
+      "level": 2,
+      "logical_page": 202,
+      "physical_start": 219,
+      "physical_end": 224,
+      "parent_id": null
+    },
+    {
+      "id": "4d1f3c07-2e35-479a-ae88-1412bf404be9",
+      "title": "7.3.1 数字签名的生成算法",
+      "level": 3,
+      "logical_page": 202,
+      "physical_start": 219,
+      "physical_end": 219,
+      "parent_id": null
+    },
+    {
+      "id": "e2710079-62f5-4650-bdaa-66eab27e1dea",
+      "title": "7.3.2 数字签名的验证算法",
+      "level": 3,
+      "logical_page": 203,
+      "physical_start": 220,
+      "physical_end": 221,
+      "parent_id": null
+    },
+    {
+      "id": "73a129b0-a58b-4519-a813-df05c161237d",
+      "title": "7.3.3 示例",
+      "level": 3,
+      "logical_page": 205,
+      "physical_start": 222,
+      "physical_end": 224,
+      "parent_id": null
+    },
+    {
+      "id": "eb0b6c3a-6b00-4931-87f2-b89fb6660955",
+      "title": "7.4 美国数字签名标准 (DSS)",
+      "level": 2,
+      "logical_page": 208,
+      "physical_start": 225,
+      "physical_end": 226,
+      "parent_id": null
+    },
+    {
+      "id": "dc1bf28e-f72c-4f8a-8bd7-876818d1c8a0",
+      "title": "7.4.1 算法描述",
+      "level": 3,
+      "logical_page": 209,
+      "physical_start": 226,
+      "physical_end": 226,
+      "parent_id": null
+    },
+    {
+      "id": "778ef3ba-44fd-4b96-866b-518b152c8d50",
+      "title": "7.4.2 算法证明",
+      "level": 3,
+      "logical_page": 210,
+      "physical_start": 227,
+      "physical_end": 227,
+      "parent_id": null
+    },
+    {
+      "id": "7163cf96-c568-4b05-b82f-d7ec19ed5e80",
+      "title": "7.5 俄罗斯数字签名标准 (GOST)",
+      "level": 2,
+      "logical_page": 210,
+      "physical_start": 227,
+      "physical_end": 227,
+      "parent_id": null
+    },
+    {
+      "id": "6c513607-bf52-41ec-bdb2-87647f9b78d0",
+      "title": "7.6 推荐阅读",
+      "level": 2,
+      "logical_page": 211,
+      "physical_start": 228,
+      "physical_end": 228,
+      "parent_id": null
+    },
+    {
+      "id": "8391d2e0-d03a-4886-bf40-746a038192a1",
+      "title": "习题与实验研究",
+      "level": 2,
+      "logical_page": 212,
+      "physical_start": 229,
+      "physical_end": 229,
+      "parent_id": null
+    },
+    {
+      "id": "44180928-94c7-43b4-8526-bde2379d9f06",
+      "title": "第 8 章 抗量子计算密码 (选修)",
+      "level": 1,
+      "logical_page": 213,
+      "physical_start": 230,
+      "physical_end": 267,
+      "parent_id": null
+    },
+    {
+      "id": "f6e5a3fc-d1b4-41c9-940d-0709de2e5b10",
+      "title": "8.1 量子计算对现有公钥密码的挑战",
+      "level": 2,
+      "logical_page": 213,
+      "physical_start": 230,
+      "physical_end": 230,
+      "parent_id": null
+    },
+    {
+      "id": "6e51ddcf-6d5e-441a-8957-1802482fae4e",
+      "title": "8.2 与格密码相关的几个问题",
+      "level": 2,
+      "logical_page": 214,
+      "physical_start": 231,
+      "physical_end": 239,
+      "parent_id": null
+    },
+    {
+      "id": "10c83413-c35b-42ef-9e9d-c6414e56b15c",
+      "title": "8.2.1 格和格密码的概念",
+      "level": 3,
+      "logical_page": 214,
+      "physical_start": 231,
+      "physical_end": 232,
+      "parent_id": null
+    },
+    {
+      "id": "b2be62be-9e65-4fb3-9d00-13a1a7894235",
+      "title": "8.2.2 快速数论变换 NTT",
+      "level": 3,
+      "logical_page": 216,
+      "physical_start": 233,
+      "physical_end": 237,
+      "parent_id": null
+    },
+    {
+      "id": "62da390a-5e08-491e-aa7e-6741a41a8d94",
+      "title": "8.2.3 LWE 和 SIS 问题",
+      "level": 3,
+      "logical_page": 221,
+      "physical_start": 238,
+      "physical_end": 239,
+      "parent_id": null
+    },
+    {
+      "id": "17571d33-6921-498a-bee9-628a13418b30",
+      "title": "8.3 Kyber 密码",
+      "level": 2,
+      "logical_page": 223,
+      "physical_start": 240,
+      "physical_end": 255,
+      "parent_id": null
+    },
+    {
+      "id": "34adb70e-b3c4-4d76-9524-ed50af9a5efd",
+      "title": "8.3.1 辅助运算及符号说明",
+      "level": 3,
+      "logical_page": 223,
+      "physical_start": 240,
+      "physical_end": 245,
+      "parent_id": null
+    },
+    {
+      "id": "9b9bea5f-7149-437b-939a-94d6695cb5dd",
+      "title": "8.3.2 Kyber 密码的推荐参数",
+      "level": 3,
+      "logical_page": 229,
+      "physical_start": 246,
+      "physical_end": 246,
+      "parent_id": null
+    },
+    {
+      "id": "615db17b-ad8a-4d4f-9b95-27088ddc5ef6",
+      "title": "8.3.3 Kyber 密码 IND-CPA 公钥加密方案",
+      "level": 3,
+      "logical_page": 229,
+      "physical_start": 246,
+      "physical_end": 252,
+      "parent_id": null
+    },
+    {
+      "id": "4570f39f-4c48-4f54-8f74-e7f0aa7f512d",
+      "title": "8.3.4 Kyber 密码 CCAKEM 密钥封装机制 (KEM)",
+      "level": 3,
+      "logical_page": 236,
+      "physical_start": 253,
+      "physical_end": 255,
+      "parent_id": null
+    },
+    {
+      "id": "04fe2e5d-63a1-47c5-a663-3ad225553602",
+      "title": "8.4 Dilithium 密码",
+      "level": 2,
+      "logical_page": 239,
+      "physical_start": 256,
+      "physical_end": 262,
+      "parent_id": null
+    },
+    {
+      "id": "011c9d27-bf27-4453-b031-51053220e9e2",
+      "title": "8.4.1 基本运算与辅助函数",
+      "level": 3,
+      "logical_page": 239,
+      "physical_start": 256,
+      "physical_end": 259,
+      "parent_id": null
+    },
+    {
+      "id": "45685058-6a47-4b1d-9e6d-99ad2ba825b7",
+      "title": "8.4.2 Dilithium 签名方案推荐参数",
+      "level": 3,
+      "logical_page": 243,
+      "physical_start": 260,
+      "physical_end": 260,
+      "parent_id": null
+    },
+    {
+      "id": "62430d19-4e7f-4d7a-a773-225382fdd734",
+      "title": "8.4.3 签名算法",
+      "level": 3,
+      "logical_page": 243,
+      "physical_start": 260,
+      "physical_end": 262,
+      "parent_id": null
+    },
+    {
+      "id": "a8e7c947-30aa-4c28-9b0e-6e6a242fc09e",
+      "title": "8.5 小结",
+      "level": 2,
+      "logical_page": 246,
+      "physical_start": 263,
+      "physical_end": 263,
+      "parent_id": null
+    },
+    {
+      "id": "643b06aa-4e56-4084-a841-826d75ed3510",
+      "title": "8.6 推荐阅读",
+      "level": 2,
+      "logical_page": 247,
+      "physical_start": 264,
+      "physical_end": 264,
+      "parent_id": null
+    },
+    {
+      "id": "b201eea9-180e-443c-9c08-68c208abfab1",
+      "title": "习题与实验研究",
+      "level": 2,
+      "logical_page": 247,
+      "physical_start": 264,
+      "physical_end": 267,
+      "parent_id": null
+    },
+    {
+      "id": "6d612240-5a32-4c36-9809-77d57f4bc1e7",
+      "title": "第 9 章 密码分析 (选修)",
+      "level": 1,
+      "logical_page": 251,
+      "physical_start": 268,
+      "physical_end": 295,
+      "parent_id": null
+    },
+    {
+      "id": "3fbf35ad-054f-4e80-8436-e17182041e8c",
+      "title": "9.1 统计式分析方法",
+      "level": 2,
+      "logical_page": 251,
+      "physical_start": 268,
+      "physical_end": 277,
+      "parent_id": null
+    },
+    {
+      "id": "ea38a34f-11a7-4739-acdf-853cc9e3cd59",
+      "title": "9.1.1 分组密码分析方法",
+      "level": 3,
+      "logical_page": 251,
+      "physical_start": 268,
+      "physical_end": 274,
+      "parent_id": null
+    },
+    {
+      "id": "10dd4960-2043-4d5a-be34-cf8b37ebf185",
+      "title": "9.1.2 公钥密码分析方法",
+      "level": 3,
+      "logical_page": 258,
+      "physical_start": 275,
+      "physical_end": 277,
+      "parent_id": null
+    },
+    {
+      "id": "126164b4-e05e-4def-85e5-efcbd7ec9c8d",
+      "title": "9.2 侧信道分析方法",
+      "level": 2,
+      "logical_page": 261,
+      "physical_start": 278,
+      "physical_end": 290,
+      "parent_id": null
+    },
+    {
+      "id": "f7db8ffb-4a50-415f-83db-3089430b20fc",
+      "title": "9.2.1 能量侧信道分析",
+      "level": 3,
+      "logical_page": 261,
+      "physical_start": 278,
+      "physical_end": 279,
+      "parent_id": null
+    },
+    {
+      "id": "0fcc9f98-f9a8-4dfa-922b-889988cf1657",
+      "title": "9.2.2 时间侧信道分析",
+      "level": 3,
+      "logical_page": 263,
+      "physical_start": 280,
+      "physical_end": 283,
+      "parent_id": null
+    },
+    {
+      "id": "2129c660-1710-4746-ae14-41c839585065",
+      "title": "9.2.3 故障侧信道分析",
+      "level": 3,
+      "logical_page": 267,
+      "physical_start": 284,
+      "physical_end": 290,
+      "parent_id": null
+    },
+    {
+      "id": "c40d470c-3a30-4d84-a72e-6922124213a2",
+      "title": "9.3 推荐阅读",
+      "level": 2,
+      "logical_page": 274,
+      "physical_start": 291,
+      "physical_end": 291,
+      "parent_id": null
+    },
+    {
+      "id": "d0790fa5-6e45-4ffb-9680-3eadeb485672",
+      "title": "习题与实验研究",
+      "level": 2,
+      "logical_page": 274,
+      "physical_start": 291,
+      "physical_end": 295,
+      "parent_id": null
+    },
+    {
+      "id": "c06011e8-7c23-4728-bf0c-1e4974884fa0",
+      "title": "第五篇 密码应用",
+      "level": 1,
+      "logical_page": 279,
+      "physical_start": 296,
+      "physical_end": 367,
+      "parent_id": null
+    },
+    {
+      "id": "0e52a34a-9a09-4226-a9bf-80619816c16f",
+      "title": "第10章 密钥管理",
+      "level": 2,
+      "logical_page": 279,
+      "physical_start": 296,
+      "physical_end": 328,
+      "parent_id": null
+    },
+    {
+      "id": "39bcee27-4cdc-4511-a2e2-5a3f3b54a52f",
+      "title": "10.1 密钥管理的原则",
+      "level": 3,
+      "logical_page": 279,
+      "physical_start": 296,
+      "physical_end": 297,
+      "parent_id": null
+    },
+    {
+      "id": "a12fb93a-e906-4322-aa9f-f6fab3123715",
+      "title": "10.2 传统密码体制的密钥管理",
+      "level": 3,
+      "logical_page": 281,
+      "physical_start": 298,
+      "physical_end": 320,
+      "parent_id": null
+    },
+    {
+      "id": "86f198f0-83b5-4579-979c-081e2145d72a",
+      "title": "10.2.1 密钥组织",
+      "level": 4,
+      "logical_page": 281,
+      "physical_start": 298,
+      "physical_end": 298,
+      "parent_id": null
+    },
+    {
+      "id": "d09dc8ec-0343-429d-80a4-9dfe65a7862c",
+      "title": "10.2.2 随机数和随机序列的产生",
+      "level": 4,
+      "logical_page": 282,
+      "physical_start": 299,
+      "physical_end": 303,
+      "parent_id": null
+    },
+    {
+      "id": "a42e6a6c-e488-47bf-8005-62ec85ed7a9b",
+      "title": "10.2.3 密钥产生",
+      "level": 4,
+      "logical_page": 287,
+      "physical_start": 304,
+      "physical_end": 305,
+      "parent_id": null
+    },
+    {
+      "id": "77301025-4d13-4337-b285-3bbc44f06a81",
+      "title": "10.2.4 密钥分配",
+      "level": 4,
+      "logical_page": 289,
+      "physical_start": 306,
+      "physical_end": 316,
+      "parent_id": null
+    },
+    {
+      "id": "842c1829-a575-443f-8410-3d4af58b3348",
+      "title": "10.2.5 密钥的存储与备份",
+      "level": 4,
+      "logical_page": 300,
+      "physical_start": 317,
+      "physical_end": 317,
+      "parent_id": null
+    },
+    {
+      "id": "e81238ae-0ea7-4d00-ba96-0d342d43d127",
+      "title": "10.2.6 密钥更新",
+      "level": 4,
+      "logical_page": 301,
+      "physical_start": 318,
+      "physical_end": 318,
+      "parent_id": null
+    },
+    {
+      "id": "374492a1-b2f3-44ae-b038-78a9505a68af",
+      "title": "10.2.7 密钥的终止和销毁",
+      "level": 4,
+      "logical_page": 302,
+      "physical_start": 319,
+      "physical_end": 319,
+      "parent_id": null
+    },
+    {
+      "id": "fca29fb3-5b0c-4338-997c-f9726cba7857",
+      "title": "10.2.8 专用密码装置",
+      "level": 4,
+      "logical_page": 302,
+      "physical_start": 319,
+      "physical_end": 320,
+      "parent_id": null
+    },
+    {
+      "id": "f5680415-dd55-40fa-a6f5-83833b2996f3",
+      "title": "10.3 公开密钥密码体制的密钥管理",
+      "level": 3,
+      "logical_page": 304,
+      "physical_start": 321,
+      "physical_end": 326,
+      "parent_id": null
+    },
+    {
+      "id": "96cd815c-339e-473c-9f2f-5729994f2fe3",
+      "title": "10.3.1 公开密钥密码的密钥产生",
+      "level": 4,
+      "logical_page": 304,
+      "physical_start": 321,
+      "physical_end": 321,
+      "parent_id": null
+    },
+    {
+      "id": "3d8aec47-1af4-414b-921a-d1568396d219",
+      "title": "10.3.2 公开密钥的分配",
+      "level": 4,
+      "logical_page": 305,
+      "physical_start": 322,
+      "physical_end": 322,
+      "parent_id": null
+    },
+    {
+      "id": "2c8acaf1-6f46-477a-a8fa-70e1f363303f",
+      "title": "10.3.3 公开密钥基础设施 PKI",
+      "level": 4,
+      "logical_page": 306,
+      "physical_start": 323,
+      "physical_end": 326,
+      "parent_id": null
+    },
+    {
+      "id": "2a29d9fa-581c-4e6f-8552-51ab71f55d07",
+      "title": "10.4 推荐阅读",
+      "level": 3,
+      "logical_page": 310,
+      "physical_start": 327,
+      "physical_end": 327,
+      "parent_id": null
+    },
+    {
+      "id": "5ad98eca-307e-4d12-a196-d00d73748528",
+      "title": "习题与实验研究",
+      "level": 3,
+      "logical_page": 310,
+      "physical_start": 327,
+      "physical_end": 328,
+      "parent_id": null
+    },
+    {
+      "id": "8be0b1cf-2a9c-4ed0-8104-033aec84fc3b",
+      "title": "第11章 密码协议",
+      "level": 2,
+      "logical_page": 312,
+      "physical_start": 329,
+      "physical_end": 339,
+      "parent_id": null
+    },
+    {
+      "id": "7518d731-20c6-491c-99bb-79fbd09e6e8e",
+      "title": "11.1 密码协议的基本概念",
+      "level": 3,
+      "logical_page": 312,
+      "physical_start": 329,
+      "physical_end": 330,
+      "parent_id": null
+    },
+    {
+      "id": "db4000f9-30f9-44aa-bc6e-5b071f670f6c",
+      "title": "11.2 密码协议的设计与分析",
+      "level": 3,
+      "logical_page": 314,
+      "physical_start": 331,
+      "physical_end": 335,
+      "parent_id": null
+    },
+    {
+      "id": "b8f4166e-5280-478a-bfed-a48bd01196d2",
+      "title": "11.3 密码协议分析举例",
+      "level": 3,
+      "logical_page": 319,
+      "physical_start": 336,
+      "physical_end": 337,
+      "parent_id": null
+    },
+    {
+      "id": "0dafd5f1-2455-4f42-9399-643e8feb87db",
+      "title": "11.4 推荐阅读",
+      "level": 3,
+      "logical_page": 321,
+      "physical_start": 338,
+      "physical_end": 338,
+      "parent_id": null
+    },
+    {
+      "id": "fa818e2d-2273-4cc9-9faa-2045a142b613",
+      "title": "习题与实验研究",
+      "level": 3,
+      "logical_page": 322,
+      "physical_start": 339,
+      "physical_end": 339,
+      "parent_id": null
+    },
+    {
+      "id": "56817c61-a5fa-41c2-bdea-55f00ddeadad",
+      "title": "第12章 认证",
+      "level": 2,
+      "logical_page": 323,
+      "physical_start": 340,
+      "physical_end": 354,
+      "parent_id": null
+    },
+    {
+      "id": "95507438-0b96-44b5-aa6c-85942d118d5f",
+      "title": "12.1 认证的概念",
+      "level": 3,
+      "logical_page": 323,
+      "physical_start": 340,
+      "physical_end": 340,
+      "parent_id": null
+    },
+    {
+      "id": "00f4b8e0-a113-46b7-833d-d744a63dd607",
+      "title": "12.2 身份认证",
+      "level": 3,
+      "logical_page": 324,
+      "physical_start": 341,
+      "physical_end": 347,
+      "parent_id": null
+    },
+    {
+      "id": "913cf573-e0ad-4400-905d-63936c91f3f2",
+      "title": "12.2.1 口令",
+      "level": 4,
+      "logical_page": 324,
+      "physical_start": 341,
+      "physical_end": 345,
+      "parent_id": null
+    },
+    {
+      "id": "1fdc0548-2c0a-4f69-a3eb-bed464880437",
+      "title": "12.2.2 智能卡和 USB-Key",
+      "level": 4,
+      "logical_page": 329,
+      "physical_start": 346,
+      "physical_end": 347,
+      "parent_id": null
+    },
+    {
+      "id": "37482c18-5584-47f2-ab8c-0833c69b0ec3",
+      "title": "12.2.3 生理特征识别",
+      "level": 3,
+      "logical_page": 331,
+      "physical_start": 348,
+      "physical_end": 351,
+      "parent_id": null
+    },
+    {
+      "id": "23d5583f-758c-4c4e-a7b6-7fb8cbd72158",
+      "title": "12.2.4 零知识证明",
+      "level": 3,
+      "logical_page": 335,
+      "physical_start": 352,
+      "physical_end": 354,
+      "parent_id": null
+    },
+    {
+      "id": "ae592de0-1f54-45f8-b1a2-3c78a9983c1f",
+      "title": "12.3 站点认证",
+      "level": 2,
+      "logical_page": 338,
+      "physical_start": 355,
+      "physical_end": 355,
+      "parent_id": null
+    },
+    {
+      "id": "725eebb1-d310-4308-bd54-5adf64ac8666",
+      "title": "12.3.1 单向认证",
+      "level": 3,
+      "logical_page": 338,
+      "physical_start": 355,
+      "physical_end": 355,
+      "parent_id": null
+    },
+    {
+      "id": "fefd27e1-2774-472e-b593-c7f2ff6636c9",
+      "title": "12.4 报文认证",
+      "level": 2,
+      "logical_page": 339,
+      "physical_start": 356,
+      "physical_end": 365,
+      "parent_id": null
+    },
+    {
+      "id": "776e7df3-b9ca-4ab1-8cdc-81972cac4db9",
+      "title": "12.4.1 报文源的认证",
+      "level": 3,
+      "logical_page": 340,
+      "physical_start": 357,
+      "physical_end": 357,
+      "parent_id": null
+    },
+    {
+      "id": "e5766f0c-d838-4578-9ed6-2933df708d2a",
+      "title": "12.4.2 报文宿的认证",
+      "level": 3,
+      "logical_page": 340,
+      "physical_start": 357,
+      "physical_end": 357,
+      "parent_id": null
+    },
+    {
+      "id": "eefa8928-3bda-4d47-9079-7b5a6ed0441e",
+      "title": "12.4.3 报文内容的认证与消息认证码",
+      "level": 3,
+      "logical_page": 340,
+      "physical_start": 357,
+      "physical_end": 363,
+      "parent_id": null
+    },
+    {
+      "id": "b4337268-31ed-42cf-8083-6b52c288c144",
+      "title": "12.4.4 报文时间性的认证",
+      "level": 3,
+      "logical_page": 347,
+      "physical_start": 364,
+      "physical_end": 365,
+      "parent_id": null
+    },
+    {
+      "id": "4c9232b4-373b-41f6-b9e5-baad3c8a9102",
+      "title": "12.5 推荐阅读",
+      "level": 2,
+      "logical_page": 349,
+      "physical_start": 366,
+      "physical_end": 366,
+      "parent_id": null
+    },
+    {
+      "id": "92159c74-a30c-4ceb-8d40-2439f17eda94",
+      "title": "习题与实验研究",
+      "level": 2,
+      "logical_page": 349,
+      "physical_start": 366,
+      "physical_end": 367,
+      "parent_id": null
+    },
+    {
+      "id": "96189b5d-8774-4932-b352-6b0b23ab1523",
+      "title": "第 13 章 密码在区块链中的应用 (选修)",
+      "level": 1,
+      "logical_page": 351,
+      "physical_start": 368,
+      "physical_end": 380,
+      "parent_id": null
+    },
+    {
+      "id": "72bea831-eb79-47bb-bcf7-aaaeabbde400",
+      "title": "13.1 区块链的概念",
+      "level": 2,
+      "logical_page": 351,
+      "physical_start": 368,
+      "physical_end": 371,
+      "parent_id": null
+    },
+    {
+      "id": "b8a78796-eb68-476e-9465-ac35b01d7ef5",
+      "title": "13.1.2 区块链的起源、发展和应用",
+      "level": 3,
+      "logical_page": 352,
+      "physical_start": 369,
+      "physical_end": 371,
+      "parent_id": null
+    },
+    {
+      "id": "06119b0f-621c-4400-8792-447ed6b18dae",
+      "title": "13.1.3 区块链面临的挑战",
+      "level": 3,
+      "logical_page": 355,
+      "physical_start": 372,
+      "physical_end": 372,
+      "parent_id": null
+    },
+    {
+      "id": "dfdec172-7d51-433c-9bd4-7820ccc6e90c",
+      "title": "13.2 区块链技术",
+      "level": 2,
+      "logical_page": 355,
+      "physical_start": 372,
+      "physical_end": 378,
+      "parent_id": null
+    },
+    {
+      "id": "626a3391-fa54-4946-bcb4-b7b2d3f10656",
+      "title": "13.2.1 区块的结构",
+      "level": 3,
+      "logical_page": 356,
+      "physical_start": 373,
+      "physical_end": 373,
+      "parent_id": null
+    },
+    {
+      "id": "a150d692-29cf-4513-ac22-432429592b65",
+      "title": "13.2.2 区块的链式结构",
+      "level": 3,
+      "logical_page": 357,
+      "physical_start": 374,
+      "physical_end": 374,
+      "parent_id": null
+    },
+    {
+      "id": "1f17c1d2-8eaa-4152-bef7-bb7670575f9b",
+      "title": "13.2.3 Merkle 树",
+      "level": 3,
+      "logical_page": 358,
+      "physical_start": 375,
+      "physical_end": 376,
+      "parent_id": null
+    },
+    {
+      "id": "3d3a2ba2-9113-4680-bc40-691d5aba6aa0",
+      "title": "13.2.4 比特币区块链系统中的共识机制",
+      "level": 3,
+      "logical_page": 360,
+      "physical_start": 377,
+      "physical_end": 377,
+      "parent_id": null
+    },
+    {
+      "id": "54286064-9e39-434b-86c8-e915e9b9c045",
+      "title": "13.2.5 密码在区块链中的应用",
+      "level": 3,
+      "logical_page": 360,
+      "physical_start": 377,
+      "physical_end": 378,
+      "parent_id": null
+    },
+    {
+      "id": "d7af2ff5-76f7-4acc-99cd-3bbb1033a1c9",
+      "title": "13.3 推荐阅读",
+      "level": 2,
+      "logical_page": 362,
+      "physical_start": 379,
+      "physical_end": 379,
+      "parent_id": null
+    },
+    {
+      "id": "795695fd-5173-4ea4-b6d5-ecf2ee1fe41b",
+      "title": "习题",
+      "level": 2,
+      "logical_page": 362,
+      "physical_start": 379,
+      "physical_end": 380,
+      "parent_id": null
+    },
+    {
+      "id": "d5c677f9-ace1-4ae3-9f61-1f38a2f5a4fc",
+      "title": "第 14 章 密码在可信计算中的应用 (选修)",
+      "level": 1,
+      "logical_page": 364,
+      "physical_start": 381,
+      "physical_end": 396,
+      "parent_id": null
+    },
+    {
+      "id": "c451a002-2628-4fe9-a2b9-efa81f6e71dc",
+      "title": "14.1 可信计算的概念",
+      "level": 2,
+      "logical_page": 364,
+      "physical_start": 381,
+      "physical_end": 381,
+      "parent_id": null
+    },
+    {
+      "id": "1e075b01-6c53-44a2-84d1-8a7d7a479d6b",
+      "title": "14.2 可信计算的发展历程",
+      "level": 2,
+      "logical_page": 365,
+      "physical_start": 382,
+      "physical_end": 384,
+      "parent_id": null
+    },
+    {
+      "id": "3c44ac25-65d9-4ec2-8b1e-7a96f1259b54",
+      "title": "14.2.2 中国可信计算的发展",
+      "level": 3,
+      "logical_page": 366,
+      "physical_start": 383,
+      "physical_end": 384,
+      "parent_id": null
+    },
+    {
+      "id": "4123ce5e-263a-4957-90d5-a7a29a3b8f89",
+      "title": "14.3 可信计算的关键技术",
+      "level": 2,
+      "logical_page": 368,
+      "physical_start": 385,
+      "physical_end": 392,
+      "parent_id": null
+    },
+    {
+      "id": "878694ce-1e0a-477c-ad17-28275580c699",
+      "title": "14.3.1 信任根",
+      "level": 3,
+      "logical_page": 368,
+      "physical_start": 385,
+      "physical_end": 386,
+      "parent_id": null
+    },
+    {
+      "id": "6d8406ec-5db7-427b-8fd0-0ab79f0d645f",
+      "title": "14.3.2 度量存储报告机制",
+      "level": 3,
+      "logical_page": 370,
+      "physical_start": 387,
+      "physical_end": 387,
+      "parent_id": null
+    },
+    {
+      "id": "9cb044a5-ffd0-40c9-b728-cf6ffb7e082c",
+      "title": "14.3.3 可信平台模块",
+      "level": 3,
+      "logical_page": 371,
+      "physical_start": 388,
+      "physical_end": 388,
+      "parent_id": null
+    },
+    {
+      "id": "aa70ea01-93bd-412e-903a-f341d2454c66",
+      "title": "14.3.4 可信计算平台",
+      "level": 3,
+      "logical_page": 372,
+      "physical_start": 389,
+      "physical_end": 389,
+      "parent_id": null
+    },
+    {
+      "id": "225b9d1f-ecfc-4880-8498-a0ff7b781151",
+      "title": "14.3.5 可信软件栈",
+      "level": 3,
+      "logical_page": 373,
+      "physical_start": 390,
+      "physical_end": 390,
+      "parent_id": null
+    },
+    {
+      "id": "d2d69357-15b3-465a-a513-a4802117adfd",
+      "title": "14.3.6 远程证明",
+      "level": 3,
+      "logical_page": 374,
+      "physical_start": 391,
+      "physical_end": 391,
+      "parent_id": null
+    },
+    {
+      "id": "2ed02b7a-34ef-424f-b7b3-c51dd0abfabc",
+      "title": "14.3.7 可信网络连接",
+      "level": 3,
+      "logical_page": 374,
+      "physical_start": 391,
+      "physical_end": 391,
+      "parent_id": null
+    },
+    {
+      "id": "9bc17c71-1cf7-4731-a051-ec983b5b1e10",
+      "title": "14.3.8 密码技术",
+      "level": 3,
+      "logical_page": 375,
+      "physical_start": 392,
+      "physical_end": 392,
+      "parent_id": null
+    },
+    {
+      "id": "bc8fca1b-4da8-4335-923b-b6b39c86835e",
+      "title": "14.4 TCG 可信计算中的密码发展",
+      "level": 2,
+      "logical_page": 376,
+      "physical_start": 393,
+      "physical_end": 394,
+      "parent_id": null
+    },
+    {
+      "id": "08f31035-f4f9-447a-bd45-1b8c9fbded1c",
+      "title": "14.4.1 TCG TPM 1.2 在密码方面的不足",
+      "level": 3,
+      "logical_page": 376,
+      "physical_start": 393,
+      "physical_end": 393,
+      "parent_id": null
+    },
+    {
+      "id": "4c6e1458-5ce4-4355-a0a8-17e8f3f0979a",
+      "title": "14.4.2 TCG TPM 2.0 在密码方面的改进",
+      "level": 3,
+      "logical_page": 377,
+      "physical_start": 394,
+      "physical_end": 394,
+      "parent_id": null
+    },
+    {
+      "id": "7952e603-d98d-4bb7-9d96-8bf7da085561",
+      "title": "14.5 推荐阅读",
+      "level": 2,
+      "logical_page": 378,
+      "physical_start": 395,
+      "physical_end": 395,
+      "parent_id": null
+    },
+    {
+      "id": "ec76a876-613b-4990-967a-a62377b6f40d",
+      "title": "习题",
+      "level": 2,
+      "logical_page": 379,
+      "physical_start": 396,
+      "physical_end": 396,
+      "parent_id": null
+    },
+    {
+      "id": "bd0c13af-8579-484a-b2e0-bacf9d1118c5",
+      "title": "参考文献",
+      "level": 1,
+      "logical_page": 380,
+      "physical_start": 397,
+      "physical_end": 406,
+      "parent_id": null
+    }
+  ]
+}

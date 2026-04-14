@@ -35,11 +35,11 @@ async def run_v48_audit():
         # 🏛️ 调用引擎，传入确权参数
         result = await engine.ingest_document(
             file_path=str(test_pdf.absolute()),
-            force=True, 
+            force=False, 
             force_ocr=True,
             manual_toc_range=manual_toc_range,
             manual_offset=manual_offset, # 🚀 V48.0 新参数
-            limit_pages=40, # 处理前 40 页
+            limit_pages=None, 
             dev_mode=True
         )
         print(f"✅ [Pipeline] 执行成功，总耗时: {time.time()-start_time:.2f}s")

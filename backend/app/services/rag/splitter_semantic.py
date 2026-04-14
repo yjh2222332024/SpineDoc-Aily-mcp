@@ -6,44 +6,27 @@ License: Private / Proprietary (Unauthorized copying is strictly prohibited)
 """
 from typing import List, Dict, Any
 import numpy as np
-from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import re
+from backend.app.services.rag.embedding import embedding_service
 
 class SemanticSplitter:
     """
-    语义感知切片器 (Deep Semantic Splitter)
+    语义感知切片器 (Deep Semantic Splitter) - V50.4 单例对齐版
     
     不按字数切，按“意思”切。
-    使用 Sentence-Transformers 计算句子间的语义相似度，
-    当相似度低于阈值时，认为话题发生了转换，进行切分。
+    🚀 [V50.4] 核心升级：复用 EmbeddingService (BGE-M3)，实现 100% 本地化与资源零浪费。
     """
 
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2", threshold: float = 0.5):
+    def __init__(self, threshold: float = 0.45):
         """
         Args:
-            model_name: HuggingFace 模型名称
-            threshold: 相似度阈值
+            threshold: 相似度阈值 (针对 BGE-M3 调优，建议 0.4-0.5)
         """
-        import torch
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        print(f"🚀 [Splitter] 正在加载语义模型 (Local-Only): {model_name} [Device: {device}]")
-        
-        try:
-            # 🚀 [V43.4] 第一跳：尝试 GPU 加载
-            self.model = SentenceTransformer(model_name, device=device, local_files_only=True)
-        except Exception as e:
-            if "cuda" in str(e).lower() or "out of memory" in str(e).lower():
-                print(f"⚠️ [Splitter] 显存不足或 CUDA 异常，正在退守【系统内存 + CPU】模式... (Error: {e})")
-                # 🚀 第二跳：降级到 CPU
-                self.model = SentenceTransformer(model_name, device="cpu", local_files_only=True)
-            else:
-                print(f"🚨 [Splitter] 模型加载发生不可恢复错误: {e}")
-                raise e
-        
         self.threshold = threshold
+        print(f"🚀 [Splitter] 语义切片引擎已就绪 (复用后端 BGE-M3)")
 
-    def split_text(self, text: str, min_chunk_len: int = 100) -> List[str]:
+    async def split_text(self, text: str, min_chunk_len: int = 150) -> List[str]:
         """
         对长文本进行语义切片。
         min_chunk_len: 最小字符数，防止切得太碎导致丢失上下文。
@@ -55,8 +38,9 @@ class SemanticSplitter:
         if len(sentences) <= 1:
             return sentences
 
-        # 2. 计算 Embeddings
-        embeddings = self.model.encode(sentences)
+        # 2. 🚀 使用单例服务获取 Embeddings (自动加速/降级)
+        embeddings_list = await embedding_service.get_embeddings(sentences)
+        embeddings = np.array(embeddings_list)
 
         # 3. 计算相邻句子的相似度
         breaks = []

@@ -17,6 +17,7 @@ class SpineNode(BaseModel):
     physical_end: int = 0      # 对齐后的结束物理页
     confidence: float = 1.0
     source: str = "ocr"        # ocr, vlm, metadata
+    is_synthetic: bool = False # 🚀 [V3.5] 涌现标记：是否为 AI 生成的隐性脊梁
     
     # 树形结构
     children: List["SpineNode"] = []
