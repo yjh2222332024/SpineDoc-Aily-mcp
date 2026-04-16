@@ -60,6 +60,7 @@ gemini-clip/
 docker-compose.override.yml
 docker_data/
 
-scripts/
-tests/
-docs/
+# 以下目录已启用 - 核心文档和脚本需要版本控制
+# scripts/
+# tests/
+# docs/
