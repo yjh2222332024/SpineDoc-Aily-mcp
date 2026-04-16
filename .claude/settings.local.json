@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(D:study.venvScriptspython.exe -c ' *)",
+      "Bash(PYTHONPATH=E:/study/code/spine-close/Spine-close python spine_cli/main.py git diff --help)"
+    ]
+  }
+}

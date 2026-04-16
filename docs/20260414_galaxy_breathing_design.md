@@ -1,42 +1,20 @@
-# 🏛️ SpineDoc 架构演进：知识星系 (Operation Galaxy Breath)
+# 20260414_galaxy_evolution_plan.md
 
-**Date**: 2026-04-14 PM
-**Architect**: Karpathy & Uncle Bob
-**Status**: Design Locked / Implementation Starting
+## 🚀 目标：星系演化与防止碎片化 (Galaxy Breathing v2.0)
+我们要构建一个具有“吸收优先、分裂极难”机制的自组织星系系统，防止知识碎片的爆炸式增长。
 
-## 1. 哲学背景：Software 3.0 的语义引力
-传统的私有知识库 (RAG) 往往受困于“文件夹”或“单维度标签”的思维定式。这种“番茄炒蛋”悖论——即一个事实单元可能同时属于多个领域——导致了检索时的语义漂移。
+## 🛠️ 修改清单
+1.  **`backend/app/services/intelligence/galaxy/scout.py`**：
+    *   重构 `project_document_to_galaxies` 方法。
+    *   引入 **“守门员逻辑” (Gatekeeper Logic)**：
+        *   **吸纳阀值 (`join_threshold=0.85`)**：向量高相似度直接进行 N:N 投影，严禁新建。
+        *   **新建阀值 (`emergent_threshold=0.50`)**：仅在与现有星系中心相似度极低（< 0.50）时，才允许坍缩为新星系。
+        *   **搁置区 (Limbo)**：如果相似度在 0.5 - 0.85 之间，标记为“漂流者 (Drifter)”，等待更多文档注入以明确其引力归属，防止因孤立文档建立“有病星系”。
 
-**Operation Galaxy Breath** 的核心思想是将文档视为语义空间中的实体，它们不属于星系，而是受到星系的“引力捕获”。
+## 🎯 预期效果
+*   **星系数量稳定性**：确保只有真正独立且庞大的知识领域才能分裂出新星系。
+*   **多重投影**：一篇“番茄炒蛋”会被同时投影至“番茄星系”和“鸡蛋星系”，利用 N:N 映射实现语义连接，而不是创建多余的“番茄炒蛋星系”。
+*   **知识冗余度降低**：彻底根治“星系爆炸”带来的领域碎片化问题。
 
-## 2. 核心架构：多中心流形 (Multi-centric Manifold)
-
-### 2.1 Galaxy (星系层)
-星系不再是物理容器，而是**语义重心 (Centroid)**。
-- 每个星系有一个由核心文档簇蒸馏出的 `centroid_embedding`。
-- 星系拥有一个 `description`，定义了该领域的逻辑边界。
-
-### 2.2 GalaxyLink (引力链接层)
-这是实现“呼吸”的关键。
-- **N:N 映射**：一个 `Document` 可以被多个 `Galaxy` 捕获。
-- **Relevance Weight (关联权重)**：记录文档在不同星系中的引力大小。
-- **Perspective Summary (视角摘要)**：同一份文档，在 [AI 星系] 和 [烹饪星系] 的视角下，其元数据摘要是完全不同的。
-
-## 3. 逻辑流：引力撞击 (Gravitational Impact)
-
-1.  **Galaxy Scouting**: 原始问题首先与所有 `Galaxy` 的重心进行向量碰撞，锁定 Top-N 星系。
-2.  **Contextual Routing**: 系统根据锁定的星系，通过 `DocumentGalaxyLink` 筛选出高关联文档。
-3.  **Witness Dispatch**: 为每个关联文档分配一个 `WitnessNode`（单文档 Agent）。
-4.  **Federated Consensus**: 大法官汇总各星系的证词，进行跨星系的逻辑质证。
-
-## 4. 知识代谢 (Knowledge Metabolism)
-- **自愈 (Self-healing)**：当新的高置信度证据出现时，通过 CRUD 修改 Chunk 的 `veracity_score`。
-- **迁移 (Migration)**：随着知识演化，文档在星系间的 `relevance_score` 会动态更新。
-
-## 5. 待办事项 (Next Steps)
-- [ ] 在 `backend/app/core/models.py` 中新增 `Galaxy` 和 `DocumentGalaxyLink` 模型。
-- [ ] 实现 `GalaxyDiscoverer`：自动聚类存量文档。
-- [ ] 升级 `SpineEngine.hybrid_ask`：支持“星系 -> 文档 -> 证人”的级联调度。
-
----
-**"Vibe Coding: Design with Empathy, Execute with Precision."**
+## 🛡️ 风险提示
+*   如果阈值过高，部分冷门领域可能会暂时找不到星系，这需要通过后续的“知识漂流者合并”任务来解决。

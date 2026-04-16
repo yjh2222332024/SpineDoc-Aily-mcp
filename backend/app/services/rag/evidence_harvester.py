@@ -11,6 +11,7 @@ from typing import List, Dict, Any, Optional, Tuple
 import numpy as np
 import logging
 from backend.app.services.keyword_extractor import get_keyword_extractor
+from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ class EvidenceHarvester:
         """
         🚀 核心：证据收割主流程
         """
-        print(f"🌊 [Harvester] 正在为查询执行 RRF 融合收割: {query[:30]}...")
+        print(f"🌊 [Harvester] 正在为查询执行 RRF 融合收割: {query[:settings.CONTEXT_COMMIT_QUERY_PREFIX]}...")
 
         # 1. 提取 Query 关键词 (逻辑标签碰撞源)
         query_tags = self.extractor.extract_keywords(query, top_n=10)

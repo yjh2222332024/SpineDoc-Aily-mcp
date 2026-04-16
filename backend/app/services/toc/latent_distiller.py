@@ -39,7 +39,7 @@ class LatentSpineDistiller:
                 "index": idx,
                 "p": c.get("page_number", 0),
                 "tags": c.get("logic_tags", [])[:8],
-                "hook": c["content"][:100].strip()
+                "hook": c["content"][:settings.CONTEXT_CHUNK_PREVIEW_CONTENT].strip()
             })
 
         # 2. 蒸馏 Level -2 (Sections)

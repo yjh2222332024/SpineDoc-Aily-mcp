@@ -25,7 +25,7 @@ async def restore_spine_only():
             manual_toc_range=[9, 15],
             manual_offset=17,
             limit_pages=20,       # 仅运行前几页以触发 TOC 逻辑
-            dev_mode=False       # 保护磁盘缓存
+          
         )
         print("\n[bold green]✅ 脊梁复活完成！数据库中的 TOC 树已对齐。[/bold green]")
     except Exception as e:

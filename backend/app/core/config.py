@@ -30,48 +30,18 @@ class Settings(BaseSettings):
         if env_url: return env_url
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
-    # 2. Redis 零件
-    REDIS_HOST: str = "localhost"
-    REDIS_PORT: int = 6379
-    REDIS_PASSWORD: Optional[str] = "dPYgQR+yWRLs/f8Y/WS8+XSrceUrXRwl"
-
-    @property
-    def REDIS_URL(self) -> str:
-        env_url = os.getenv("REDIS_URL")
-        if env_url: return env_url
-        auth = f":{self.REDIS_PASSWORD}@" if self.REDIS_PASSWORD else ""
-        return f"redis://{auth}{self.REDIS_HOST}:{self.REDIS_PORT}/0"
-
     # 2. AI 引擎 (BYOK)
     LLM_PROVIDER: str = "deepseek"
     LLM_API_KEY: Optional[str] = None
     LLM_BASE_URL: str = "https://api.deepseek.com/v1"
     LLM_MODEL_NAME: str = "deepseek-chat"
-    AI_TIMEOUT: int = 300  # 🚀 [架构师提示] 默认 5 分钟超时，适配长文档解析
-    OCR_USE_GPU: bool = True  # 🚀 [架构师提示] 默认开启 GPU OCR，独显用户的福音
+   
     
     # VLM 配置 (用于视觉确认)
-    VLM_API_KEY: Optional[str] = None
+    # 🏛️ 架构师：默认值仅用于 .env 缺失时的回退，实际值从 .env 读取
+    # VLM_API_KEY 是 property (见第 86 行)，自动回退到 EMBEDDING_API_KEY
     VLM_BASE_URL: str = "https://api.siliconflow.cn/v1"
-    VLM_MODEL_NAME: str = "Qwen/Qwen3-VL-8B-Instruct"
-    
-    # OCR策略配置
-    OCR_STRATEGY: str = "adaptive"  # local_only, cloud_first, fallback, adaptive, batch_mode
-    OCR_CLOUD_PROVIDER: str = "deepseek"  # glm, deepseek, alibaba, tencent
-    OCR_LOCAL_MAX_PAGES: int = 50  # 本地OCR最大页数，超过则转云端
-    OCR_CLOUD_MIN_CONFIDENCE: float = 0.8  # 云端OCR最小置信度
-    
-    # 云端OCR配置
-    GLM_OCR_API_KEY: Optional[str] = None
-    DEEPSEEK_OCR_API_KEY: Optional[str] = None
-    ALIBABA_OCR_ACCESS_KEY: Optional[str] = None
-    ALIBABA_OCR_ACCESS_SECRET: Optional[str] = None
-    TENCENT_OCR_SECRET_ID: Optional[str] = None
-    TENCENT_OCR_SECRET_KEY: Optional[str] = None
-    
-    # 性能配置
-    OCR_MAX_CONCURRENT_REQUESTS: int = 5  # 云端OCR最大并发请求数
-    OCR_REQUEST_TIMEOUT: int = 30  # OCR请求超时时间(秒)
+    VLM_MODEL_NAME: str = "Qwen/Qwen2.5-VL-72B-Instruct"  # 硅基流动 72B 高精度版
 
     # --- 🚀 [V43.7] 全局统一 API 接口 (SiliconFlow 核心) ---
     # 架构师指令：所有的云端能力（VLM, Embedding）统一共用此 Key
@@ -80,24 +50,45 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL_NAME: str = "BAAI/bge-m3"
     EMBEDDING_MODEL_PATH: str = r"E:\ai_models\models--BAAI--bge-m3\snapshots\5617a9f61b028005a4858fdac845db406aefb181"
     EMBEDDING_DIMENSION: int = 1024
-    
-    # VLM 配置 (Qwen3 高精度视觉专家)
-    VLM_BASE_URL: str = "https://api.siliconflow.cn/v1"
-    VLM_MODEL_NAME: str = "Qwen/Qwen3-VL-8B-Instruct"
-    
+
+    # --- 🚀 [V49.0] 联网证人配置 (Tavily) ---
+    TAVILY_API_KEY: Optional[str] = None
+    TAVILY_MAX_RESULTS: int = 3
+    TAVILY_SEARCH_DEPTH: str = "advanced"
+    TAVILY_CONCURRENT_LIMIT: int = 5
+    TAVILY_FALLBACK_SLEEP_SECONDS: int = 3  # 🚀 [V50.6] 联网失败后休眠秒数
+
+    # --- 🚀 [V50.10] 联邦法庭配置 ---
+    COURT_SCOUT_QUERY_LIMIT: int = 3  # Scout 拆解查询数量上限
+    COURT_CONTEXT_TOC_LIMIT: int = 50  # 上下文 TOC 截取上限
+    COURT_AUTHORITY_PEER_REVIEW_BONUS: float = 1.10  # 同行评审加成 10%
+    COURT_AUTHORITY_USER_GENERATED_PENALTY: float = 0.90  # 用户生成惩罚 10%
+    COURT_AUTHORITY_CROSS_SOURCE_BONUS: float = 1.10  # 跨源印证加成 10%
+
+    # --- 🚀 [V50.11] TOC 验证约束 ---
+    TOC_MAX_PAGES_LIMIT: int = 5000  # 最大页数限制
+    TOC_MAX_DEPTH_LIMIT: int = 8  # 最大目录层级
+    TOC_MAX_ITEMS_LIMIT: int = 1000  # 最大目录项数
+
+    # --- 🚀 [V50.11] 上下文截断配置 ---
+    CONTEXT_LOGIC_TAGS_LIMIT: int = 10  # logic_tags 截取上限
+    CONTEXT_SELECTED_IDS_LIMIT: int = 5  # Examiner 选择分片上限
+    CONTEXT_FALLBACK_CHUNKS: int = 3  # Examiner 兜底分片数
+    CONTEXT_COMMIT_QUERY_PREFIX: int = 30  # Git 提交消息查询前缀长度
+    CONTEXT_COMMIT_DOC_ID_PREFIX: int = 8  # 文档 ID 前缀长度
+    CONTEXT_EVIDENCE_CONTENT_PREFIX: int = 150  # 证据内容截取上限
+    CONTEXT_EVIDENCE_REASON_PREFIX: int = 50  # 裁决原因截取上限
+    CONTEXT_CHUNK_PREVIEW_KEYWORDS: int = 5  # 切片预览关键词数量
+    CONTEXT_CHUNK_PREVIEW_CONTENT: int = 200  # 切片预览内容长度
+    CONTEXT_VECTOR_BATCH_TEXT_PREFIX: int = 1500  # 向量嵌入文本截取上限
+
     @property
     def VLM_API_KEY(self) -> Optional[str]:
         # 自动回退：优先使用 VLM 专用 Key，否则使用全局共用 Key
         return os.getenv("VLM_API_KEY") or self.EMBEDDING_API_KEY
 
     # --- 🚀 环境自适应推理接口 ---
-    @property
-    def SLM_API_URL(self) -> str:
-        url = os.getenv("SLM_API_URL", "http://127.0.0.1:11434/v1")
-        # 🏛️ 顶级架构师：自动纠正宿主机访问容器域名的错误
-        if "slm" in url and not self.IS_IN_DOCKER:
-            return "http://127.0.0.1:11434/v1"
-        return url
+   
     
     # 🏛️ 架构师指令：从 .env 读取配置（如果有），否则使用默认值
     # 这样既支持动态配置，又保证有合理的回退值
@@ -105,11 +96,8 @@ class Settings(BaseSettings):
     STORAGE_ROOT: str = str(BACKEND_ROOT / "storage")
     TEMP_UPLOADS: str = str(BACKEND_ROOT / "temp_uploads")
     CACHE_DIR: str = "E:/ai_models"
-    
+
     # 4. 环境与调试
-    DEV_MODE: bool = True
-    DEV_USER_ID: UUID = UUID("00000000-0000-0000-0000-000000000001") 
-    DEV_WORKSPACE_ID: UUID = UUID("00000000-0000-0000-0000-000000000002")
 
     model_config = {
         # 🏛️ 架构师对齐：强制指向项目根目录的 .env，确保 Docker 与本地环境共用一套 Key

@@ -14,7 +14,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # 🚀 统一使用标准路径导入
-from backend.app.services.ocr.zhipu_worker import ZhipuCloudWorker
+
 from backend.app.services.ocr.silicon_worker import SiliconVLMWorker
 from backend.app.services.ocr.paddle_worker import PaddleWorker
 from backend.app.services.ocr.got_worker import GOTWorker
@@ -43,17 +43,18 @@ class AdaptiveOCRWorker:
     策略:
     1. 确定性优先: 使用 PaddleOCR (嗅探) + GOT-OCR 2.0 (精修) 组合。
     2. 高精度 VLM 分流: 目录页专用。
-    3. 云端降级: 仅保留 Zhipu Cloud 作为极端情况下的回退。
+  
     """
     def __init__(self):
         self.paddle_worker: Optional[PaddleWorker] = None
         self.got_worker: Optional[GOTWorker] = None
-        self.cloud_worker: Optional[ZhipuCloudWorker] = None
+       
         self.vlm_worker: Optional[SiliconVLMWorker] = None
-        
+
         self.failure_count = 0
         self.max_failures = 2
         self.switched_to_cloud = False
+        self.vlm_failed = False  # 🚀 [V50.7] VLM 失败标志，防止重复尝试
         self._initialize()
     
     def _initialize(self):
@@ -76,20 +77,23 @@ class AdaptiveOCRWorker:
             )
             print("👁️ [OCR] 高精度 VLM (SiliconFlow) 已就绪")
     
-    def _init_cloud(self):
-        zhipu_key = os.getenv("ZHIPU_API_KEY")
-        if zhipu_key:
-            self.cloud_worker = ZhipuCloudWorker(api_key=zhipu_key)
-            print("☁️ [OCR] 云端 Zhipu-OCR 已就绪")
+   
     
     async def ocr_to_markdown(self, img_np: np.ndarray, high_precision: bool = False) -> Optional[str]:
         """
         确定性 OCR 识别主入口 (V1.8.0: 纯净并发版)
         """
-        # 1. 目录页路径
-        if high_precision and self.vlm_worker:
-            try: return await self.vlm_worker.ocr_to_markdown(img_np)
-            except Exception as e: print(f"⚠️ [OCR-VLM] 目录模式失败: {e}")
+        # 1. 目录页路径（仅在 VLM 未失败时尝试）
+        if high_precision and self.vlm_worker and not self.vlm_failed:
+            try:
+                result = await self.vlm_worker.ocr_to_markdown(img_np)
+                if not result:
+                    raise Exception("VLM return empty")
+                return result
+            except Exception as e:
+                self.vlm_failed = True
+                return None
+
 
         # 2. 🛡️ [V1.8.0] 确定性路径：Paddle (Scout) + GOT (Specialist)
         if self.paddle_worker and self.got_worker and not self.switched_to_cloud:
@@ -102,7 +106,8 @@ class AdaptiveOCRWorker:
                 if not blocks: return ""
 
                 loop = asyncio.get_running_loop()
-                semaphore = asyncio.Semaphore(2) 
+                # 🚀 [V1.8.5] 动态算力配额：从配置层读取并发限制
+                semaphore = asyncio.Semaphore(settings.OCR_MAX_CONCURRENCY) 
 
                 async def _process_block(idx: int, b: Dict[str, Any]) -> Tuple[int, str]:
                     is_complex = b['type'] == 'formula' or b['confidence'] < 0.6

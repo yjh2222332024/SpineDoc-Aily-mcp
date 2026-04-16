@@ -1,92 +1,358 @@
-# 🏛️ SpineDoc (阅脊) V1.0.0 - "逻辑刺客" 稳定版
+# 🛡️ SpineDoc (阅脊)
 
-[![License: MIT](https://img.shields.io/badge/许可证-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Trident Architecture](https://img.shields.io/badge/架构-Trident_v1.2.0-red.svg)](#-三叉戟架构-trident)
+**逻辑刺客级文档审计引擎** - 专为审计合同、论文、法律文书等长文档设计
+
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > **"不要只是与 PDF 聊天，去重构它们的逻辑。"**
->
-> **SpineDoc** 是一款专为**超长、复杂文档**设计的高精度逻辑审计引擎。它拒绝盲目的文本切块，通过独创的 **隐式脊梁重建 (ISR)** 与 **联邦辩论 (Federated Debate)** 技术，实现物理页码级的事实溯源与逻辑纠偏。
 
 ---
 
-## 🔱 三叉戟架构 (Trident Architecture)
+## 📖 什么是 SpineDoc？
 
-SpineDoc 构建了“三位一体”的文档智能生态：
+SpineDoc 是一个面向**长文档审计**的智能知识引擎。它不仅能回答"文档说了什么"，更能揭示"逻辑是否自洽"、"证据是否充分"、"是否有隐藏矛盾"。
 
-1.  **核心 CLI (引擎层)**: 强大的 **"Logic Assassin"** 终端，支持海量文档的星系雷达粗筛与多智能体蒙眼辩论。
-2.  **内置 MCP 服务器 (协议层)**: 完美对接 Claude Desktop、Cursor 及 IDE，让顶级 AI 直接调度本地文档的物理逻辑。
-3.  **智能取证 (能力层)**: 100% 锚定物理页码，通过三轮对线压榨真相，彻底终结 RAG 幻觉。
+### 核心能力
 
----
+| 能力 | 说明 |
+|------|------|
+| 🦴 **逻辑脊梁提取** | 自动识别文档的 implicit structure，提取核心论证链条 |
+| ⚖️ **联邦法庭质证** | 多智能体辩论 + 四色置信度评估，暴露逻辑漏洞 |
+| 🌐 **联网证人** | 自动检索外部证据，触发知识库自我更新 |
+| 📜 **Git 版本追溯** | 每个语义切片都有 Git 历史，支持回滚和审计 |
+| 🎯 **精准定位** | 答案精确到页码和段落，附带逻辑溯源证据链 |
 
-## ⚖️ 核心突破：联邦辩论法庭 (V40.8)
+### 适用场景
 
-SpineDoc 引入了革命性的博弈取证机制，确保回答的绝对客观性：
-
-*   **蒙眼取证 (Witness Node)**: 针对每个相关文档分配独立 Agent，隔离证据，消除文档间的“互盲偏见”。
-*   **冲突嗅探 (Moderator Node)**: 冷酷主理人实时监控证词。一旦发现数据矛盾，立即标记 `CONFLICT`。
-*   **物理溯源 (Iron Anchor)**: 采用中值标定技术，精准对齐 PDF 逻辑与物理页码，实现像素级证据回溯。
-*   **终审判决 (Chief Justice)**: 拒绝平庸合成。对于争议事实，判决书将客观并列呈现版本差异。
-
----
-
-## 🌟 核心黑科技
-
-*   **🧬 ISR (Implicit Spine Reconstruction)**: 自动探测并重建文档逻辑骨架，使检索具备“章节感知”能力。
-*   **🛰️ 星系雷达 (Galaxy Radar)**: 基于关键词位掩码的机械粗筛，相比全量向量检索降低 **90%** 的算力开销。
-*   **⚔️ 语义反哺**: 章节正文关键词自动注入 TOC 向量，赋予目录结构强大的“语义磁性”。
+- 📄 **合同审查**：发现条款矛盾、责任不清、风险漏洞
+- 📑 **论文审计**：验证论证链条、检查引用完整性
+- ⚖️ **法律文书**：比对证据链、发现逻辑断层
+- 📊 **招股书/财报**：交叉验证数据一致性
 
 ---
 
-## 🚀 极速上手
+## 🚀 快速开始
 
-### 1. 安装
+### 系统要求
+
+- Python 3.10+
+- Docker（用于 PostgreSQL）
+- Windows 11 / macOS / Linux
+
+### 第一步：安装 PostgreSQL
+
+使用 Docker 一键安装：
+
 ```bash
-git clone https://github.com/yjh2222332024/Spine-open.git
-cd Spine-open
-pip install -e .
+# Windows (PowerShell)
+docker run -d --name spinedoc-postgres ^
+  -e POSTGRES_PASSWORD=spinedoc123 ^
+  -p 5432:5432 postgres:15
+
+# macOS / Linux
+docker run -d --name spinedoc-postgres \
+  -e POSTGRES_PASSWORD=spinedoc123 \
+  -p 5432:5432 postgres:15
 ```
 
-### 2. 审计文档
+验证安装：
 ```bash
-# 提取逻辑结构、执行 OCR 并完成语义反哺
-spine ingest ./docs/my_papers/
+docker ps | grep postgres
 ```
 
-### 3. 发起查询
+### 第二步：获取 API Key
+
+SpineDoc 使用以下云服务：
+
+| 服务 | 用途 | 注册地址 |
+|------|------|---------|
+| DeepSeek | LLM（逻辑推理） | https://platform.deepseek.com/ |
+| SiliconFlow | 向量模型 + VLM | https://cloud.siliconflow.cn/ |
+| Tavily (可选) | 联网搜索 | https://tavily.com/ |
+
+### 第三步：一键配置
+
 ```bash
-# 获取带物理溯源的判决书
-spine ask "详细对比不同文档中关于 SM4 算法分组长度的描述。"
+# 运行交互式配置向导
+spine setup
+```
+
+按提示输入：
+1. 数据库连接字符串（直接回车使用默认值）
+2. DeepSeek API Key
+3. SiliconFlow API Key
+4. Tavily API Key（可选，直接回车跳过）
+
+### 第四步：下载 AI 模型
+
+```bash
+# 下载必需模型（约 2.7GB）
+spine models download --mirror
+
+# 或下载所有模型（约 5GB，包括可选模型）
+spine models download --all --mirror
+```
+
+`--mirror` 使用国内镜像加速下载。
+
+### 第五步：检查配置
+
+```bash
+spine check
+```
+
+输出示例：
+```
+📋 配置检查
+
+必需配置：4/4
+可选配置：1/1
+
+  ✓ 数据库配置 [必需]
+  ✓ LLM 配置 [必需]
+  ✓ 向量模型配置 [必需]
+  ✓ VLM 配置 [必需]
+  ✓ 联网搜索 (可选) [可选]
+```
+
+### 第六步：开始使用
+
+```bash
+# 导入 PDF 文档
+spine ingest your_document.pdf
+
+# 提问（多文档检索）
+spine ask "文档的核心论点是什么？"
+
+# 提问（单文档）
+spine ask "SM4 的密钥长度" -d 9b1d1195
+
+# 提问（联网搜索，可能更新知识库）
+spine ask "最新的密码学标准" --online
+
+# 查看文档脊梁
+spine tree <文档 ID>
+
+# 查看语义切片
+spine chunks <文档 ID>
+
+# Git 版本管理
+spine git history <ChunkID>
+spine git revert <ChunkID> --to <commit_hash>
 ```
 
 ---
 
-## 📊 性能量化 (实验室测试数据)
+## 📚 命令行参考
 
-| 维度 | 传统 RAG | **SpineDoc V1.0.0** | **提升/优势** |
-| :--- | :--- | :--- | :--- |
-| **引用精度** | < 60% (常发生页码偏移) | **100% (物理锚定)** | **🎯 真实溯源** |
-| **构建速度** | 线性增长 (容易爆炸) | **43.1s / 100页 (并发)** | **🚀 极速收割** |
-| **冲突识别** | 无 (倾向于瞎编) | **95% (冲突嗅探)** | **⚖️ 逻辑严密** |
+### 核心命令
+
+| 命令 | 说明 | 示例 |
+|------|------|------|
+| `spine ingest <pdf>` | 导入 PDF 文档 | `spine ingest contract.pdf` |
+| `spine ask "<问题>"` | 提问（多文档） | `spine ask "核心论点是什么"` |
+| `spine ask "<问题>" -d <ID>` | 提问（单文档） | `spine ask "密钥长度" -d 9b1d1195` |
+| `spine ask "<问题>" --online` | 提问（联网） | `spine ask "最新标准" --online` |
+| `spine tree <ID>` | 查看文档脊梁 | `spine tree 9b1d1195` |
+| `spine chunks <ID>` | 查看语义切片 | `spine chunks 9b1d1195` |
+| `spine list` | 列出所有文档 | `spine list` |
+| `spine preview <ID>` | 预览切片 | `spine preview 9b1d1195` |
+
+### 配置命令
+
+| 命令 | 说明 |
+|------|------|
+| `spine setup` | 运行配置向导 |
+| `spine check` | 检查配置状态 |
+| `spine models list` | 显示模型列表 |
+| `spine models download` | 下载必需模型 |
+| `spine models download --all` | 下载所有模型 |
+| `spine models download --mirror` | 使用镜像加速 |
+| `spine models clean` | 清理模型缓存 |
+
+### Git 命令
+
+| 命令 | 说明 |
+|------|------|
+| `spine git history <ChunkID>` | 查看 Git 历史 |
+| `spine git show <ChunkID> --to <commit>` | 查看指定版本 |
+| `spine git revert <ChunkID> --to <commit>` | 回滚到指定版本 |
+| `spine git diff <ChunkID> -o <old> -n <new>` | 比较差异 |
 
 ---
 
-## 🏛️ 致谢
+## 🏛️ 架构概览
 
-本项目由以下开源项目提供基石支持：
-- **LangGraph**: 联邦代理任务编排。
-- **PostgreSQL/pgvector**: 高性能向量与关系存储。
-- **PyMuPDF**: 深度文档物理结构解析。
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     SpineDoc 架构                            │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
+│  │   用户 CLI   │    │  配置管理   │    │  模型管理   │     │
+│  │  (spine)    │    │  (.env)     │    │ (HuggingFace)│    │
+│  └──────┬──────┘    └──────┬──────┘    └──────┬──────┘     │
+│         │                  │                  │             │
+│         └──────────────────┼──────────────────┘             │
+│                            │                                │
+│                   ┌────────▼────────┐                       │
+│                   │  SpineEngine    │                       │
+│                   │  (核心引擎)      │                       │
+│                   └────────┬────────┘                       │
+│                            │                                │
+│         ┌──────────────────┼──────────────────┐             │
+│         │                  │                  │             │
+│  ┌──────▼──────┐   ┌──────▼──────┐   ┌──────▼──────┐       │
+│  │  向量检索    │   │  联邦法庭   │   │  Git 版本   │       │
+│  │  (RAG)      │   │  (Collector)│   │  (Manager)  │       │
+│  └──────┬──────┘   └──────┬──────┘   └──────┬──────┘       │
+│         │                  │                  │             │
+│         │         ┌────────▼────────┐        │             │
+│         │         │  Internet       │        │             │
+│         │         │  Witness        │        │             │
+│         │         └─────────────────┘        │             │
+│         │                                    │             │
+│  ┌──────▼────────────────────────────────────▼──────┐     │
+│  │              PostgreSQL + pgvector                │     │
+│  │              (向量数据库 + Git 存储)               │     │
+│  └───────────────────────────────────────────────────┘     │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 核心组件
+
+| 组件 | 说明 |
+|------|------|
+| **SpineEngine** | 核心引擎，协调所有子模块 |
+| **RAG (Retrieval-Augmented Generation)** | 向量检索 + 语义理解 |
+| **Federated Court** | 多智能体辩论系统 |
+| **Internet Witness** | 联网证据检索 |
+| **Git Manager** | 版本控制和审计追溯 |
+| **TOC Distiller** | 目录结构提取和验证 |
 
 ---
 
-## 联系方式
-- **邮箱**: 2857922968@qq.com
-- **GitHub**: [yjh2222332024](https://github.com/yjh2222332024)
-- **小红书**: 肯德基和麦当劳真是一对苦命鸳鸯 
+## 🔧 高级配置
 
-## 📄 开源协议
-本项目采用 **MIT License** 协议。
+### 环境变量详解
 
-Copyright (c) 2026 **Junhao Yan (严俊皓)**. All Rights Reserved.
+`.env` 文件包含以下配置：
+
+```ini
+# 数据库（必需）
+DATABASE_URL=postgresql+asyncpg://spinedoc:spinedoc123@localhost:5432/spinedoc
+
+# LLM 配置（必需）
+LLM_API_KEY=sk-xxxxxxxxx
+LLM_BASE_URL=https://api.deepseek.com/v1
+LLM_MODEL_NAME=deepseek-chat
+
+# 向量模型（必需）
+EMBEDDING_API_KEY=sk-xxxxxxxxx
+EMBEDDING_BASE_URL=https://api.siliconflow.cn/v1
+EMBEDDING_MODEL_NAME=BAAI/bge-m3
+EMBEDDING_DIMENSION=1024
+
+# VLM 配置（必需）
+VLM_API_KEY=sk-xxxxxxxxx
+VLM_BASE_URL=https://api.siliconflow.cn/v1
+VLM_MODEL_NAME=Qwen/Qwen2.5-VL-72B-Instruct
+
+# 联网搜索（可选）
+TAVILY_API_KEY=xxxxxxxxx
+TAVILY_MAX_RESULTS=3
+```
+
+### 自定义模型缓存目录
+
+```bash
+# 设置环境变量
+export SPINEDOC_CACHE_DIR=/path/to/your/cache
+
+# 或在 .env 中配置
+CACHE_DIR=/path/to/your/cache
+```
+
+### 使用其他 LLM 提供商
+
+SpineDoc 支持所有兼容 OpenAI API 格式的服务商：
+
+```ini
+# OpenAI
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_MODEL_NAME=gpt-4o
+
+# Moonshot
+LLM_BASE_URL=https://api.moonshot.cn/v1
+LLM_MODEL_NAME=moonshot-v1-128k
+
+# 自定义
+LLM_BASE_URL=https://your-custom-api.com/v1
+LLM_MODEL_NAME=your-model-name
+```
+
+---
+
+## ❓ 常见问题
+
+### Q: 为什么置信度都是 0.40？
+A: 0.40 是单文档检索的基准置信度。更高置信度需要：
+- 多文档 corroboration（0.60-0.80）
+- 联网证据支持（0.80-0.95）
+- 同行评审/权威来源（0.95+）
+
+### Q: 导入文档后状态一直是 "Processing…"？
+A: 可能原因：
+1. PostgreSQL 未启动：`docker ps` 检查
+2. API Key 无效：运行 `spine check` 验证
+3. 模型未下载：运行 `spine models download`
+
+### Q: 联网搜索失败？
+A: 检查：
+1. Tavily API Key 是否配置
+2. 网络连接是否正常
+3. 查看日志中的详细错误信息
+
+### Q: 如何清理所有数据重新开始？
+```bash
+# 停止并删除数据库容器
+docker stop spinedoc-postgres && docker rm spinedoc-postgres
+
+# 删除配置文件
+rm .env
+
+# 删除模型缓存
+spine models clean
+
+# 重新运行配置
+spine setup
+```
+
+---
+
+## 📄 许可证
+
+MIT License
+
+---
+
+## 🙏 致谢
+
+- **DeepSeek** - 提供高性价比的 LLM 服务
+- **SiliconFlow** - 提供向量模型和 VLM
+- **智源研究院** - BAAI/bge 系列向量模型
+- **PaddlePaddle** - PaddleOCR
+- **HuggingFace** - 模型托管平台
+
+---
+
+## 📬 联系方式
+
+- GitHub Issues: [提交问题或建议](https://github.com/yjh2222332024/Spine-open/issues)
+- 邮箱：2857922968@qq.com
+
+---
+
+**🚀 SpineDoc - 让逻辑漏洞无所遁形**

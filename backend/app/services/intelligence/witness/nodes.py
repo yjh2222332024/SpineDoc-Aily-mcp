@@ -32,7 +32,7 @@ async def scout_node(state: WitnessState):
     4. 严格输出 JSON 对象格式：{{"sub_queries": ["q1", "q2", "q3"]}}
     """
     
-    print(f"🕵️ [Scout] 正在拆解意图: {state['query'][:30]}...")
+    print(f"🕵️ [Scout] 正在拆解意图: {state['query'][:settings.CONTEXT_COMMIT_QUERY_PREFIX]}...")
     
     try:
         response = await client.chat.completions.create(
@@ -57,8 +57,22 @@ async def witness_collector_node(state: WitnessState):
     """
     from backend.app.services.rag.pyramid_harvester import PyramidHarvester
     from backend.app.services.rag.vector_store import PostgresStore
-    
+    from backend.app.core.db import get_async_sessionmaker
+    from backend.app.core.models import TocItem
+    from sqlmodel import select
+
     print(f"📡 [Witness] 启动物理收割，覆盖 {len(state['sub_queries'])} 个探测任务...")
+
+    # 🚀 加载 TOC（如果还没有加载）
+    if not state.get('toc') or len(state['toc']) == 0:
+        print(f"  ↳ 正在加载文档 TOC...")
+        session_maker = get_async_sessionmaker()
+        async with session_maker() as session:
+            stmt = select(TocItem).where(TocItem.document_id == state['doc_id']).order_by(TocItem.page)
+            result = await session.execute(stmt)
+            toc_items = result.scalars().all()
+            state['toc'] = [{"title": t.title, "page": t.page, "level": t.level, "physical_start": t.physical_start} for t in toc_items]
+        print(f"  ↳ TOC 加载完成：{len(state['toc'])} 个章节")
     
     store = PostgresStore()
     harvester = PyramidHarvester(store)
@@ -78,7 +92,7 @@ async def witness_collector_node(state: WitnessState):
                     "id": str(res['id']),
                     "p": res['page_number'],
                     "path": res['breadcrumb'],
-                    "tags": res['logic_tags'][:10]
+                    "tags": res['logic_tags'][:settings.CONTEXT_LOGIC_TAGS_LIMIT]
                 })
                 seen_ids.add(res['id'])
                 
@@ -97,7 +111,7 @@ async def examiner_node(state: WitnessState):
     prompt = f"""你是一个严谨的法医审计质证员。你需要通过审视【指纹库】和【逻辑脊梁】，选出最能回答问题的证据分片。
     
     【目标文档逻辑脊梁 (TOC)】:
-    {json.dumps(state['toc'][:50], ensure_ascii=False)} 
+    {json.dumps(state['toc'][:settings.COURT_CONTEXT_TOC_LIMIT], ensure_ascii=False)} 
     
     【待选证据指纹库】:
     {json.dumps(state['fingerprint_pool'], ensure_ascii=False)}
@@ -122,14 +136,20 @@ async def examiner_node(state: WitnessState):
             temperature=0.1
         )
         data = json.loads(response.choices[0].message.content)
-        selected_ids = data.get("selected_ids", [])[:5]
-        
+        selected_ids = data.get("selected_ids", [])[:settings.CONTEXT_SELECTED_IDS_LIMIT]
+
+        # 🚀 兜底逻辑：如果 LLM 没有选出证据，取指纹池 RRF 分数最高的前 3 个
+        if not selected_ids and state['fingerprint_pool']:
+            print(f"  ↳ LLM 未选出证据，使用 RRF 兜底：取前 3 个分片")
+            sorted_pool = sorted(state['fingerprint_pool'], key=lambda x: x.get('rrf_score', 0), reverse=True)
+            selected_ids = [f["id"] for f in sorted_pool[:settings.CONTEXT_FALLBACK_CHUNKS]]
+
         print(f"  ↳ 质证完毕：锁定 {len(selected_ids)} 个核心证据 ID。")
         return {"selected_ids": selected_ids}
     except Exception as e:
         logger.error(f"Examiner 节点崩溃: {e}")
         # 兜底：取指纹池前 3 个
-        return {"selected_ids": [f["id"] for f in state['fingerprint_pool'][:3]]}
+        return {"selected_ids": [f["id"] for f in state['fingerprint_pool'][:settings.CONTEXT_FALLBACK_CHUNKS]]}
 
 async def integrator_node(state: WitnessState):
     """

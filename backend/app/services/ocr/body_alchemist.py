@@ -10,7 +10,7 @@ import re
 from typing import List, Dict, Any, Optional, Tuple
 from concurrent.futures import ProcessPoolExecutor
 from .ocr_process_utils import render_page_standard, get_adaptive_ocr_worker, AdaptiveOCRWorker
-from .zhipu_worker import ZhipuCloudWorker
+
 from .page_streamer import PageStreamer
 
 class BodyAlchemist:
@@ -74,9 +74,7 @@ class BodyAlchemist:
                             gc.collect()
                             if torch.cuda.is_available(): torch.cuda.empty_cache()
                     
-                    if isinstance(worker, ZhipuCloudWorker):
-                        import random
-                        await asyncio.sleep(2.0 + random.random() * 1.5)
+                    
                 else:
                     print(f"⚠️ [Consumer] P{page_idx+1} 数据为空，跳过")
 

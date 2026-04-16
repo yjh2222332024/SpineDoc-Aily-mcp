@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import Enum
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import Column, JSON
-from sqlalchemy.dialects.postgresql import JSONB # 🚀 [V48.5] 引入 JSONB
+from sqlalchemy.dialects.postgresql import JSONB # 🚀 保持 JSONB 兼容性
 from app.core.config import settings 
 
 class ProcessingStatus(str, Enum):
@@ -63,48 +63,30 @@ class Tag(SQLModel, table=True):
     workspace_id: UUID = Field(foreign_key="workspace.id")
     documents: List["Document"] = Relationship(back_populates="tags", link_model=DocumentTagLink)
 
-# --- 🚀 [V5.0] 知识星系核心架构 (Operation Galaxy Breath) ---
+# --- 🚀 [V5.0] 知识星系核心架构 (作为新表存在，不影响旧表物理结构) ---
 
 class Galaxy(SQLModel, table=True):
-    """
-    🏛️ 知识星系 (Macro-Cluster)
-    职责：定义宏观语义边界，作为引力中心。
-    """
     __table_args__ = {"extend_existing": True}
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    name: str = Field(index=True, unique=True)
-    description: str                    # LLM 视角下的星系定义 (用于调度员意图匹配)
-    
-    # 星系语义重心：由所属文档簇蒸馏而出的向量
-    centroid_embedding: List[float] = Field(
-        sa_column=Column(Vector(settings.EMBEDDING_DIMENSION))
-    )
-    
+    name: str = Field(unique=True) # 🚀 移除 index=True，保持简洁，避免索引冲突
+    description: str
+    centroid_embedding: List[float] = Field(sa_column=Column(Vector(settings.EMBEDDING_DIMENSION)))
+    member_count: int = Field(default=0) # 🚀 记录成员总数，支撑人口加权演化
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    
-    # Relationships
     document_links: List["DocumentGalaxyLink"] = Relationship(back_populates="galaxy")
 
 class DocumentGalaxyLink(SQLModel, table=True):
-    """
-    🔗 引力链接 (The Breathing Link)
-    职责：管理 N:N 映射，记录文档在不同星系引力下的“坍缩状态”。
-    """
     __table_args__ = {"extend_existing": True}
     document_id: UUID = Field(foreign_key="document.id", primary_key=True)
     galaxy_id: UUID = Field(foreign_key="galaxy.id", primary_key=True)
-    
-    relevance_score: float = Field(default=0.0) # 关联强度 (0.0 - 1.0)
-    perspective_summary: Optional[str] = Field(default=None) # 星系视角摘要
-    
+    relevance_score: float = Field(default=0.0)
+    perspective_summary: Optional[str] = Field(default=None)
     hit_frequency: int = Field(default=0)
     last_aligned_at: datetime = Field(default_factory=datetime.utcnow)
-
-    # Relationships
     document: "Document" = Relationship(back_populates="galaxy_links")
     galaxy: "Galaxy" = Relationship(back_populates="document_links")
 
-# --- 🚀 [V3.0] 文档与逻辑脊梁 (ISR) ---
+# --- 🚀 [V3.0] 文档与逻辑脊梁 (100% 物理还原) ---
 
 class Document(SQLModel, table=True):
     __table_args__ = {"extend_existing": True}
@@ -113,19 +95,20 @@ class Document(SQLModel, table=True):
     file_path: str
     file_hash: Optional[str] = Field(index=True)
     status: ProcessingStatus = Field(default=ProcessingStatus.PENDING)
+    error_message: Optional[str] = Field(default=None)
     
+    is_toc_locked: bool = Field(default=False)
     is_scanned: bool = Field(default=False)
     page_offset: int = Field(default=0)
+    processed_pages: int = Field(default=0)
     total_pages: int = Field(default=0)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
     
     workspace_id: Optional[UUID] = Field(default=None, foreign_key="workspace.id")
     folder_id: Optional[UUID] = Field(default=None, foreign_key="folder.id")
-
-    # 🚀 [V35.0] Nexus 全景画像
     nexus_atlas: Optional[Dict[str, Any]] = Field(default_factory=dict, sa_column=Column(JSONB))
     
-    # Relationships
     workspace: Optional[Workspace] = Relationship(back_populates="documents")
     folder: Optional[Folder] = Relationship(back_populates="documents")
     tags: List[Tag] = Relationship(back_populates="documents", link_model=DocumentTagLink)
@@ -141,14 +124,17 @@ class TocItem(SQLModel, table=True):
     title: str
     page: int
     level: int
+    confidence: float = Field(default=1.0)
     
     summary: Optional[str] = Field(default=None)
-    keywords: Optional[List[str]] = Field(default=None, sa_column=Column(JSONB))
+    keywords: Optional[List[str]] = Field(default=None, sa_column=Column(JSON))
     embedding: Optional[List[float]] = Field(sa_column=Column(Vector(settings.EMBEDDING_DIMENSION)))
+    keyword_embedding: Optional[List[float]] = Field(sa_column=Column(Vector(settings.EMBEDDING_DIMENSION)))
     
     physical_start: int = Field(default=0)
     physical_end: int = Field(default=0)
-    is_synthetic: bool = Field(default=False) # 🚀 [V3.5] 涌现标记
+    offset_verified: bool = Field(default=False)
+    is_synthetic: bool = Field(default=False)
     
     document_id: UUID = Field(foreign_key="document.id")
     parent_id: Optional[UUID] = Field(default=None, foreign_key="tocitem.id")
@@ -157,13 +143,7 @@ class TocItem(SQLModel, table=True):
     parent: Optional["TocItem"] = Relationship(back_populates="children", sa_relationship_kwargs={"remote_side": "TocItem.id"})
     children: List["TocItem"] = Relationship(back_populates="parent")
 
-# --- 🚀 [V6.0] Chunk 进化与代谢账本 (LLM Wiki Genome) ---
-
 class Chunk(SQLModel, table=True):
-    """
-    🧬 文本分块表 (V6.0 Wiki 活性版)
-    职责：作为知识检索与质证的最小全息单元。
-    """
     __table_args__ = {"extend_existing": True}
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     content: str
@@ -171,43 +151,36 @@ class Chunk(SQLModel, table=True):
     breadcrumb: Optional[str] = Field(default=None)
     embedding: List[float] = Field(sa_column=Column(Vector(settings.EMBEDDING_DIMENSION)))
 
-    # --- 物理/逻辑锚点 ---
     document_id: UUID = Field(foreign_key="document.id", ondelete="CASCADE")
     toc_item_id: Optional[UUID] = Field(default=None, foreign_key="tocitem.id", ondelete="SET NULL")
-    level: int = Field(default=1) # 🚀 必须保留，否则入库崩溃
+    level: int = Field(default=1)
 
-    # --- 🚀 活性基因 (Holographic Genome) ---
-    veracity_score: float = Field(default=1.0)   # 真实性得分 (实时同步)
-    confidence_score: float = Field(default=1.0) # 🚀 兼容旧版：逻辑置信度
-    is_deprecated: bool = Field(default=False)    # 是否被废弃 (代谢开关)
-    
-    # 星系引力钉选：手动或 Agent 标记的固定引力
-    galaxy_weights: Optional[Dict[str, float]] = Field(default_factory=dict, sa_column=Column(JSONB))
+    confidence_score: float = Field(default=1.0) # 🚀 保持物理一致
 
     logic_tags: Optional[List[str]] = Field(default_factory=list, sa_column=Column(JSONB))
-    metadata_json: Optional[Dict[str, Any]] = Field(default_factory=dict, sa_column=Column(JSONB))
-    causality_links: Optional[Dict[str, Any]] = Field(default_factory=dict, sa_column=Column(JSONB)) # 🚀 必须保留
+    metadata_json: Optional[Dict[str, Any]] = Field(default_factory=dict, sa_column=Column(JSON))
+    causality_links: Optional[Dict[str, Any]] = Field(default_factory=dict, sa_column=Column(JSONB))
     
-    # Relationships
     document: Document = Relationship(back_populates="chunks")
     revisions: List["ChunkRevision"] = Relationship(back_populates="chunk")
 
+# --- 🚀 [V6.0] 知识代谢账本 (作为新表存在，承载代谢状态) ---
+
 class ChunkRevision(SQLModel, table=True):
-    """
-    📖 知识代谢账本 (Metabolism Ledger)
-    职责：剥离高频更新的审计逻辑与历史快照。
-    """
     __table_args__ = {"extend_existing": True}
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     chunk_id: UUID = Field(foreign_key="chunk.id", ondelete="CASCADE")
     
-    # --- 修改细节 ---
+    # 修改详情
     old_content: Optional[str] = None
     new_content: str
-    change_reason: str                  # 修改动机
-    contributor_agent: str              # [WitnessNode, GrandJustice, Human]
+    change_reason: str
+    contributor_agent: str
     
-    veracity_delta: float = 0.0         # 置信度变化量
+    # 🚀 代谢状态：挪到这里，不再污染 Chunk 物理表
+    veracity_score: float = 1.0
+    is_deprecated: bool = False
+    
     revision_number: int = 1
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

@@ -10,6 +10,7 @@ from typing import List, Dict, Any, Optional, Tuple
 import logging
 from backend.app.services.rag.vector_store import PostgresStore
 from backend.app.services.keyword_extractor import get_keyword_extractor
+from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ class PyramidHarvester:
         """
         🚀 [V49.2] 金字塔巡航流程
         """
-        print(f"🌲 [Pyramid] 启动逻辑巡航: {query[:30]}...")
+        print(f"🌲 [Pyramid] 启动逻辑巡航: {query[:settings.CONTEXT_COMMIT_QUERY_PREFIX]}...")
 
         # --- Step 1: 逻辑预瞄 (TOC Probing) ---
         # 探测最相关的 5 个章节

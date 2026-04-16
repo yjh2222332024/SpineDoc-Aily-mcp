@@ -33,7 +33,7 @@ dependencies = [
 spine = "spine_cli.main:app"
 
 [tool.setuptools]
-packages = ["spine_cli", "spine_cli.core", "spine_cli.core.agents", "spine_cli.core.agents.nodes", "spine_cli.indexer", "spine_cli.llm", "spine_cli.mcp", "app", "app.services", "app.services.rag", "app.services.toc", "app.core", "app.schemas"]
+packages = ["spine_cli", "backend", "backend.app", "backend.app.core", "backend.app.services", "backend.app.services.rag", "backend.app.services.toc", "backend.app.services.ocr", "backend.app.services.ocr.integration", "backend.app.services.knowledge", "backend.app.services.git_services", "backend.app.services.intelligence", "backend.app.services.intelligence.court", "backend.app.services.intelligence.galaxy", "backend.app.services.intelligence.witness"]
 
 [tool.setuptools.package-dir]
 "spine_cli" = "spine_cli"

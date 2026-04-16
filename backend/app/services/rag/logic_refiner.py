@@ -14,6 +14,7 @@ from typing import List, Dict, Any, Optional
 # 🚀 物理对齐导入：将核心服务提升至模块级别
 from backend.app.services.keyword_extractor import get_keyword_extractor
 from backend.app.services.rag.embedding import embedding_service
+from backend.app.core.config import settings
 
 # 🏛️ 顶级架构师：必须在任何逻辑之前初始化日志
 logger = logging.getLogger(__name__)
@@ -35,7 +36,7 @@ class LogicRefiner:
             "logic_tags": [],
             "embedding": [0.0] * 1024,
             "logic_role": "structural_content",
-            "summary": chunk_content[:150].strip() if chunk_content else "",
+            "summary": chunk_content[:settings.CONTEXT_EVIDENCE_CONTENT_PREFIX].strip() if chunk_content else "",
             "breadcrumb": breadcrumb,
             "refine_status": "failed",
             "is_mechanical": True
@@ -69,7 +70,7 @@ class LogicRefiner:
                     logger.warning(f"⚠️ [Refiner] 向量化子模块异常: {emb_e}")
 
             # 3. 生成摘要
-            summary = chunk_content[:150].strip().replace("\n", " ")
+            summary = chunk_content[:settings.CONTEXT_EVIDENCE_CONTENT_PREFIX].strip().replace("\n", " ")
             if len(chunk_content) > 150:
                 summary += "..."
 

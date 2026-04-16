@@ -1,0 +1,33 @@
+# SpineDoc 开发数据库 (Docker 方案)
+# 使用方式：docker compose -f docker-compose-db.yml up -d
+version: '3.8'
+
+services:
+  db:
+    image: pgvector/pgvector:pg16-16
+    container_name: spine-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: spinedoc
+      POSTGRES_PASSWORD: spinedoc123
+      POSTGRES_DB: spinedoc
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - spine_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spinedoc -d spinedoc"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - spine-network
+
+volumes:
+  spine_postgres_data:
+    name: spine_postgres_data
+
+networks:
+  spine-network:
+    name: spine-network

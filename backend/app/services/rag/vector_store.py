@@ -34,7 +34,7 @@ class PostgresStore:
         async with httpx.AsyncClient(timeout=120.0) as client:
             headers = {"Authorization": f"Bearer {settings.EMBEDDING_API_KEY}", "Content-Type": "application/json"}
             for i in range(0, len(texts), BATCH_SIZE):
-                batch_texts = [t[:1500] for t in texts[i:i + BATCH_SIZE]]
+                batch_texts = [t[:settings.CONTEXT_VECTOR_BATCH_TEXT_PREFIX] for t in texts[i:i + BATCH_SIZE]]
                 payload = {"input": batch_texts, "model": settings.EMBEDDING_MODEL_NAME}
                 try:
                     resp = await client.post(f"{settings.EMBEDDING_BASE_URL.rstrip('/')}/embeddings", json=payload, headers=headers)
