@@ -1,5 +1,7 @@
 # SpineDoc Git Ignore Contract
-
+.claude/
+.qwen/
+tests/
 # 1. 虚拟环境与依赖
 .venv/
 venv/
