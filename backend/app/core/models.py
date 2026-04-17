@@ -6,7 +6,7 @@ from enum import Enum
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import Column, JSON
 from sqlalchemy.dialects.postgresql import JSONB # 🚀 保持 JSONB 兼容性
-from app.core.config import settings 
+from backend.app.core.config import settings 
 
 class ProcessingStatus(str, Enum):
     """文档处理状态枚举"""
@@ -164,6 +164,81 @@ class Chunk(SQLModel, table=True):
     document: Document = Relationship(back_populates="chunks")
     revisions: List["ChunkRevision"] = Relationship(back_populates="chunk")
 
+    # 🕸️ [V7.0] 逻辑织网 - 出边关系
+    outgoing_relationships: List["ChunkRelationship"] = Relationship(
+        back_populates="source_chunk",
+        sa_relationship_kwargs={"foreign_keys": "ChunkRelationship.source_chunk_id"}
+    )
+    # 🕸️ [V7.0] 逻辑织网 - 入边关系
+    incoming_relationships: List["ChunkRelationship"] = Relationship(
+        back_populates="target_chunk",
+        sa_relationship_kwargs={"foreign_keys": "ChunkRelationship.target_chunk_id"}
+    )
+
+
+# --- 🕸️ [V7.0] 逻辑织网协议 (Judgment Breeds Connectivity) ---
+
+class RelationshipType(str, Enum):
+    """
+    Chunk 关系谓词枚举 - 不可变的关系 Schema
+
+    每一条"边"都必须喊出它的逻辑意义，拒绝廉价的联想。
+    """
+    CAUSALITY = "causality"        # A 导致 B，或 A 是 B 的前提
+    CONTRADICTION = "contradiction" # A 与 B 存在逻辑冲突（触发法庭记录）
+    SUPPORT = "support"            # A 为 B 提供物理层面的证据支撑
+    EVOLUTION = "evolution"        # B 是 A 的修正版本（跨文档知识更迭）
+    COMPLEMENT = "complement"      # A 和 B 描述同一实体的不同维度
+
+
+class ChunkRelationship(SQLModel, table=True):
+    """
+    Chunk 关系表 - 逻辑织网的物理载体
+
+    设计哲学:
+      - 关联不是数据录入，是审判后的质证结论
+      - 只有经过联邦法庭审判的 Chunk 才配拥有连接键
+      - 每条关系都代表系统对事实关联的郑重承诺
+
+    使用场景:
+      - Moderator 裁决后，GraphWeaver 自动缝合关系
+      - Distributor 传唤时，顺着关系键进行"逻辑爬行"寻址
+    """
+    __table_args__ = {"extend_existing": True}
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+
+    # 关系两端
+    source_chunk_id: UUID = Field(foreign_key="chunk.id", index=True)
+    target_chunk_id: UUID = Field(foreign_key="chunk.id", index=True)
+
+    # 关系谓词（核心逻辑）
+    rel_type: RelationshipType = Field(index=True)
+
+    # 关系强度 (0.0-1.0) - 由 Moderator 裁决时评估
+    strength: float = Field(default=1.0)
+
+    # 关系描述（人类可读，由 LLM 生成）
+    description: Optional[str] = None
+
+    # 证据溯源 - 指向触发此关系的 Court Verdict
+    verdict_id: Optional[UUID] = Field(default=None, index=True)
+
+    # 元数据
+    created_by: str = Field(default="GraphWeaver")  # 创建者（Agent 名称）
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # Relationships
+    source_chunk: Chunk = Relationship(
+        back_populates="outgoing_relationships",
+        sa_relationship_kwargs={"foreign_keys": "[ChunkRelationship.source_chunk_id]"}
+    )
+    target_chunk: Chunk = Relationship(
+        back_populates="incoming_relationships",
+        sa_relationship_kwargs={"foreign_keys": "[ChunkRelationship.target_chunk_id]"}
+    )
+
+
 # --- 🚀 [V6.0] 知识代谢账本 (作为新表存在，承载代谢状态) ---
 
 class ChunkRevision(SQLModel, table=True):
@@ -187,7 +262,33 @@ class ChunkRevision(SQLModel, table=True):
     # Relationships
     chunk: Chunk = Relationship(back_populates="revisions")
 
-# --- 🚀 [V1.0] 后台监控与性能 ---
+# --- ⚖️ [V8.0] 司法档案库 (Court Verdict Archive) ---
+
+class CourtVerdict(SQLModel, table=True):
+    """
+    ⚖️ 联邦判决书：记录每一次联邦法庭审判的完整全景。
+    职责：为 Refinery 提供推理迹语料，为用户提供审计溯源。
+    """
+    __table_args__ = {"extend_existing": True}
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    
+    query: str = Field(index=True)
+    
+    # 🏛️ 核心产出
+    final_answer: str
+    reasoning_thought: Optional[str] = Field(default=None, sa_column=Column(JSONB)) # 存储完整的思考链
+    verdict_decision: str = Field(default="ACCEPTED") # ACCEPTED | CONFLICT | PARTIAL
+    
+    # 📡 证据溯源
+    cited_galaxies: List[str] = Field(default_factory=list, sa_column=Column(JSONB))
+    confidence_score: float = Field(default=0.0)
+    
+    # 📈 元数据
+    duration_ms: int = Field(default=0)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # 可选：关联具体的文档链接（用于深度跳转）
+    # metadata_json: Optional[Dict[str, Any]] = Field(default_factory=dict, sa_column=Column(JSON))
 
 class ProcessingMetric(SQLModel, table=True):
     __table_args__ = {"extend_existing": True}

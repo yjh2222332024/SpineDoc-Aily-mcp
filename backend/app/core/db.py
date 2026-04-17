@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text
-from app.core.config import settings
+from backend.app.core.config import settings
 from typing import AsyncGenerator
 
 # 1. 声明引擎占位符，不立即初始化
@@ -39,7 +39,7 @@ async def init_db():
     if _db_initialized:
         return  # 🚀 已初始化，直接返回
     
-    from app.core import models # 延迟导入
+    from backend.app.core import models # 延迟导入
     from sqlmodel import SQLModel
     
     engine = get_async_engine()

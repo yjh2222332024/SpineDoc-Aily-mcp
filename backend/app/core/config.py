@@ -82,6 +82,12 @@ class Settings(BaseSettings):
     CONTEXT_CHUNK_PREVIEW_CONTENT: int = 200  # 切片预览内容长度
     CONTEXT_VECTOR_BATCH_TEXT_PREFIX: int = 1500  # 向量嵌入文本截取上限
 
+    # --- 🚀 [V51.1] 冲突裁决配置 ---
+    # 🚀 [V51.2] 已弃用：向量过滤被移除（Distributor 负责相关性筛选）
+    # CONFLICT_SIMILARITY_THRESHOLD: float = 0.35  # 保留但不再使用
+    CONFLICT_SCOUT_RECOMMENDED_MIN: int = 3  # Scout 推荐证据数量下限
+    CONFLICT_SCOUT_RECOMMENDED_MAX: int = 12  # Scout 推荐证据数量上限
+
     @property
     def VLM_API_KEY(self) -> Optional[str]:
         # 自动回退：优先使用 VLM 专用 Key，否则使用全局共用 Key

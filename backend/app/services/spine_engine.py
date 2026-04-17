@@ -23,6 +23,8 @@ if str(project_root) not in sys.path:
 from typing import List, Dict, Any, Optional
 from uuid import UUID, uuid4
 
+# 🕸️ [V7.0] 一次性导入所有模型，防止 SQLAlchemy 重复注册错误
+import backend.app  # 预先注册所有模型
 from sqlmodel import select, func, String
 from backend.app.core.db import get_async_sessionmaker
 from backend.app.core.models import Document, TocItem, Chunk, ProcessingStatus

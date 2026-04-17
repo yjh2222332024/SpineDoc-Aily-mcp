@@ -3,6 +3,8 @@
 =====================================================
 职责：基于证据分片检测冲突，裁决矛盾，生成最终判决书。
 不再比较证词，而是直接在证据分片层面进行冲突分析和裁决。
+
+🚀 [V51.2] 移除向量过滤：Distributor 已完成相关性筛选，Moderator 专注冲突检测
 """
 
 import json
@@ -55,8 +57,11 @@ class Moderator:
         """
         print(f"👨‍⚖️ [Moderator] 开始裁决，共 {len(evidence_packages)} 份证据包...")
 
-        # 1. 检测证据分片之间的冲突
-        conflicts = await self._detect_conflicts(evidence_packages, query)
+        # 1. 检测证据分片之间的冲突（同时返回过滤后的证据包）
+        conflicts, valid_packages = await self._detect_conflicts(evidence_packages, query)
+
+        # 使用过滤后的证据包进行后续步骤
+        evidence_packages = valid_packages if valid_packages else evidence_packages
 
         # 2. 裁决冲突
         resolved_conflicts = []
@@ -152,20 +157,30 @@ class Moderator:
         self,
         evidence_packages: List[Dict],
         query: str
-    ) -> List[Dict]:
+    ) -> tuple[List[Dict], List[Dict]]:
         """
         检测证据分片之间的逻辑冲突
 
         策略：
         1. 提取每个证据包的核心主张
         2. 使用 LLM 判断主张之间是否存在矛盾
+        3. 【V7.0】如果存在冲突/关联，必须声明 proposed_relationships
+
+        注意：
+        - 不再进行向量相似度过滤，因为 Distributor 已经根据查询相关性选择了星系
+        - 只处理真正的逻辑冲突，不处理"同名异义"（那应该在 Distributor 层解决）
         """
         if len(evidence_packages) < 2:
-            return []
+            print(f"  ⚠️ [Moderator] 证据包不足 2 个，跳过冲突检测")
+            return [], list(evidence_packages)
+
+        # 🚀 [V51.2] 移除向量过滤：Distributor 已经完成了相关性筛选
+        # 直接使用所有证据包进行冲突检测
+        valid_packages = list(evidence_packages)
 
         # 构造冲突检测上下文
         evidence_summaries = []
-        for pkg in evidence_packages:
+        for pkg in valid_packages:
             chunk_texts = [f"[P{c['page_number']}] {c['content'][:settings.CONTEXT_EVIDENCE_CONTENT_PREFIX]}..." for c in pkg['evidence_chunks'][:settings.CONTEXT_FALLBACK_CHUNKS]]
             summary = {
                 "galaxy_name": pkg["galaxy_name"],
@@ -186,6 +201,14 @@ class Moderator:
 1. 提取每个证据包的核心主张（事实性陈述）
 2. 识别主张之间的矛盾或不一致
 3. 如果没有明显冲突，返回空列表
+4. 【V7.0 严格模式】如果检测到冲突/关联，必须声明 proposed_relationships
+
+【关系类型定义】（严格枚举，不可私造）
+- causality: A 导致 B，或 A 是 B 的前提
+- contradiction: A 与 B 存在逻辑冲突（需要裁决）
+- support: A 为 B 提供物理层面的证据支撑
+- evolution: B 是 A 的修正版本（跨文档知识更迭）
+- complement: A 和 B 描述同一实体的不同维度
 
 输出格式（严格 JSON）：
 {{
@@ -193,13 +216,27 @@ class Moderator:
         {{
             "description": "冲突描述",
             "packages": [
-                {{"galaxy_name": "星系名", "doc_id": "文档 ID", "claim": "主张内容"}},
-                {{"galaxy_name": "星系名", "doc_id": "文档 ID", "claim": "主张内容"}}
+                {{"galaxy_name": "星系名", "doc_id": "文档 ID", "claim": "主张内容", "chunk_id": "Chunk ID"}}
             ],
-            "severity": "CRITICAL" 或 "MINOR"
+            "severity": "CRITICAL" 或 "MINOR",
+            "proposed_relationships": [
+                {{
+                    "source_chunk_id": "Chunk ID 1",
+                    "target_chunk_id": "Chunk ID 2",
+                    "rel_type": "contradiction",
+                    "strength": 0.95,
+                    "description": "两个 Chunk 在 XX 描述上存在直接矛盾"
+                }}
+            ]
         }}
     ]
 }}
+
+注意：
+- proposed_relationships 是可选的，只有当你确定存在关系时才声明
+- rel_type 必须是上述枚举值之一
+- strength 范围 0.0-1.0
+- 不要强行找冲突！没有明显矛盾就返回空列表！
 """
 
         try:
@@ -214,11 +251,14 @@ class Moderator:
             conflicts = data.get("conflicts", [])
 
             print(f"  ↳ 检测到 {len(conflicts)} 个冲突")
-            return conflicts
+            if conflicts:
+                for c in conflicts:
+                    print(f"      - {c.get('description', '未知')[:100]}...")
+            return conflicts, valid_packages
 
         except Exception as e:
             print(f"⚠️ [Moderator] 冲突检测失败：{e}")
-            return []
+            return [], valid_packages
 
     async def _resolve_conflict(
         self,

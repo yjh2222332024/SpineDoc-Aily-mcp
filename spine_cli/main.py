@@ -73,11 +73,11 @@ def display_spine_tree(toc: List[Any]):
         if hasattr(item, "level"):
             lvl = getattr(item, "level", 1)
             title = getattr(item, "title", "Untitled")
-            page = getattr(item, "page", 0)
+            page = getattr(item, "physical_start", getattr(item, "logical_page", 0))
         else:
             lvl = item.get("level", 1)
             title = item.get("title", "Untitled")
-            page = item.get("page", 0)
+            page = item.get("physical_start", item.get("page", 0))
         
         parent = nodes.get(lvl - 1, root_tree)
         node = parent.add(f"[green]{title}[/green] [dim](P{page})[/dim]")
@@ -255,7 +255,8 @@ def tree(doc_id: str = typer.Argument(..., help="文档 ID 前缀或完整 ID"))
         
         spine_tree = Tree(f"📄 [bold blue]{doc['filename']}[/bold blue] (Offset: {doc['page_offset']})")
         for item in doc.get("toc", []):
-            spine_tree.add(f"[bold green]{item['title']}[/bold green] [dim](P{item['page']})[/dim]")
+            page = item.get("physical_start", item.get("page", 0))
+            spine_tree.add(f"[bold green]{item['title']}[/bold green] [dim](P{page})[/dim]")
         
         console.print("\n")
         console.print(Panel(spine_tree, title="SpineDoc ISR 透视", border_style="cyan"))
