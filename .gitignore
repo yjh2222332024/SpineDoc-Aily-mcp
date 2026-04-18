@@ -60,6 +60,10 @@ gemini-clip/
 docker-compose.override.yml
 docker_data/
 
+# 8. 未来规划 (训练代码/模型架构 - 暂时不推送)
+backend/app/services/protocol_parser/_future_plans/
+docs/_future_*.md
+
 # 以下目录已启用 - 核心文档和脚本需要版本控制
 # scripts/
 # tests/
