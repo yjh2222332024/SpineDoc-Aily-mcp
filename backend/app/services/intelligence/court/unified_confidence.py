@@ -125,225 +125,176 @@ class LocalEvidenceIntegrityChecker:
         return any(s in domain for s in AUTHORITATIVE_SOURCES)
 
 
+import math
+import logging
+from typing import Dict, List, Tuple, Optional
+from datetime import datetime, timezone
+from urllib.parse import urlparse
+from enum import Enum
+
+from .color_confidence import ConfidenceColor
+from backend.app.core.config import settings
+from .config_loader import get_config_loader
+from backend.app.infra.math.evidence_fusion import EvidenceFusionEngine
+from backend.app.infra.math.velocity_stats import LogicalMetabolismStats
+
+logger = logging.getLogger(__name__)
+
 class UnifiedConfidenceCalculator:
     """
-    ⚖️ 统一置信度计算器
-
-    支持本地 PDF 和联网证据的统一评估，允许严苛条件下推翻本地证据。
+    ⚖️ 统一置信度计算器 (V9.2 科学版)
+    
+    职责：
+    1. 利用 LogicalMetabolismStats 感知各领域的“知识半衰期”。
+    2. 利用 EvidenceFusionEngine (Dempster-Shafer) 融合异构证据。
+    3. 消除硬编码，实现物理级置信度对齐。
     """
 
-    def __init__(self, custom_percentiles: Optional[Dict] = None):
-        """
-        初始化计算器
+    def __init__(self, session):
+        self.fusion_engine = EvidenceFusionEngine()
+        self.stats_engine = LogicalMetabolismStats(session)
+        self.config = get_config_loader()
 
-        Args:
-            custom_percentiles: 自定义分位数阈值
-        """
-        self.color_calc = ColorConfidenceCalculator(custom_percentiles)
-        self.integrity_checker = LocalEvidenceIntegrityChecker()
-
-    def calculate_local(
+    async def calculate(
         self,
-        chunk: Dict,
-        web_evidence: Optional[List[Dict]] = None
+        local_chunk: Dict,
+        web_evidence: List[Dict],
+        galaxy_id: str
     ) -> Tuple[ConfidenceColor, float]:
         """
-        计算本地 PDF 证据置信度（可能被联网证据推翻）
-
-        Args:
-            chunk: 本地证据分片 {
-                content: str,
-                page_number: int,
-                breadcrumb: str,
-                pdf_creation_date: Optional[str],
-                doc_status: str,  # 'completed' | 'pending'
-                has_conflict_verdict: bool,
-                ...
-            }
-            web_evidence: 相关联网证据列表
-
-        Returns:
-            (颜色，置信度 0-1)
+        🚀 核心审判：将本地主权与联网证据进行数学碰撞。
         """
-        # 1. 计算基础置信度（本地来源）
-        w_source = self._calculate_local_source_score(chunk)
-        w_recency = self._calculate_local_recency(chunk, web_evidence)
-        w_corroboration = self._calculate_corroboration(chunk, source_type='LOCAL_PDF')
+        # 1. 为本地证据分配初始 Mass (基于主权等级)
+        local_mass = await self._allocate_local_mass(local_chunk, galaxy_id)
+        
+        # 2. 为联网证据分配初始 Mass (应用二级冲突探测)
+        web_masses = []
+        for e in web_evidence:
+            # 🚀 [V9.3 核心改进]：二级探测流水线
+            is_contradiction = await self._detect_conflict_tier(local_chunk, e)
+            
+            mass = self._allocate_web_mass(e, is_contradiction)
+            web_masses.append(mass)
+        
+        # 3. 证据融合 (Dempster-Shafer Fusion)
+        all_masses = [local_mass] + web_masses
+        fused_m = self.fusion_engine.combine_evidence(all_masses)
+        
+        # 4. 获取物理抑制后的最终分数
+        final_score = self.fusion_engine.get_final_score(fused_m)
+        
+        # 5. 映射颜色
+        color = self._determine_color_v9(final_score, self.fusion_engine.last_conflict_k)
+        
+        # 回填元数据供前端显示
+        local_chunk['confidence'] = final_score
+        local_chunk['color'] = color.value
+        local_chunk['conflict_k'] = self.fusion_engine.last_conflict_k
+        
+        return color, final_score
 
-        # 基础置信度
-        base_score = w_source * w_recency * w_corroboration
-
-        # 2. 检查是否被推翻
-        is_overridden = False
-        if web_evidence and self.integrity_checker.should_override_local(chunk, web_evidence):
-            is_overridden = True
-            base_score = base_score * self.integrity_checker.integrity_penalty  # 置信度减半
-
-        # 3. 颜色判定
-        color = self._determine_color(base_score, is_overridden)
-
-        # 4. 标记状态
-        chunk['color'] = color.value
-        chunk['confidence'] = round(base_score, 3)
-        chunk['is_overridden'] = is_overridden
-
-        return color, round(base_score, 3)
-
-    def calculate_web(
-        self,
-        chunk: Dict,
-        independent_sources: int = 1
-    ) -> Tuple[ConfidenceColor, float]:
+    async def _detect_conflict_tier(self, local: Dict, web: Dict) -> bool:
         """
-        计算联网证据置信度
-
-        Args:
-            chunk: 联网证据分片 {
-                content: str,
-                source_url: str,
-                published_date: Optional[str],
-                query_type: str,
-                ...
-            }
-            independent_sources: 独立来源数
-
-        Returns:
-            (颜色，置信度 0-1)
+        ⚖️ 二级冲突探测流水线：机械 > LLM
         """
-        # 使用原有颜色计算器
-        color, score = self.color_calc.calculate(chunk, independent_sources)
+        # --- TIER 1: 机械硬核探测 (Mechanistic) ---
+        web_content = web.get('content', '').lower()
+        web_label = (web.get('label') or '').upper()
+        local_label = (local.get('label') or '').upper()
 
-        # 标记状态
-        chunk['color'] = color.value
-        chunk['confidence'] = score
+        # 1. 证明结果硬对线 (Tamarin 官方判决)
+        if "FALSIFIED" in web_label and "VERIFIED" in local_label:
+            return True
+            
+        # 2. 漏洞级关键词探测
+        hard_conflict_keywords = ["漏洞", "leak", "compromised", "attack found", "falsified", "exploit"]
+        if any(kw in web_content for kw in hard_conflict_keywords):
+            return True
 
-        return color, score
+        # --- TIER 2: LLM 语义公诉人 (Neural Fallback) ---
+        # 只有在机械探测无法断定时触发
+        try:
+            # 未来这里通过 slm_swarm.conflict_check(local, web) 实现
+            # 目前模拟：如果 web 带有明确的 contradiction 标志
+            return web.get('llm_verdict') == "contradiction"
+        except:
+            return False
 
-    def _calculate_local_source_score(self, chunk: Dict) -> float:
-        """
-        计算本地 PDF 来源可信度
-
-        基于：
-        1. 文档入库状态（completed/pending）
-        2. TOC 完整性（有目录 > 无目录）
-        3. 分片位置（核心章节 > 附录）
-        """
-        base_score = 0.85  # 入库文档基础分
-
-        # 状态加成
-        if chunk.get('doc_status') == 'completed':
-            base_score += 0.10
-
-        # TOC 完整性加成
-        if chunk.get('breadcrumb'):
-            base_score += 0.05
-
-        # 核心章节加成（breadcrumb 包含"第 X 章"）
-        breadcrumb = chunk.get('breadcrumb', '')
-        if '第' in breadcrumb and '章' in breadcrumb:
-            base_score += 0.05
-
-        return min(1.0, base_score)
-
-    def _calculate_local_recency(
-        self,
-        chunk: Dict,
-        web_evidence: Optional[List[Dict]]
-    ) -> float:
-        """
-        计算本地 PDF 内容时间衰减
-
-        策略：
-        1. 优先使用 PDF 元数据（creation_date）
-        2. 若无，用外部证据推断
-        3. 若都无，保守估计
-        """
-        # 1. PDF 元数据
-        pub_date_str = chunk.get('pdf_creation_date')
-
-        if pub_date_str:
-            try:
-                pub_date = datetime.fromisoformat(pub_date_str.replace("Z", "+00:00"))
-                days_old = (datetime.now().astimezone() - pub_date).days
-
-                # 学术 PDF 半衰期 3 年
-                lambda_ = math.log(2) / (365 * 3)
-                return math.exp(-lambda_ * days_old)
-            except:
-                pass
-
-        # 2. 外部证据推断
-        if web_evidence:
-            conflicting_web = [
-                e for e in web_evidence
-                if e.get('published_date') and e.get('source_url')
-            ]
-
-            if conflicting_web:
-                latest_date = max(e['published_date'] for e in conflicting_web if e.get('published_date'))
-                try:
-                    latest = datetime.fromisoformat(latest_date.replace("Z", "+00:00"))
-                    days_old = (datetime.now().astimezone() - latest).days
-
-                    # 有冲突时半衰期缩短为 1 年
-                    lambda_ = math.log(2) / 365
-                    return math.exp(-lambda_ * days_old) * 0.7  # 冲突惩罚
-                except:
-                    pass
-
-        # 3. 保守估计
-        return 0.60
-
-    def _calculate_corroboration(self, chunk: Dict, source_type: str) -> float:
-        """
-        计算多源印证加成
-
-        跨源印证（本地 + 联网）加成更高
-        """
-        # 简单实现：假设已有 independent_sources 字段
-        independent_sources = chunk.get('independent_sources', 1)
-
-        # 基础加成
-        w = 1.0 - (1.0 / independent_sources)
-        w = min(0.8, w)
-        base_multiplier = 1.0 + (w * 0.3)
-
-        # 跨源加成
-        source_types = chunk.get('source_types', [source_type])
-        has_local = 'LOCAL_PDF' in source_types
-        has_web = 'INTERNET' in source_types
-
-        if has_local and has_web:
-            # 🚀 [V50.10] 从配置读取跨源加成系数
-            bonus = settings.COURT_AUTHORITY_CROSS_SOURCE_BONUS
-            return base_multiplier * bonus
-
-        return base_multiplier
-
-    def _determine_color(self, score: float, is_overridden: bool) -> ConfidenceColor:
-        """
-        颜色判定
-
-        被推翻的本地证据自动降级
-        """
-        if is_overridden:
-            # 被推翻的本地证据，最高 YELLOW
-            if score >= 0.45:
-                return ConfidenceColor.YELLOW
-            elif score >= 0.25:
-                return ConfidenceColor.YELLOW
-            else:
-                return ConfidenceColor.RED
-
-        # 正常判定
-        if score >= 0.70:
-            return ConfidenceColor.GREEN
-        elif score >= 0.50:
-            return ConfidenceColor.BLUE
-        elif score >= 0.25:
-            return ConfidenceColor.YELLOW
+    async def _allocate_local_mass(self, chunk: Dict, galaxy_id: str) -> Dict[str, float]:
+        """计算本地主权 Mass，包含自适应时间衰减"""
+        base_belief = 0.90 # 默认主权分
+        
+        # 获取该领域的代谢率 tau
+        tau = await self.stats_engine.get_sector_velocity(galaxy_id)
+        
+        # 🚀 物理对齐：确保时间轴统一
+        pub_date_raw = chunk.get('pdf_creation_date')
+        if not pub_date_raw:
+            pub_date = datetime.now(timezone.utc)
+        elif isinstance(pub_date_raw, str):
+            from dateutil import parser
+            pub_date = parser.isoparse(pub_date_raw)
         else:
-            return ConfidenceColor.RED
+            pub_date = pub_date_raw
+
+        # 如果是 naive，强制补上 UTC；如果是 aware，保留其时区
+        if pub_date.tzinfo is None:
+            pub_date = pub_date.replace(tzinfo=timezone.utc)
+            
+        time_diff = (datetime.now(timezone.utc) - pub_date).total_seconds()
+        
+        # 🚀 应用科学衰减模型: W = e^(-Δt / τ)
+        decay_weight = self.stats_engine.calculate_decay_weight(time_diff, tau)
+        
+        final_belief = base_belief * decay_weight
+        
+        return {
+            "belief": round(final_belief, 4),
+            "disbelief": 0.0,
+            "uncertainty": round(1.0 - final_belief, 4)
+        }
+
+    def _allocate_web_mass(self, e: Dict, is_contradiction: bool = False) -> Dict[str, float]:
+        """计算联网证据 Mass"""
+        # 🚀 [V9.4 核心改进]：优先尊重证据自带的原始置信度
+        base_weight = e.get('confidence', 0.70)
+        
+        # 权威度加成
+        url = e.get('source_url', '') or e.get('source', '')
+        domain = urlparse(url).netloc
+        
+        authoritative_sources = self.config.get_authoritative_sources()
+        if any(s in domain for s in AUTHORITATIVE_SOURCES):
+            # 只有在原始权重不是特别低的情况下才加成
+            if base_weight > 0.4:
+                base_weight += 0.15 
+            
+        final_m = min(0.95, round(base_weight, 4))
+        
+        # 极性分配逻辑
+        if is_contradiction:
+            return {
+                "belief": 0.0,
+                "disbelief": final_m,
+                "uncertainty": round(1.0 - final_m, 4)
+            }
+        else:
+            return {
+                "belief": final_m,
+                "disbelief": 0.0,
+                "uncertainty": round(1.0 - final_m, 4)
+            }
+
+    def _determine_color_v9(self, score: float, k: float) -> ConfidenceColor:
+        """
+        V9.2 颜色判定：增加冲突感知
+        """
+        if k > 0.8: return ConfidenceColor.RED # 极度冲突
+        
+        if score >= 0.80: return ConfidenceColor.GREEN
+        if score >= 0.60: return ConfidenceColor.BLUE
+        if score >= 0.35: return ConfidenceColor.YELLOW
+        return ConfidenceColor.RED
 
 
 # 🎨 渲染辅助
