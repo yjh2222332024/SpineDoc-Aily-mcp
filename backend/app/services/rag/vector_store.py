@@ -98,6 +98,38 @@ class PostgresStore:
             rows = result.fetchall()
             return [{"id": str(row[0]), "content": row[1], "page_number": row[2], "breadcrumb": row[3], "logic_tags": row[4], "document_id": str(row[5]), "found_by_tags": True} for row in rows]
 
+    async def get_chunk_by_id(self, chunk_id: UUID) -> Optional[Chunk]:
+        """
+        📜 [V53.5] 空间定位：根据 ID 获取完整 Chunk 实体
+        职责：为 REM 编排器提供起始粒子 (Seed Particle)。
+        依据：Jaynes (1957) 最大熵原理，定位必须具备确定性。
+        """
+        async with self._session_maker() as session:
+            stmt = select(Chunk).where(Chunk.id == chunk_id)
+            result = await session.execute(stmt)
+            return result.scalar_one_or_none()
+
+    async def probe_vicinity(self, vector: List[float], limit: int = 5) -> List[Dict]:
+        """
+        🛰️ [V53.5] 空间探测：寻找向量邻域内的“邻居”
+        职责：模拟布朗运动中的粒子碰撞。
+        依据：Hafner (2023) - 潜空间轨迹生成依赖于精准的邻域探测。
+        """
+        async with self._session_maker() as session:
+            # 🚀 [V3.5] 使用 L2 距离算子进行空间探测
+            # 注意：embedding.l2_distance 是 pgvector 的原生支持
+            stmt = select(Chunk).order_by(Chunk.embedding.l2_distance(vector)).limit(limit)
+            result = await session.execute(stmt)
+            chunks = result.scalars().all()
+            
+            return [{
+                "id": str(c.id),
+                "content": c.content,
+                "breadcrumb": c.breadcrumb,
+                "embedding": c.embedding,
+                "logic_tags": c.logic_tags or []
+            } for c in chunks]
+
     async def get_toc_ranges_by_ids(self, toc_ids: List[UUID]) -> List[Tuple[int, int]]:
         """🚀 [V48.6] 3.0 原子工具：解析 TOC ID 集合为物理航道"""
         if not toc_ids: return []

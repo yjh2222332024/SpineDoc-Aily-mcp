@@ -193,40 +193,48 @@ class RelationshipType(str, Enum):
 
 class ChunkRelationship(SQLModel, table=True):
     """
-    Chunk 关系表 - 逻辑织网的物理载体
-
-    设计哲学:
-      - 关联不是数据录入，是审判后的质证结论
-      - 只有经过联邦法庭审判的 Chunk 才配拥有连接键
-      - 每条关系都代表系统对事实关联的郑重承诺
-
-    使用场景:
-      - Moderator 裁决后，GraphWeaver 自动缝合关系
-      - Distributor 传唤时，顺着关系键进行"逻辑爬行"寻址
+    🕸️ [V7.0] 逻辑织网协议 - 增加 [V53.5] 代谢奖惩扩展
+    设计哲学：模拟神经突触的动态可塑性（Synaptic Plasticity）。
     """
     __table_args__ = {"extend_existing": True}
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
-    # 关系两端
     source_chunk_id: UUID = Field(foreign_key="chunk.id", index=True)
     target_chunk_id: UUID = Field(foreign_key="chunk.id", index=True)
 
-    # 关系谓词（核心逻辑）
     rel_type: RelationshipType = Field(index=True)
 
-    # 关系强度 (0.0-1.0) - 由 Moderator 裁决时评估
-    strength: float = Field(default=1.0)
+    # 🚀 [V53.5] 代谢权重系统 (Metabolic Weight System)
 
-    # 关系描述（人类可读，由 LLM 生成）
+    # 【辩护：最大熵原则】 
+    # 依据：Jaynes (1957) 信息论最大熵原理 & BAKE (Han et al. 2025) 贝叶斯先验。
+    # 设定 0.5 理由：在 [0,1] 概率区间内，0.5 代表系统的最大不确定性状态（Prior Uncertainty）。
+    # 既不假设关联成立，也不假设其不成立，等待“多巴胺”或“内啡肽”信号进行后验修正。
+    strength: float = Field(default=0.5) 
+    
+    # 【辩护：奖励预测误差 RPE】
+    # 依据：Schultz (1997) & Berry (Cell 2015) 的 Dopamine RPE 模型。
+    # 设定 0.0 理由：多巴胺记录的是“预期之外的增量”。初始状态下无预测误差，
+    # 仅当布朗运动碰撞出“远端节点”且法庭判定有效时，该值才会激增，驱动灵感产生。
+    dopamine_reward: float = Field(default=0.0) 
+    
+    # 【辩护：阿片类固化机制】
+    # 依据：Trezza (PNAS 2007) & Hebbian Learning (1949) "Wire together, Fire together"。
+    # 设定 0.0 理由：内啡肽代表系统的“镇静与稳定”力量。稳定性是随时间（重复激活）累积的，
+    # 初始状态为 0（Tabula Rasa），随验证次数增加而单调上升。
+    endorphin_stability: float = Field(default=0.0) 
+
     description: Optional[str] = None
-
-    # 证据溯源 - 指向触发此关系的 Court Verdict
     verdict_id: Optional[UUID] = Field(default=None, index=True)
 
-    # 元数据
-    created_by: str = Field(default="GraphWeaver")  # 创建者（Agent 名称）
+    created_by: str = Field(default="GraphWeaver")
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # 【辩护：突触稳态缩放】
+    # 依据：Turrigiano (2012) & Physiological Reviews (2013) 的 Synaptic Scaling 模型。
+    # 作用：记录时间锚点，用于计算公式 Δw = -λ * w 中的衰减系数 λ，实现“选择性遗忘”。
+    last_activated_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Relationships
     source_chunk: Chunk = Relationship(
@@ -237,6 +245,46 @@ class ChunkRelationship(SQLModel, table=True):
         back_populates="incoming_relationships",
         sa_relationship_kwargs={"foreign_keys": "[ChunkRelationship.target_chunk_id]"}
     )
+
+
+# --- 🧬 [V53.5] 代谢进化核心载体 (The Metabolic Forge) ---
+
+class MetabolicTrace(SQLModel, table=True):
+    """
+    🌀 梦境轨迹：记录布朗运动产生的思维漂移路径。
+    依据：Mastering Diverse Domains through World Models (Nature 2023) 中的 Latent Imagination 轨迹。
+    """
+    __table_args__ = {"extend_existing": True}
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    
+    seed_chunk_id: UUID = Field(foreign_key="chunk.id", index=True)
+    path_nodes: List[UUID] = Field(default_factory=list, sa_column=Column(JSONB)) 
+    
+    drift_distance: float = Field(default=0.0) # 向量空间漂移距离
+    innovation_score: float = Field(default=0.0) # 潜在逻辑张力
+    
+    is_merged: bool = Field(default=False) 
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class LogicTension(SQLModel, table=True):
+    """
+    ⚡ 逻辑张力审计：量化灵感与真理的冲突程度。
+    依据：SpineDoc 原创量化公式 LT = Novelty * Validity。
+    支撑论文中的 [LT] 指标，作为多巴胺奖励的计算输入。
+    """
+    __table_args__ = {"extend_existing": True}
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    
+    trace_id: Optional[UUID] = Field(default=None, foreign_key="metabolictrace.id")
+    verdict_id: UUID = Field(foreign_key="courtverdict.id")
+    
+    novelty_score: float = Field(default=0.0) 
+    validity_score: float = Field(default=0.0) 
+    tension_value: float = Field(default=0.0) 
+    
+    analysis_text: str 
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 # --- 🚀 [V6.0] 知识代谢账本 (作为新表存在，承载代谢状态) ---

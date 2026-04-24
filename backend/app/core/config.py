@@ -58,6 +58,13 @@ class Settings(BaseSettings):
     TAVILY_CONCURRENT_LIMIT: int = 5
     TAVILY_FALLBACK_SLEEP_SECONDS: int = 3  # 🚀 [V50.6] 联网失败后休眠秒数
 
+    # --- 🐦 [V52.0] 飞书/Lark 集成配置 ---
+    FEISHU_APP_ID: Optional[str] = None
+    FEISHU_APP_SECRET: Optional[str] = None
+    FEISHU_DEFAULT_CHAT_ID: Optional[str] = None
+    FEISHU_BITABLE_TOKEN: Optional[str] = None
+    FEISHU_BITABLE_TABLE_ID: Optional[str] = None
+
     # --- 🚀 [V50.10] 联邦法庭配置 ---
     COURT_SCOUT_QUERY_LIMIT: int = 3  # Scout 拆解查询数量上限
     COURT_CONTEXT_TOC_LIMIT: int = 50  # 上下文 TOC 截取上限
