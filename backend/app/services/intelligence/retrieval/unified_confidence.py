@@ -56,7 +56,7 @@ class LocalEvidenceIntegrityChecker:
     1. 联网证据来自权威来源（≥2 个）
     2. 联网证据时间更新（晚于本地 PDF 元数据）
     3. 多源印证（≥2 个独立联网来源）
-    4. Moderator 明确裁决冲突
+    4. ConflictResolver 明确裁决冲突
 
     配置参数：
     - min_authoritative_sources: 最小权威来源数（默认 2）
@@ -110,7 +110,7 @@ class LocalEvidenceIntegrityChecker:
             # 联网证据不更新
             return False
 
-        # 条件 3: Moderator 已裁决冲突
+        # 条件 3: ConflictResolver 已裁决冲突
         if not local_chunk.get('has_conflict_verdict', False):
             return False
 
@@ -159,13 +159,13 @@ class UnifiedConfidenceCalculator:
         self,
         local_chunk: Dict,
         web_evidence: List[Dict],
-        galaxy_id: str
+        cluster_id: str
     ) -> Tuple[ConfidenceColor, float]:
         """
-        🚀 核心审判：将本地主权与联网证据进行数学碰撞。
+        🚀 Core logic: Fuse local evidence with web evidence using Dempster-Shafer theory.
         """
         # 1. 为本地证据分配初始 Mass (基于主权等级)
-        local_mass = await self._allocate_local_mass(local_chunk, galaxy_id)
+        local_mass = await self._allocate_local_mass(local_chunk, cluster_id)
         
         # 2. 为联网证据分配初始 Mass (应用二级冲突探测)
         web_masses = []
@@ -220,12 +220,11 @@ class UnifiedConfidenceCalculator:
         except:
             return False
 
-    async def _allocate_local_mass(self, chunk: Dict, galaxy_id: str) -> Dict[str, float]:
-        """计算本地主权 Mass，包含自适应时间衰减"""
-        base_belief = 0.90 # 默认主权分
-        
-        # 获取该领域的代谢率 tau
-        tau = await self.stats_engine.get_sector_velocity(galaxy_id)
+    async def _allocate_local_mass(self, chunk: Dict, cluster_id: str) -> Dict[str, float]:
+        """Calculate local mass with adaptive time decay."""
+        base_belief = 0.90
+
+        tau = await self.stats_engine.get_sector_velocity(cluster_id)
         
         # 🚀 物理对齐：确保时间轴统一
         pub_date_raw = chunk.get('pdf_creation_date')

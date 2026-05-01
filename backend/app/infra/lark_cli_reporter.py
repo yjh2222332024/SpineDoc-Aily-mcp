@@ -39,37 +39,41 @@ class LarkCliReporter(IFeishuReporter):
             logger.error(f"❌ [LarkCLI] 执行异常: {e}")
             return False
 
-    async def report_verdict(self, verdict: Dict[str, Any], chat_id: str) -> bool:
-        """通过飞书发送精美的互动卡片判决书"""
-        card_json = self.card_builder.build_verdict_card(verdict)
-        
+    async def report_result(self, result: Dict[str, Any], chat_id: str) -> bool:
+        """通过飞书发送精美的互动卡片报告"""
+        # 优先使用 AilyPresenter 格式的卡片（白盒化程度高），否则回退到 LarkCardBuilder
+        if result.get("interactive_card"):
+            card_json = result["interactive_card"]
+        else:
+            card_json = self.card_builder.build_result_card(result)
+
         # 🚀 [V52.12] 修复参数：使用 --msg-type interactive 和 --content
         args = [
-            "im", "+messages-send", 
-            "--chat-id", chat_id, 
+            "im", "+messages-send",
+            "--chat-id", chat_id,
             "--msg-type", "interactive",
             "--content", json.dumps(card_json, ensure_ascii=False)
         ]
         return await self._run_command(args)
 
-    async def sync_asset(self, verdict: Dict[str, Any], evolution_logs: Dict[str, Any]) -> bool:
+    async def sync_asset(self, result: Dict[str, Any], evolution_logs: Dict[str, Any]) -> bool:
         # ... (同步 Bitable 逻辑不变)
         from backend.app.core.config import settings
-        
+
         # 构造 Bitable 记录
-        knowledge_delta = verdict.get("verdict_metadata", {}).get("knowledge_delta", {})
+        knowledge_update = result.get("result_metadata", {}).get("knowledge_update", {})
         record_fields = {
-            "审计问题": verdict.get("query", "未知查询"),
-            "判决结论": verdict.get("text", verdict.get("final_answer", ""))[:5000],
-            "置信度评分": verdict.get("verdict_metadata", {}).get("confidence", 0.0),
-            "风险状态": "🔴 高危" if knowledge_delta else "🟢 正常",
+            "审计问题": result.get("query", "未知查询"),
+            "结论": result.get("text", result.get("final_answer", ""))[:5000],
+            "置信度评分": result.get("result_metadata", {}).get("confidence", 0.0),
+            "风险状态": "🔴 高危" if knowledge_update else "🟢 正常",
             "逻辑进化摘要": str(evolution_logs)[:2000]
         }
 
         if settings.FEISHU_BITABLE_TOKEN:
             sync_args = [
-                "base", "+record-upsert", 
-                "--base-token", settings.FEISHU_BITABLE_TOKEN, 
+                "base", "+record-upsert",
+                "--base-token", settings.FEISHU_BITABLE_TOKEN,
                 "--table-id", settings.FEISHU_BITABLE_TABLE_ID,
                 "--json", json.dumps(record_fields, ensure_ascii=False)
             ]
@@ -81,11 +85,11 @@ class LarkCliReporter(IFeishuReporter):
             chat_id = settings.FEISHU_DEFAULT_CHAT_ID
             if chat_id:
                 args = [
-                    "im", "+messages-send", 
-                    "--chat-id", chat_id, 
+                    "im", "+messages-send",
+                    "--chat-id", chat_id,
                     "--msg-type", "interactive",
                     "--content", json.dumps(evo_card, ensure_ascii=False)
                 ]
                 return await self._run_command(args)
-        
+
         return True

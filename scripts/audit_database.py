@@ -1,3 +1,8 @@
+"""
+⚠️ DEPRECATED - Local Database Audit
+====================================
+This script is deprecated. Local persistence has been phased out in favor of cloud Bitable.
+"""
 import asyncio
 import sys
 from pathlib import Path

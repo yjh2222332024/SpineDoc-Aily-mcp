@@ -26,7 +26,6 @@ class BaseIngestOrchestrator(ABC):
         self,
         file_path: str,
         file_hash: str,
-        session_maker,
         engine: "SpineEngine",
         ctx: Optional[IngestContext] = None,
     ) -> dict[str, Any]:
@@ -69,51 +68,66 @@ async def _finalize_ingestion(
     toc: List,
     chunks: List,
     engine: "SpineEngine",
+    skip_bitable: bool = False,
+    store=None,
 ) -> dict[str, Any]:
     """
-    🚀 [V95.0] 云端主权持久化：彻底废弃本地 DB 与向量化。
+    Cloud-native persistence: Bitable is the sole ledger.
+    Includes GLM vector computation for logical summaries and Galaxy Clustering.
     """
-    from backend.app.services.feishu.bitable_ledger import bitable_ledger
-    
-    # 1. Bitable 同步 (唯一账本)
+    from backend.app.services.rag.embedding import embedding_service
+    from backend.app.services.intelligence.galaxy.cluster_engine import cluster_engine
+    from backend.app.services.knowledge.git_manager import get_git_manager
+
     doc_record_id = None
-    try:
-        print(f"🛰️ [Finalize] 正在同步资产至 Bitable 云端...")
-        doc_record_id = await bitable_ledger.get_or_create_document(
-            db_doc.filename, db_doc.file_hash or "", db_doc.total_pages
-        )
-        
-        if toc:
-            toc_data = [n.model_dump() if hasattr(n, 'model_dump') else n for n in toc]
-            await bitable_ledger.save_toc_items_batch(doc_record_id, toc_data)
-        
-        await bitable_ledger.save_chunks_batch(doc_record_id, chunks)
-        print("✅ [Finalize] 飞书 Bitable 逻辑账本同步完成")
-    except Exception as e:
-        print(f"⚠️ [Finalize] 云端同步异常: {e}")
+    if not skip_bitable:
+        try:
+            doc_record_id = await store.get_or_create_document(
+                db_doc.filename, db_doc.file_hash or "", db_doc.total_pages
+            )
 
-    # 🏛️ 架构师决定：本地数据库写入与向量化已废弃，直接跳过。
+            if toc:
+                toc_data = [n.model_dump() if hasattr(n, 'model_dump') else n for n in toc]
+                await store.save_toc_items_batch(doc_record_id, toc_data)
 
-    # 2. 记忆进化 (可选)
-    try:
-        all_evolution_logs = []
-        for c in chunks:
-            # 兼容字典和对象格式
-            c_id = c.get("id") if isinstance(c, dict) else getattr(c, "id", None)
-            c_content = c.get("content") if isinstance(c, dict) else getattr(c, "content", "")
+            # 1. 保存原始分片到 Bitable
+            await store.save_chunks_batch(doc_record_id, chunks)
+
+            # 2. 语义反哺轮询
+            synced_chunks = await store.wait_for_tags(doc_record_id)
+            print(f"  ↳ 成功召回 {len(synced_chunks)} 个打标分片")
+
+            # 3. 向量确权
+            print(f"🧠 [Finalize] 正在为 {len(synced_chunks)} 个逻辑摘要计算向量...")
+            summary_texts = [c.get("summary") or c.get("content")[:200] for c in synced_chunks]
+            embeddings = await embedding_service.get_embeddings(summary_texts)
+
+            # 4. 星系聚类
+            print(f"🌌 [Finalize] 启动星系聚类...")
+            from backend.app.services.intelligence.galaxy.cluster_engine import ClusterEngine
+            sower = ClusterEngine(store=store)
+            for i, c in enumerate(synced_chunks):
+                if not c or not isinstance(c, dict):
+                    print(f"⚠️ [Finalize] 发现坏分片，跳过: {c}")
+                    continue
+                
+                # 🛡️ 暴力调试
+                print(f"DEBUG: Processing chunk index {i}, ID: {c.get('id')}")
+                if 'embedding' not in c:
+                     c["embedding"] = embeddings[i]
+                     print("DEBUG: Embedding injected.")
+
+                await sower.assign_chunk(c["id"], c)
+
             
-            note_id = await engine.memory.ingest_memory({
-                "id": str(c_id), "content": c_content,
-                "document_id": str(db_doc.id),
-            })
-            if note_id:
-                logs = await engine.memory.evolve_network(note_id)
-                all_evolution_logs.extend(logs)
+            # 5. Git 溯源 (改为延迟异步记录，防止阻塞)
+            print(f"📜 [Finalize] 提交 Git 溯源信息...")
+            # (Git 部分逻辑已隔离，待异步实现)
 
-        if all_evolution_logs:
-            await engine.reporter.report_evolution(all_evolution_logs)
-    except Exception as e:
-        print(f"⚠️ [Memory] 进化记录跳过: {e}")
+        except Exception as e:
+            print(f"⚠️ [Finalize] Cloud sync / Clustering error: {e}")
+    else:
+        print(f"🛰️ [Finalize] 跳过 Bitable 冗余同步（由编排器自主管理）")
 
     return {"id": str(db_doc.id), "toc": toc, "bitable_id": doc_record_id}
 

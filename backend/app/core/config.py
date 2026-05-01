@@ -3,12 +3,20 @@ import os
 from uuid import UUID
 from typing import Optional
 from pathlib import Path
+from dotenv import load_dotenv
 
 # --- 路径锚定：顶级架构师的绝对基准 ---
 # APP_ROOT = .../backend/app
 APP_ROOT = Path(__file__).resolve().parent.parent
 # BACKEND_ROOT = .../backend
 BACKEND_ROOT = APP_ROOT.parent
+# PROJECT_ROOT = .../
+PROJECT_ROOT = BACKEND_ROOT.parent
+
+# 🚀 [V62.0] 显式加载驱动：确保 Windows 环境下的确定性
+ENV_PATH = PROJECT_ROOT / ".env"
+if ENV_PATH.exists():
+    load_dotenv(ENV_PATH, override=True)
 
 class Settings(BaseSettings):
     """
@@ -30,11 +38,26 @@ class Settings(BaseSettings):
         if env_url: return env_url
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
-    # 2. AI 引擎 (BYOK)
-    LLM_PROVIDER: str = "deepseek"
+    # 2. AI 引擎 (BYOK) - 🚀 [V61.0] 豆包 2.0 标准契约
+    LLM_PROVIDER: str = "doubao"
     LLM_API_KEY: Optional[str] = None
-    LLM_BASE_URL: str = "https://api.deepseek.com/v1"
-    LLM_MODEL_NAME: str = "deepseek-chat"
+    LLM_BASE_URL: str = "https://ark.cn-beijing.volces.com/api/v3"
+    LLM_MODEL_NAME: str = "doubao-2-0"
+    LLM_ENDPOINT: Optional[str] = None
+
+    @property
+    def REAL_LLM_KEY(self) -> Optional[str]:
+        return self.LLM_API_KEY
+
+    @property
+    def REAL_LLM_MODEL(self) -> str:
+        """如果提供了 Endpoint，则优先使用它作为模型 ID"""
+        return self.LL_ENDPOINT or self.LLM_MODEL_NAME
+
+    @property
+    def LL_ENDPOINT(self) -> Optional[str]:
+        # 兼容性处理，防止属性重名冲突
+        return self.LLM_ENDPOINT
    
     
     # VLM 配置 (用于视觉确认)
@@ -51,12 +74,12 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL_PATH: str = r"E:\ai_models\models--BAAI--bge-m3\snapshots\5617a9f61b028005a4858fdac845db406aefb181"
     EMBEDDING_DIMENSION: int = 1024
 
-    # --- 🚀 [V49.0] 联网证人配置 (Tavily) ---
-    TAVILY_API_KEY: Optional[str] = None
-    TAVILY_MAX_RESULTS: int = 3
-    TAVILY_SEARCH_DEPTH: str = "advanced"
-    TAVILY_CONCURRENT_LIMIT: int = 5
-    TAVILY_FALLBACK_SLEEP_SECONDS: int = 3  # 🚀 [V50.6] 联网失败后休眠秒数
+    # --- 🚀 [V110.0] 联网检索配置 (智谱 Web Search API) ---
+    ZHIPU_API_KEY: Optional[str] = None
+    ZHIPU_SEARCH_ENGINE: str = "search_pro"       # search_std / search_pro / search_pro_sogou / search_pro_quark
+    ZHIPU_MAX_RESULTS: int = 5
+    ZHIPU_CONTENT_SIZE: str = "high"              # low / medium / high
+    ZHIPU_FALLBACK_SLEEP_SECONDS: int = 3
 
     # --- 🐦 [V52.0] 飞书/Lark 集成配置 ---
     FEISHU_APP_ID: Optional[str] = None
@@ -65,8 +88,8 @@ class Settings(BaseSettings):
     FEISHU_BITABLE_TOKEN: Optional[str] = None
     FEISHU_BITABLE_TABLE_ID: Optional[str] = None
 
-    # --- 🚀 [V50.10] 联邦法庭配置 ---
-    COURT_SCOUT_QUERY_LIMIT: int = 3  # Scout 拆解查询数量上限
+    # --- 🚀 [V50.10] 检索协调器配置 ---
+    COURT_SCOUT_QUERY_LIMIT: int = 3  # QueryRouter 拆解查询数量上限
     COURT_CONTEXT_TOC_LIMIT: int = 50  # 上下文 TOC 截取上限
     COURT_AUTHORITY_PEER_REVIEW_BONUS: float = 1.10  # 同行评审加成 10%
     COURT_AUTHORITY_USER_GENERATED_PENALTY: float = 0.90  # 用户生成惩罚 10%
@@ -79,8 +102,8 @@ class Settings(BaseSettings):
 
     # --- 🚀 [V50.11] 上下文截断配置 ---
     CONTEXT_LOGIC_TAGS_LIMIT: int = 10  # logic_tags 截取上限
-    CONTEXT_SELECTED_IDS_LIMIT: int = 5  # Examiner 选择分片上限
-    CONTEXT_FALLBACK_CHUNKS: int = 3  # Examiner 兜底分片数
+    CONTEXT_SELECTED_IDS_LIMIT: int = 5  # Selector 选择分片上限
+    CONTEXT_FALLBACK_CHUNKS: int = 3  # Selector 兜底分片数
     CONTEXT_COMMIT_QUERY_PREFIX: int = 30  # Git 提交消息查询前缀长度
     CONTEXT_COMMIT_DOC_ID_PREFIX: int = 8  # 文档 ID 前缀长度
     CONTEXT_EVIDENCE_CONTENT_PREFIX: int = 150  # 证据内容截取上限
@@ -90,10 +113,10 @@ class Settings(BaseSettings):
     CONTEXT_VECTOR_BATCH_TEXT_PREFIX: int = 1500  # 向量嵌入文本截取上限
 
     # --- 🚀 [V51.1] 冲突裁决配置 ---
-    # 🚀 [V51.2] 已弃用：向量过滤被移除（Distributor 负责相关性筛选）
+    # 🚀 [V51.2] 已弃用：向量过滤被移除（QueryRouter 负责相关性筛选）
     # CONFLICT_SIMILARITY_THRESHOLD: float = 0.35  # 保留但不再使用
-    CONFLICT_SCOUT_RECOMMENDED_MIN: int = 3  # Scout 推荐证据数量下限
-    CONFLICT_SCOUT_RECOMMENDED_MAX: int = 12  # Scout 推荐证据数量上限
+    CONFLICT_SCOUT_RECOMMENDED_MIN: int = 3  # QueryRouter 推荐证据数量下限
+    CONFLICT_SCOUT_RECOMMENDED_MAX: int = 12  # QueryRouter 推荐证据数量上限
 
     @property
     def VLM_API_KEY(self) -> Optional[str]:

@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import Enum
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import Column, JSON
-from sqlalchemy.dialects.postgresql import JSONB # 🚀 保持 JSONB 兼容性
+from sqlalchemy.dialects.postgresql import JSONB # Keep JSONB compatibility
 from backend.app.core.config import settings 
 
 class ProcessingStatus(str, Enum):
@@ -16,7 +16,7 @@ class ProcessingStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
 
-# --- 🚀 [V1.0] 基础关联与用户体系 ---
+# --- Basic relations and user system ---
 
 class DocumentTagLink(SQLModel, table=True):
     __table_args__ = {"extend_existing": True}
@@ -63,15 +63,15 @@ class Tag(SQLModel, table=True):
     workspace_id: UUID = Field(foreign_key="workspace.id")
     documents: List["Document"] = Relationship(back_populates="tags", link_model=DocumentTagLink)
 
-# --- 🚀 [V5.0] 知识星系核心架构 (作为新表存在，不影响旧表物理结构) ---
+# --- Knowledge Clusters Core Architecture ---
 
 class Galaxy(SQLModel, table=True):
     __table_args__ = {"extend_existing": True}
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    name: str = Field(unique=True) # 🚀 移除 index=True，保持简洁，避免索引冲突
+    name: str = Field(unique=True) # Remove index=True to maintain simplicity and avoid conflicts
     description: str
     centroid_embedding: List[float] = Field(sa_column=Column(Vector(settings.EMBEDDING_DIMENSION)))
-    member_count: int = Field(default=0) # 🚀 记录成员总数，支撑人口加权演化
+    member_count: int = Field(default=0) # Record total member count to support evolution
     created_at: datetime = Field(default_factory=datetime.utcnow)
     document_links: List["DocumentGalaxyLink"] = Relationship(back_populates="galaxy")
 
@@ -86,7 +86,7 @@ class DocumentGalaxyLink(SQLModel, table=True):
     document: "Document" = Relationship(back_populates="galaxy_links")
     galaxy: "Galaxy" = Relationship(back_populates="document_links")
 
-# --- 🚀 [V3.0] 文档与逻辑脊梁 (100% 物理还原) ---
+# --- Document and Logical Backbone ---
 
 class Document(SQLModel, table=True):
     __table_args__ = {"extend_existing": True}
@@ -155,7 +155,7 @@ class Chunk(SQLModel, table=True):
     toc_item_id: Optional[UUID] = Field(default=None, foreign_key="tocitem.id", ondelete="SET NULL")
     level: int = Field(default=1)
 
-    confidence_score: float = Field(default=1.0) # 🚀 保持物理一致
+    confidence_score: float = Field(default=1.0) # Keep physical consistency
 
     logic_tags: Optional[List[str]] = Field(default_factory=list, sa_column=Column(JSONB))
     metadata_json: Optional[Dict[str, Any]] = Field(default_factory=dict, sa_column=Column(JSON))
@@ -164,19 +164,19 @@ class Chunk(SQLModel, table=True):
     document: Document = Relationship(back_populates="chunks")
     revisions: List["ChunkRevision"] = Relationship(back_populates="chunk")
 
-    # 🕸️ [V7.0] 逻辑织网 - 出边关系
+    # Graph Integration - Outgoing relationships
     outgoing_relationships: List["ChunkRelationship"] = Relationship(
         back_populates="source_chunk",
         sa_relationship_kwargs={"foreign_keys": "ChunkRelationship.source_chunk_id"}
     )
-    # 🕸️ [V7.0] 逻辑织网 - 入边关系
+    # Graph Integration - Incoming relationships
     incoming_relationships: List["ChunkRelationship"] = Relationship(
         back_populates="target_chunk",
         sa_relationship_kwargs={"foreign_keys": "ChunkRelationship.target_chunk_id"}
     )
 
 
-# --- 🕸️ [V7.0] 逻辑织网协议 (Judgment Breeds Connectivity) ---
+# --- Graph Integration Protocol ---
 
 class RelationshipType(str, Enum):
     """
@@ -193,7 +193,7 @@ class RelationshipType(str, Enum):
 
 class ChunkRelationship(SQLModel, table=True):
     """
-    🕸️ [V7.0] 逻辑织网协议 - 增加 [V53.5] 代谢奖惩扩展
+    Graph Integration Protocol - Added Evolution extensions
     设计哲学：模拟神经突触的动态可塑性（Synaptic Plasticity）。
     """
     __table_args__ = {"extend_existing": True}
@@ -205,7 +205,7 @@ class ChunkRelationship(SQLModel, table=True):
 
     rel_type: RelationshipType = Field(index=True)
 
-    # 🚀 [V53.5] 代谢权重系统 (Metabolic Weight System)
+    # Evolution Weight System
 
     # 【辩护：最大熵原则】 
     # 依据：Jaynes (1957) 信息论最大熵原理 & BAKE (Han et al. 2025) 贝叶斯先验。
@@ -247,11 +247,11 @@ class ChunkRelationship(SQLModel, table=True):
     )
 
 
-# --- 🧬 [V53.5] 代谢进化核心载体 (The Metabolic Forge) ---
+# --- Evolution Core Carrier ---
 
 class MetabolicTrace(SQLModel, table=True):
     """
-    🌀 梦境轨迹：记录布朗运动产生的思维漂移路径。
+    Trace Log: Record drift paths.
     依据：Mastering Diverse Domains through World Models (Nature 2023) 中的 Latent Imagination 轨迹。
     """
     __table_args__ = {"extend_existing": True}
@@ -269,7 +269,7 @@ class MetabolicTrace(SQLModel, table=True):
 
 class LogicTension(SQLModel, table=True):
     """
-    ⚡ 逻辑张力审计：量化灵感与真理的冲突程度。
+    Tension Audit: Quantify conflict between novel ideas and established facts.
     依据：SpineDoc 原创量化公式 LT = Novelty * Validity。
     支撑论文中的 [LT] 指标，作为多巴胺奖励的计算输入。
     """
@@ -287,7 +287,7 @@ class LogicTension(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
-# --- 🚀 [V6.0] 知识代谢账本 (作为新表存在，承载代谢状态) ---
+# --- Knowledge Evolution Ledger ---
 
 class ChunkRevision(SQLModel, table=True):
     __table_args__ = {"extend_existing": True}
@@ -300,7 +300,7 @@ class ChunkRevision(SQLModel, table=True):
     change_reason: str
     contributor_agent: str
     
-    # 🚀 代谢状态：挪到这里，不再污染 Chunk 物理表
+    # Evolution Status: Moved here to keep Chunk table clean
     veracity_score: float = 1.0
     is_deprecated: bool = False
     
@@ -310,11 +310,11 @@ class ChunkRevision(SQLModel, table=True):
     # Relationships
     chunk: Chunk = Relationship(back_populates="revisions")
 
-# --- ⚖️ [V8.0] 司法档案库 (Court Verdict Archive) ---
+# --- Retrieval Result Archive ---
 
-class CourtVerdict(SQLModel, table=True):
+class RetrievalResult(SQLModel, table=True):
     """
-    ⚖️ 联邦判决书：记录每一次联邦法庭审判的完整全景。
+    Retrieval Result: Record complete overview of retrieval synthesis.
     职责：为 Refinery 提供推理迹语料，为用户提供审计溯源。
     """
     __table_args__ = {"extend_existing": True}
@@ -322,16 +322,16 @@ class CourtVerdict(SQLModel, table=True):
     
     query: str = Field(index=True)
     
-    # 🏛️ 核心产出
+    # Core outputs
     final_answer: str
     reasoning_thought: Optional[str] = Field(default=None, sa_column=Column(JSONB)) # 存储完整的思考链
-    verdict_decision: str = Field(default="ACCEPTED") # ACCEPTED | CONFLICT | PARTIAL
+    result_status: str = Field(default="ACCEPTED") # ACCEPTED | CONFLICT | PARTIAL
     
-    # 📡 证据溯源
+    # Evidence traceability
     cited_galaxies: List[str] = Field(default_factory=list, sa_column=Column(JSONB))
     confidence_score: float = Field(default=0.0)
     
-    # 📈 元数据
+    # Metadata
     duration_ms: int = Field(default=0)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

@@ -1,8 +1,8 @@
 """
-⚖️ CalibrationManager - 置信度自校准经理
+⚠️ DEPRECATED - CalibrationManager
 =============================================
-职责：对比 AI 判决与物理真理，动态修正置信度量化参数。
-理论：误差反馈控制 (Error Feedback Control)。
+This module is deprecated. Local database persistence has been phased out.
+Self-calibration should now target Feishu Bitable or cloud-native telemetry.
 """
 
 import json
@@ -10,7 +10,7 @@ import logging
 from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.app.core.models import CourtVerdict
+from backend.app.core.models import RetrievalResult
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class CalibrationManager:
         """
         try:
             # 1. 查询所有判例
-            stmt = select(CourtVerdict)
+            stmt = select(RetrievalResult)
             result = await self.session.execute(stmt)
             verdicts = result.scalars().all()
 

@@ -1,8 +1,7 @@
 """
-SpineDoc 金字塔收割机 (PyramidHarvester) - V3.1 
+⚠️ DEPRECATED - SpineDoc 金字塔收割机 (PyramidHarvester)
 ===============================================
-职责：实现“逻辑导航 -> 物理减枝 -> 语义收割”的三段式检索。
-特点：完全基于数据的活性探测，废弃所有魔法数字与层级假设。
+职责：此模块已废弃。三段式检索已简化为 AilyHarvester 的云端直接收割。
 """
 
 import asyncio

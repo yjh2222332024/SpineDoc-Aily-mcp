@@ -15,6 +15,7 @@ class SpineNode(BaseModel):
     logical_page: int          # 书本上印的页码
     physical_start: int = 0    # 对齐后的起始物理页
     physical_end: int = 0      # 对齐后的结束物理页
+    logic_coord: Optional[str] = None  # 🚀 [V108.0] 树状逻辑坐标: e.g., 1.2.1
     confidence: float = 1.0
     source: str = "ocr"        # ocr, vlm, metadata
     is_synthetic: bool = False # 🚀 [V3.5] 涌现标记：是否为 AI 生成的隐性脊梁
