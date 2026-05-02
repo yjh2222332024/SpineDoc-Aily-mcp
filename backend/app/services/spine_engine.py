@@ -7,37 +7,30 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from uuid import UUID, uuid4
 
-from sqlmodel import select, func, String
-from backend.app.core.db import get_async_sessionmaker
-from backend.app.core.models import Document, TocItem, Chunk, ProcessingStatus
-from backend.app.core.config import settings
-from backend.app.services.ocr.body_alchemist import BodyAlchemist
-from backend.app.services.rag.evidence_harvester import EvidenceHarvester
-from backend.app.services.rag.vector_store import PostgresStore
+from backend.app.services.rag.aily_harvester import aily_harvester
 from backend.app.core.interfaces import (
     IFeishuReporter, NullReporter, IAgenticMemory, NullMemory,
+    IDocumentStore,
 )
+from backend.app.services.feishu.bitable_ledger import bitable_ledger
 from backend.app.infra.loaders.universal_loader import universal_loader
 from backend.app.services.orchestrators.base import IngestContext
-from backend.app.services.orchestrators.pdf_standard import (
-    StandardPdfOrchestrator,
-)
-from backend.app.services.orchestrators.pdf_emergent import (
-    EmergentPdfOrchestrator,
-)
-from backend.app.services.orchestrators.structured_text import (
-    StructuredTextOrchestrator,
-)
-
+from backend.app.services.orchestrators.pdf_standard import StandardPdfOrchestrator
+from backend.app.services.orchestrators.pdf_emergent import EmergentPdfOrchestrator
+from backend.app.services.orchestrators.structured_text import StructuredTextOrchestrator
 
 class SpineEngine:
     def __init__(self,
                  reporter: Optional[IFeishuReporter] = None,
                  memory: Optional[IAgenticMemory] = None,
-                 alchemist: Optional[BodyAlchemist] = None,
-                 vector_store: Optional[PostgresStore] = None):
-        self.alchemist = alchemist or BodyAlchemist()
-        self.vector_store = vector_store or PostgresStore()
+                 alchemist: Optional[Any] = None,
+                 harvester: Optional[Any] = None,
+                 store: Optional[IDocumentStore] = None):
+        self.alchemist = alchemist 
+        self.harvester = harvester or aily_harvester
+        self.store = store or bitable_ledger
+        self.reporter = reporter or NullReporter()
+        self.memory = memory or NullMemory()
         self.harvester = EvidenceHarvester(self.vector_store)
         self._session_maker = get_async_sessionmaker()
         self._git_version_control = None

@@ -1,3 +1,21 @@
+from typing import List, Dict, Any, Optional
+from dataclasses import dataclass
+
+@dataclass
+class IngestContext:
+    file_path: str
+    file_hash: str
+    filename: str
+    total_pages: int
+
+class BaseIngestOrchestrator:
+    """
+    负责文档入库编排的基类。
+    """
+    def __init__(self, engine, store):
+        self.engine = engine
+        self.store = store
+
 async def _finalize_ingestion(
     db_doc,
     toc: List,
@@ -5,7 +23,7 @@ async def _finalize_ingestion(
     engine: "SpineEngine",
     skip_bitable: bool = False,
     store=None,
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     """
     云原生确权流水线：
     1. Bitable 账本存入 
@@ -36,19 +54,38 @@ async def _finalize_ingestion(
             if not synced_chunks:
                 print("⚠️ [Finalize] 打标回填超时或为空。")
             else:
-                # 3. 向量确权
-                print(f"🧠 [Finalize] 正在计算 {len(synced_chunks)} 个分片的逻辑向量...")
-                summary_texts = [c.get("summary") for c in synced_chunks]
-                embeddings = await embedding_service.get_embeddings(summary_texts)
-                
-                # 4. 星系聚类
-                print(f"🌌 [Finalize] 启动星系聚类...")
-                for i, c in enumerate(synced_chunks):
-                    c["embedding"] = embeddings[i]
-                    await cluster_engine.assign_chunk(c["id"], c)
+                # 🛡️ 逻辑确权：清洗数据
+                valid_chunks = [c for c in synced_chunks if c.get("summary") and len(c.get("summary")) > 2]
+
+                if not valid_chunks:
+                    print("⚠️ [Finalize] 没有可用的逻辑摘要分片，跳过聚类。")
+                else:
+                    # 3. 向量确权
+                    print(f"🧠 [Finalize] 正在为 {len(valid_chunks)} 个有效分片计算云端向量...")
+                    summary_texts = [c["summary"] for c in valid_chunks]
+                    embeddings = await embedding_service.get_embeddings(summary_texts)
+
+                    # 4. 星系聚类 (Galaxy Distribution)
+                    print(f"🌌 [Finalize] 启动星系聚类 (Galaxy Clustering)...")
+                    for i, c in enumerate(valid_chunks):
+                        c["embedding"] = embeddings[i]
+                        await cluster_engine.assign_chunk(c["id"], c)
+
+                    # 🚀 [V100.0] 确权闭环：回填最终状态
+                    await store.update_document_status(doc_record_id, "COMPLETED")
+                    print(f"🏁 [Finalize] 文档 {db_doc.filename} 全量确权入库完毕。")
+
         except Exception as e:
             print(f"⚠️ [Finalize] 确权流程异常: {e}")
             import traceback
             traceback.print_exc()
 
     return {"id": str(db_doc.id), "toc": toc, "bitable_id": doc_record_id}
+
+async def _check_duplicate_and_commit(db_doc, store) -> bool:
+    """占位符，保持接口兼容"""
+    return False
+
+def split_tiered_to_page_map(chunks: List[Dict]) -> Dict:
+    """占位符，保持接口兼容"""
+    return {}
