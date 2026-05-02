@@ -1,6 +1,7 @@
 import asyncio
 import json
 import subprocess
+import os
 from pathlib import Path
 from backend.app.core.interfaces.loader import IDocumentLoader
 
@@ -9,26 +10,51 @@ class LarkDocLoader(IDocumentLoader):
         self.cli_path = str(Path(cli_path).absolute())
 
     def can_handle(self, file_path: str) -> bool:
-        # 识别飞书文档 URL 或特定的 doc_id 前缀
-        return "feishu.cn/docx/" in file_path or file_path.startswith("doc")
+        # 🚀 [V112.0] 扩展判定：支持飞书文档 (docx) 和 知识库 (wiki) 链接
+        return any(x in file_path for x in ["feishu.cn/docx/", "larksuite.com/docx/", "feishu.cn/wiki/", "larksuite.com/wiki/"])
 
     async def load(self, file_path: str) -> str:
         """通过 lark-cli 将飞书文档导出为 Markdown"""
-        # 这里利用 lark-cli doc +export 功能
-        # 假设命令格式: lark-cli doc +export --doc-token XXX --type markdown
+        from backend.app.services.feishu.aily_bridge import aily_bridge
         token = self._extract_token(file_path)
-        cmd = [self.cli_path, "doc", "+export", "--doc-token", token, "--type", "markdown"]
         
+        # 🚀 [V111.0] 认证一公里：注入黄金令牌
+        tenant_token = await aily_bridge._get_tenant_token()
+        
+        env = os.environ.copy()
+        env["LARK_TENANT_ACCESS_TOKEN"] = tenant_token
+        env["FEISHU_TENANT_ACCESS_TOKEN"] = tenant_token
+        
+        # 🏛️ 使用官方推荐的 +fetch 命令
+        cmd = [
+            self.cli_path, "docs", "+fetch", 
+            "--api-version", "v2", 
+            "--doc", token, 
+            "--doc-format", "markdown"
+        ]
+        
+        print(f"📡 [LarkLoader] 正在利用黄金令牌捕获云端知识: {token[:8]}...")
+
         process = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
+            env=env
         )
         stdout, stderr = await process.communicate()
         
         if process.returncode == 0:
-            # 返回导出的 Markdown 内容
-            return stdout.decode()
+            try:
+                # 🏛️ 解析 JSON 响应
+                resp_json = json.loads(stdout.decode())
+                if not resp_json.get("ok"):
+                    raise Exception(f"业务错误: {resp_json.get('msg', '未知错误')}")
+                
+                content = resp_json.get("data", {}).get("document", {}).get("content", "")
+                return content
+            except json.JSONDecodeError:
+                # 兼容直接返回文本的情况
+                return stdout.decode()
         else:
             raise Exception(f"飞书文档导出失败: {stderr.decode()}")
 

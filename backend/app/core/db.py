@@ -1,3 +1,9 @@
+"""
+⚠️ DEPRECATED - SpineDoc Local Database Service
+=============================================
+This module is deprecated. All persistence has been migrated to Feishu Bitable.
+Do not use this for new features.
+"""
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import sessionmaker

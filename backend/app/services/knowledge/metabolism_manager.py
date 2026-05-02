@@ -5,7 +5,7 @@
 
 职责分离：
 - SpineEngine: 只负责问答分发
-- FederatedCourt: 只负责裁决
+- RetrievalCoordinator: Responsible only for synthesis
 - MetabolismManager: 只负责知识更新（Git 事务）
 """
 

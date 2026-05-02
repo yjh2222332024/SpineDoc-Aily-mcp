@@ -19,26 +19,79 @@ logger = logging.getLogger(__name__)
 
 class StructuralSplitter:
     """
-    🚀 资深架构师：物理区间分割器 (V4.0 语义切片版)
-    职责：基于 TOC 逻辑区间 [p_start, p_end] 对文本进行物理切割。
-         使用语义切片替代固定字数切分。
+    🚀 资深架构师：物理区间分割器 (V5.1 Clean Code 版)
+    职责：基于 TOC 逻辑区间执行递归结构化切分。
     """
+    # 定义层级分隔符，体现 Aily 的结构优先原则
+    DEFAULT_SEPARATORS = ["\n\n", "\n", "。", "！", "？", ". ", " "]
+
     def __init__(self, 
-                 chunk_size: int = 1000, 
+                 chunk_size: int = 800, 
                  chunk_overlap: int = 150,
-                 use_semantic_split: bool = True):
+                 use_semantic_split: bool = False):
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.use_semantic_split = use_semantic_split
         self.semantic_splitter = None
+        
         if use_semantic_split:
-            # 🚀 懒加载，避免启动时阻塞
-            try:
-                self.semantic_splitter = SemanticSplitter(threshold=0.45)
-                logger.info("✅ 语义切片器已加载")
-            except Exception as e:
-                logger.warning(f"⚠️ 语义切片器加载失败，降级为固定字数切分：{e}")
-                self.semantic_splitter = None
+            self._init_semantic_engine()
+
+    def _init_semantic_engine(self):
+        try:
+            self.semantic_splitter = SemanticSplitter(threshold=0.45)
+            logger.info("✅ 语义切片器已加载")
+        except Exception as e:
+            logger.warning(f"⚠️ 语义切片器加载失败：{e}")
+
+    async def _split_text_smart(self, text: str) -> List[str]:
+        """智能路由：优先使用递归切分，除非显式开启语义黑盒"""
+        if self.use_semantic_split and self.semantic_splitter:
+            return await self._split_by_semantic(text)
+        
+        return self._split_recursively(text, self.DEFAULT_SEPARATORS)
+
+    def _split_recursively(self, text: str, separators: List[str]) -> List[str]:
+        if len(text) <= self.chunk_size:
+            return [text]
+        
+        separator = self._pick_best_separator(text, separators)
+        parts = text.split(separator)
+        return self._combine_parts(parts, separator)
+
+    def _pick_best_separator(self, text: str, separators: List[str]) -> str:
+        for s in separators:
+            if s in text:
+                return s
+        return separators[-1]
+
+    def _combine_parts(self, parts: List[str], separator: str) -> List[str]:
+        chunks = []
+        current_chunk = ""
+        
+        for p in parts:
+            if self._is_overflow(current_chunk, p, separator):
+                chunks.append(current_chunk)
+                current_chunk = self._create_overlap_bridge(current_chunk)
+            
+            current_chunk = self._add_part_to_chunk(current_chunk, p, separator)
+        
+        if current_chunk:
+            chunks.append(current_chunk)
+        return chunks
+
+    def _is_overflow(self, current: str, next_part: str, sep: str) -> bool:
+        return len(current) + len(next_part) + len(sep) > self.chunk_size and current != ""
+
+    def _add_part_to_chunk(self, current: str, part: str, sep: str) -> str:
+        prefix = sep if current and not current.endswith(sep) else ""
+        return current + prefix + part
+
+    def _create_overlap_bridge(self, previous_chunk: str) -> str:
+        """建立切片间的逻辑桥梁，确保上下文不丢失"""
+        if len(previous_chunk) <= self.chunk_overlap:
+            return previous_chunk
+        return previous_chunk[-self.chunk_overlap:]
 
     async def _split_by_semantic(self, text: str, min_chunk_len: int = 300) -> List[str]:
         """
@@ -72,10 +125,11 @@ class StructuralSplitter:
     async def split_by_toc(self,
                            doc: Any,
                            toc_items: List[SpineNode],
-                           ocr_context: Optional[Dict[int, str]] = None) -> AsyncGenerator[Dict[str, Any], None]:
+                           ocr_context: Optional[Dict[int, str]] = None,
+                           page_text_map: Optional[Dict[int, str]] = None) -> AsyncGenerator[Dict[str, Any], None]:
         """
-        按 TOC 逻辑区间分片 (V46.6 强类型契约版)
-        职责：严格遵循 SpineNode 契约，执行物理区间分片。
+        按 TOC 逻辑区间分片 (V5.2 契约修复版)
+        职责：严格遵循 SpineNode 契约，优先使用原生文本映射 (page_text_map)。
         """
         total_items = len(toc_items)
         total_pages = len(doc)
@@ -85,26 +139,23 @@ class StructuralSplitter:
             p_end = item.physical_end
             title = item.title
 
-            # 跳过无效区间
             if p_start > p_end:
-                print(f"⚠️ [Splitter] ({idx}/{total_items}) 跳过无效区间：{title} (P{p_start}-P{p_end})")
                 continue
-
-            print(f"🧩 [Splitter] ({idx}/{total_items}) 正在处理章节：[bold green]{title}[/bold green] (P{p_start}-P{p_end})")
 
             # 1. 收集整个章节的文本
             chapter_text = ""
             for p_idx in range(p_start - 1, min(p_end, total_pages)):
                 page_tag = f"\n【页码：P{p_idx+1}】\n"
-                if ocr_context and p_idx in ocr_context:
+                # 优先级：原生文本映射 > OCR 上下文 > PyMuPDF 直接提取
+                if page_text_map and p_idx in page_text_map:
+                    chapter_text += page_tag + page_text_map[p_idx]
+                elif ocr_context and p_idx in ocr_context:
                     chapter_text += page_tag + ocr_context[p_idx]
                 else:
                     chapter_text += page_tag + doc[p_idx].get_text()
 
-            # 2. 一次性执行语义切分
-            print(f"  ↳ 🧠 正在执行章节级语义切分...")
-            # 🚀 补上缺失的 await
-            raw_sub_texts = await self._split_by_semantic(chapter_text, min_chunk_len=300)
+            # 2. 智能切分
+            raw_sub_texts = await self._split_text_smart(chapter_text)
 
             for sub_text in raw_sub_texts:
                 clean_text = sub_text.strip()
@@ -134,14 +185,16 @@ class StructuralSplitter:
 
     async def split_full_document(self,
                                   doc: Any,
-                                  ocr_context: Optional[Dict[int, str]] = None) -> AsyncGenerator[Dict[str, Any], None]:
+                                  ocr_context: Optional[Dict[int, str]] = None,
+                                  page_text_map: Optional[Dict[int, str]] = None) -> AsyncGenerator[Dict[str, Any], None]:
         """
         🚀 V4.0 新增：全量文档语义切片（带进度监控）
         """
         total_pages = len(doc)
-        buffer_size = 5  # 每 5 页进行一次语义切片
+        buffer_size = 1  # 🚀 [V63.0] 极致精细化：逐页推送，利用 Bitable AI 进行高密度反哺
         buffer_text = ""
         buffer_start_page = 1
+
         
         print(f"🌊 [Splitter] 启动全量语义切片流，共 {total_pages} 页...")
         
@@ -150,16 +203,18 @@ class StructuralSplitter:
                 print(f"  ↳ 📥 正在读取物理页码: P{p_idx+1}/{total_pages} ({(p_idx+1)/total_pages*100:.1f}%)")
             
             page_tag = f"\n【页码：P{p_idx+1}】\n"
-            if ocr_context and p_idx in ocr_context:
+            # 优先级：原生文本映射 > OCR 上下文 > PyMuPDF 直接提取
+            if page_text_map and p_idx in page_text_map:
+                buffer_text += page_tag + page_text_map[p_idx]
+            elif ocr_context and p_idx in ocr_context:
                 buffer_text += page_tag + ocr_context[p_idx]
             else:
                 buffer_text += page_tag + doc[p_idx].get_text()
             
-            # 每 5 页或最后一页，进行语义切片
+            # 每 5 页或最后一页，进行切片
             if (p_idx + 1) % buffer_size == 0 or (p_idx + 1) == total_pages:
                 if buffer_text:
-                    # 🚀 补上缺失的 await
-                    chunks = await self._split_by_semantic(buffer_text, min_chunk_len=300)
+                    chunks = await self._split_text_smart(buffer_text)
                     
                     current_page = buffer_start_page
                     for chunk in chunks:
@@ -180,7 +235,7 @@ class StructuralSplitter:
                                 "p_start": buffer_start_page,
                                 "p_end": p_idx + 1,
                                 "toc_title": "Full Document",
-                                "split_method": "semantic" if self.semantic_splitter else "fixed_size"
+                                "split_method": "recursive_structural"
                             }
                         }
                 
@@ -189,4 +244,4 @@ class StructuralSplitter:
         print(f"✅ [Splitter] 全量文档切分流水线执行完毕。")
 
 
-structural_splitter = StructuralSplitter(use_semantic_split=True)
+structural_splitter = StructuralSplitter(use_semantic_split=False)

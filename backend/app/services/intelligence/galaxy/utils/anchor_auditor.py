@@ -1,9 +1,9 @@
-"""
-⚖️ AdvancedAnchorAuditor - 语义锚点高级审计员
-=============================================
-职责：通过“物理过滤+语义质证”双重关卡，确保星系锚点的纯净度。
-架构：Layer 1 (Regex/Blacklist) + Layer 2 (CPU-based Cross-Encoder)
-"""
+“””
+AdvancedAnchorAuditor — Semantic Anchor Auditor
+=================================================
+Dual-gate system: Layer 1 (Regex/Blacklist) + Layer 2 (CPU-based Cross-Encoder)
+to ensure anchor keyword quality.
+“””
 
 import re
 import logging
@@ -54,7 +54,7 @@ class AdvancedAnchorAuditor:
         ]
         
         if not physically_clean:
-            # 如果全军覆没，返回空，让调用者去 Misc 星系
+            # 如果全军覆没，返回空，让调用者去 Misc 聚类
             return []
 
         # --- Layer 2: 语义质证 (顶配逻辑) ---

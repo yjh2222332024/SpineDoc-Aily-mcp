@@ -1,8 +1,7 @@
 """
-SpineDoc Coze 云端收割机 (CozeHarvester) - V1.0
+⚠️ DEPRECATED - SpineDoc Coze 云端收割机 (CozeHarvester)
 ==============================================
-职责：通过 Coze Workflow API 实现极致的云端语义撞击。
-架构：绕过飞书原生权限地狱，直接通过 REST API 调动向量能力。
+职责：此模块已废弃。云端语义撞击统一由 AilyHarvester 接管。
 """
 
 import asyncio
@@ -11,17 +10,18 @@ import json
 import logging
 from typing import List, Dict, Any, Optional
 from backend.app.services.keyword_extractor import get_keyword_extractor
-from backend.app.services.feishu.bitable_ledger import bitable_ledger
 from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 class CozeHarvester:
     """
-    🚀 [V60.0] Coze 云端收割机：绕过 Aily 权限限制，利用 Coze API 实现“暴力撞击”。
+    CozeHarvester: Cloud semantic search via Coze Workflow API.
     """
-    def __init__(self):
+    def __init__(self, store=None):
+        from backend.app.services.feishu.bitable_ledger import bitable_ledger
         self.extractor = get_keyword_extractor()
+        self.store = store or bitable_ledger
         self.api_key = settings.COZE_API_KEY
         self.workflow_id = settings.COZE_WORKFLOW_ID
         self.rrf_k = 60
@@ -47,7 +47,7 @@ class CozeHarvester:
         # B 路径：Bitable 标签碰撞 (云端标签收割)
         tasks = [
             self._call_coze_workflow(query),
-            bitable_ledger.search_chunks(query, doc_record_id=doc_record_id, tags=query_tags, limit=limit * 2)
+            self.store.search_chunks(query, doc_record_id=doc_record_id, tags=query_tags, limit=limit * 2)
         ]
         
         coze_results, tag_results = await asyncio.gather(*tasks)

@@ -1,8 +1,7 @@
 """
-SpineDoc 向量存储服务 (VectorStore) - V48.6 架构回归版
+⚠️ DEPRECATED - SpineDoc 向量存储服务 (VectorStore)
 ======================================================
-职责：作为 SpineDoc 知识库的物理守门员，提供向量检索、标签碰撞及 TOC 物理航道解析。
-架构：回归 backend 核心服务层，实现逻辑主权统一。
+职责：此模块已废弃。本地向量碰撞已移交给 AilyHarvester (云端) 处理。
 """
 
 import asyncio

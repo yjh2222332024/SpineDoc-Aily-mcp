@@ -1,8 +1,8 @@
 """
-💎 RefineryExporter - 逻辑结晶导出器
+⚠️ DEPRECATED - RefineryExporter
 ====================================
-职责：扫描全系统资产（DB/Git/Mesh），提纯为 1.5B 模型微调所需的“逻辑高压”语料。
-使命：让每一条训练语料都带有物理坐标主权与逻辑对线指纹。
+This module is deprecated. Local database persistence has been phased out.
+Logical extraction and refinery should now target Feishu Bitable or Git Ledger.
 """
 
 import json
@@ -53,8 +53,8 @@ class RefineryExporter:
         训练 1.5B 模型内化大法官的辩论与决策逻辑。
         """
         print("   ↳ 正在提纯推理迹 (Court Verdicts)...")
-        from backend.app.core.models import CourtVerdict
-        stmt = select(CourtVerdict).order_by(CourtVerdict.created_at).limit(limit)
+        from backend.app.core.models import RetrievalResult
+        stmt = select(RetrievalResult).order_by(RetrievalResult.created_at).limit(limit)
         result = await self.session.execute(stmt)
         verdicts = result.scalars().all()
         
