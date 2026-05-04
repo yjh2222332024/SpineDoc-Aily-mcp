@@ -57,7 +57,7 @@ class EmergentPdfOrchestrator(BaseIngestOrchestrator):
             # 3. Atomic Chunking
             print(f"[Emergent] Executing atomic chunking...")
             raw_chunks = []
-            from backend.app.services.rag.splitter import structural_splitter
+            from backend.app.services.ingestion.splitter import structural_splitter
             async for chunk in structural_splitter.split_full_document(
                 doc_obj, ocr_context=ocr_context, page_text_map=page_text_map
             ):

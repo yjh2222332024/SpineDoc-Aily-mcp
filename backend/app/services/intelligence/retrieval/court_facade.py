@@ -10,8 +10,8 @@ Responsibility:
 import asyncio
 import logging
 from typing import List, Dict, Any, Optional
-from .sovereign_sentry import SovereignSentry
-from .experts.witness_expert import WitnessExpert
+from .local_retriever import SovereignSentry
+from .experts.online_retriever import WitnessExpert
 
 logger = logging.getLogger(__name__)
 

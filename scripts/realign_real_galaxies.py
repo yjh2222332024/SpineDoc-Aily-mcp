@@ -2,7 +2,7 @@ import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from backend.app.core.config import settings
-from backend.app.services.intelligence.galaxy.scout import GalaxyScout
+from backend.app.services.intelligence.clustering.scout import GalaxyScout
 from backend.app.core.models import Galaxy, DocumentGalaxyLink, Document
 from sqlalchemy import delete, select
 

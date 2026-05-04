@@ -51,8 +51,8 @@ async def _compute_embeddings_and_cluster(synced_chunks: List[Dict], store, doc_
     """
     🚀 [V105.0] 核心确权：执行向量计算（基于 Bitable AI 摘要与标签）、星系聚类与 A-MEM 记忆演进。
     """
-    from backend.app.services.rag.embedding import embedding_service
-    from backend.app.services.intelligence.galaxy.cluster_engine import cluster_engine
+    from backend.app.services.ingestion.embedding import embedding_service
+    from backend.app.services.intelligence.clustering.cluster_engine import cluster_engine
     
     # 1. 逻辑确权：清洗数据
     valid_chunks = [c for c in synced_chunks if c.get("summary") and len(c.get("summary")) > 2]

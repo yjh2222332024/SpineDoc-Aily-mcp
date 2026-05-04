@@ -67,7 +67,7 @@ class AuditorNode:
         subpoena_order = None
         if conflicts:
             print(f"🔴 [AuditorNode] 检测到 {len(conflicts)} 处逻辑裂痕，启动联邦辩论...")
-            from backend.app.services.rag.llm_service import llm_service
+            from backend.app.services.ingestion.llm_service import llm_service
 
             # 对每一个冲突点执行庭审
             for c in conflicts:

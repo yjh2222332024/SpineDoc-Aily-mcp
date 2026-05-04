@@ -15,7 +15,7 @@ import json
 from typing import Dict, Any, List
 from .schema import CourtState
 from backend.app.services.feishu.bitable_ledger import bitable_ledger
-from backend.app.services.intelligence.galaxy.cluster_engine import cluster_engine
+from backend.app.services.intelligence.clustering.cluster_engine import cluster_engine
 
 logger = logging.getLogger(__name__)
 

@@ -66,7 +66,7 @@ class WitnessExpert:
         # 2. 🚀 [V170.0] 逻辑质证：对 Top-5 证据进行云端解构
         # 为了效率，我们只对最相关的几个证据执行深度脱水
         print(f"🧠 [WitnessExpert] 正在对 {len(raw_chunks[:5])} 条核心证据执行‘逻辑脱水’...")
-        from backend.app.services.rag.llm_service import llm_service
+        from backend.app.services.ingestion.llm_service import llm_service
         
         distillation_tasks = [self._distill_evidence(c, llm_service) for c in raw_chunks[:5]]
         refined_chunks = await asyncio.gather(*distillation_tasks)

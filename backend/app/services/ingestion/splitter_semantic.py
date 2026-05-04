@@ -10,7 +10,7 @@ import numpy as np
 import re
 import logging
 from typing import List, Dict, Any
-from backend.app.services.rag.embedding import embedding_service
+from backend.app.services.ingestion.embedding import embedding_service
 
 logger = logging.getLogger(__name__)
 

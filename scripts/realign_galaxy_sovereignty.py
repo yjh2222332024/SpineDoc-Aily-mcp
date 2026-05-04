@@ -19,7 +19,7 @@ if str(project_root) not in sys.path:
 
 from backend.app.core.db import get_async_sessionmaker
 from backend.app.core.models import Document, Galaxy, DocumentGalaxyLink
-from backend.app.services.intelligence.galaxy.scout import GalaxyScout
+from backend.app.services.intelligence.clustering.scout import GalaxyScout
 
 async def realign_all_galaxies():
     print("\n" + "🏛️  " * 20)

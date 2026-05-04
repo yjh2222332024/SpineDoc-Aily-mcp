@@ -6,7 +6,7 @@ from pathlib import Path
 # 确权环境
 sys.path.append(str(Path(__file__).parent.parent))
 
-from backend.app.services.rag.embedding import embedding_service
+from backend.app.services.ingestion.embedding import embedding_service
 from backend.app.core.config import settings
 
 async def test_basics():

@@ -1,7 +1,7 @@
 import asyncio
 import os
 import json
-from backend.app.services.intelligence.retrieval.experts.witness_expert import WitnessExpert
+from backend.app.services.intelligence.retrieval.experts.online_retriever import WitnessExpert
 
 async def test_witness_retrieval():
     print("🚀 [AtomicTest] Starting WitnessExpert (Online Retrieval) Validation...")

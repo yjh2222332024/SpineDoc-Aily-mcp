@@ -8,14 +8,11 @@ import uuid
 import numpy as np
 from typing import List, Dict, Any
 from .embedding import embedding_service
-from .logic_refiner import LogicRefiner
 
 class SpineSplitter:
     def __init__(self, threshold: float = 0.82, max_tokens: int = 800):
-        # 🚀 [V47.1] 调优：BGE-Small 的语义突变通常在 0.8 以下
         self.threshold = threshold
         self.max_tokens = max_tokens
-        self.refiner = LogicRefiner()
 
     async def split_chapter_stream(self, 
                                    text: str, 

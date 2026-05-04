@@ -10,7 +10,7 @@ Responsibility:
 
 import logging
 from typing import Dict, Any, List
-from backend.app.services.rag.llm_service import llm_service
+from backend.app.services.ingestion.llm_service import llm_service
 from .schema import CourtState
 
 logger = logging.getLogger(__name__)

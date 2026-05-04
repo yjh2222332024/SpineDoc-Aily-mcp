@@ -15,8 +15,8 @@ sys.path.append(str(PROJECT_ROOT))
 from backend.app.core.db import get_async_sessionmaker
 from backend.app.core.models import Document, TocItem, Chunk, ProcessingStatus
 from backend.app.services.ocr.body_alchemist import BodyAlchemist
-from backend.app.services.rag.splitter import structural_splitter
-from backend.app.services.rag.logic_refiner import LogicRefiner
+from backend.app.services.ingestion.splitter import structural_splitter
+from backend.app.services.ingestion.logic_refiner import LogicRefiner
 from backend.app.services.toc.base import SpineNode
 
 console = Console()

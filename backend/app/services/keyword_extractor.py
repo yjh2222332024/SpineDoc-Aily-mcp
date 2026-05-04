@@ -13,7 +13,7 @@ import logging
 from typing import List, Optional, Set, Dict, Any
 from backend.app.core.config import settings
 from pathlib import Path
-from backend.app.services.rag.llm_service import llm_service
+from backend.app.services.ingestion.llm_service import llm_service
 
 class KeywordExtractor:
     """
@@ -49,7 +49,6 @@ class KeywordExtractor:
         if stopwords_path.exists():
             with open(stopwords_path, "r", encoding="utf-8") as f:
                 self.stopwords = {line.strip() for line in f if line.strip()}
-        print(f"✅ [Keywords] 停用词表已加载：{len(self.stopwords)} 个条目")
 
     async def extract_keywords(self, text: str, top_n: int = 10) -> List[str]:
         """

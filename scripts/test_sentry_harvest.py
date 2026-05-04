@@ -1,6 +1,6 @@
 import asyncio
 import json
-from backend.app.services.intelligence.retrieval.sovereign_sentry import SovereignSentry
+from backend.app.services.intelligence.retrieval.local_retriever import SovereignSentry
 
 async def test_harvest():
     sentry = SovereignSentry()

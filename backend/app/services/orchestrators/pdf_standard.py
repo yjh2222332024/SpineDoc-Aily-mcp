@@ -7,7 +7,7 @@ import re
 
 import fitz
 
-from backend.app.services.rag.splitter import structural_splitter
+from backend.app.services.ingestion.splitter import structural_splitter
 from backend.app.services.parser import hybrid_parser
 from backend.app.services.toc.base import SpineNode
 from backend.app.services.toc.manager import toc_manager

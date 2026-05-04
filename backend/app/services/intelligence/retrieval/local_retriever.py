@@ -14,22 +14,20 @@ import os
 import numpy as np
 from typing import List, Dict, Any, Optional, Tuple
 from backend.app.services.feishu.bitable_ledger import bitable_ledger
-from backend.app.services.rag.embedding import embedding_service
-from .term_map_manager import TermMapManager
+from backend.app.services.ingestion.embedding import embedding_service
 
 logger = logging.getLogger(__name__)
 
 class SovereignSentry:
     def __init__(self):
-        self.term_map = TermMapManager()
-        self.similarity_threshold = 0.65 # 主权红线
+        self.similarity_threshold = 0.65
 
     async def route_query(self, query: str, limit: int = 3) -> List[Dict[str, Any]]:
         """
         🚀 [V150.0] 主权哨兵：金字塔重排检索
         逻辑：星系撞击 -> 领地收割 -> 云端重排 -> 金字塔回退
         """
-        from backend.app.services.rag.zhipu_reranker import zhipu_reranker
+        from backend.app.services.ingestion.zhipu_reranker import zhipu_reranker
         
         print(f"🛡️ [SovereignSentry] 哨兵就位，开始主权质询: {query[:30]}...")
 

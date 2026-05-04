@@ -1,7 +1,7 @@
 import asyncio
 import json
 import os
-from backend.app.services.intelligence.galaxy.scout import scout
+from backend.app.services.intelligence.clustering.scout import scout
 from backend.app.services.feishu.bitable_ledger import bitable_ledger
 
 async def run_evolution_demo():

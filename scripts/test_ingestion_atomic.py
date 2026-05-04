@@ -8,7 +8,7 @@ import os
 
 sys.path.append(os.getcwd())
 from backend.app.services.feishu.bitable_ledger import bitable_ledger
-from backend.app.services.rag.embedding import embedding_service
+from backend.app.services.ingestion.embedding import embedding_service
 
 async def test_step1_save_chunks():
     """Step 1: Verify save_chunks_batch writes to Bitable"""
@@ -78,7 +78,7 @@ async def test_step4_cluster_engine():
     print("TEST 4: cluster_engine.assign_chunk")
     print("=" * 50)
 
-    from backend.app.services.intelligence.galaxy.cluster_engine import ClusterEngine
+    from backend.app.services.intelligence.clustering.cluster_engine import ClusterEngine
 
     engine = ClusterEngine(store=bitable_ledger)
     test_chunk = {

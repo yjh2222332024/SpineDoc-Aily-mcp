@@ -12,8 +12,8 @@ import asyncio
 import logging
 from typing import List, Dict, Any
 from .schema import CourtState
-from ..sovereign_sentry import SovereignSentry
-from ..experts.witness_expert import WitnessExpert
+from ..local_retriever import SovereignSentry
+from ..experts.online_retriever import WitnessExpert
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +106,7 @@ class HarvesterNode:
             evidence = await self.sentry.route_query(sub_query, limit=3)
             
             # 2. 🚀 [V185.3] 逻辑脱水：对主权证据进行原子解构
-            from backend.app.services.rag.llm_service import llm_service
+            from backend.app.services.ingestion.llm_service import llm_service
             
             distillation_tasks = [self.witness._distill_evidence(e, llm_service) for e in evidence]
             refined_local = await asyncio.gather(*distillation_tasks)
