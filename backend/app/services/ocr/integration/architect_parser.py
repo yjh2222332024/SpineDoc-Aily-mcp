@@ -36,7 +36,8 @@ class ArchitectVisualParser:
     2. 严格遵循全局单例 Worker，消灭幽灵实例。
     """
     def __init__(self, mode="auto", **kwargs):
-        print("🚀 [System] ArchitectVisualParser V34.7 (Ready) 启动...")
+        from backend.app.version import get_version
+        print(f"🚀 [System] ArchitectVisualParser v{get_version()} (Ready) 启动...")
         self.worker = None 
         self.queue = asyncio.Queue(maxsize=64)
         self.semaphore = asyncio.Semaphore(16)
@@ -82,7 +83,7 @@ class ArchitectVisualParser:
         import json
 
         client = AsyncOpenAI(api_key=settings.LLM_API_KEY, base_url=settings.LLM_BASE_URL)
-        model_name = settings.LLM_MODEL_NAME
+        model_name = settings.REAL_LLM_MODEL
 
         async def process_single_page(p_idx, text):
             if allowed_pages is not None:

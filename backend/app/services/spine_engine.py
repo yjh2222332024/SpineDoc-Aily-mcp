@@ -9,8 +9,7 @@ from uuid import UUID, uuid4
 
 from sqlmodel import select, func, String
 from backend.app.core.config import settings
-from backend.app.services.ocr.body_alchemist import PdfTextExtractor
-from backend.app.services.rag.aily_harvester import aily_harvester
+from backend.app.services.ocr.body_alchemist import BodyAlchemist
 from backend.app.core.interfaces import (
     IFeishuReporter, NullReporter, IAgenticMemory, NullMemory,
     IDocumentStore,
@@ -32,12 +31,11 @@ class SpineEngine:
     def __init__(self,
                  reporter: Optional[IFeishuReporter] = None,
                  memory: Optional[IAgenticMemory] = None,
-                 alchemist: Optional[PdfTextExtractor] = None,
+                 alchemist: Optional[BodyAlchemist] = None,
                  harvester: Optional[Any] = None,
                  store: Optional[IDocumentStore] = None):
         from backend.app.services.feishu.bitable_ledger import bitable_ledger
-        self.alchemist = alchemist or PdfTextExtractor()
-        self.harvester = harvester or aily_harvester
+        self.alchemist = alchemist or BodyAlchemist()
         self.store = store or bitable_ledger
         self._git_version_control = None
         self.reporter = reporter or NullReporter()
@@ -52,6 +50,22 @@ class SpineEngine:
             self._git_version_control = get_git_version_control()
         return self._git_version_control
 
+    async def ingest(self, 
+                     file_path: str, 
+                     file_hash: Optional[str] = None, 
+                     tag_timeout: int = 300,
+                     force: bool = False) -> Dict[str, Any]:
+        """
+        🚀 [V105.0] 统一确权入口 (Proxy)
+        职责：对齐编排脚本的接口契约。
+        """
+        return await self.ingest_document(
+            file_path=file_path,
+            tag_timeout=tag_timeout,
+            force=force
+            # 内部逻辑会自动重新计算或处理 file_hash
+        )
+
     async def ingest_document(self,
                               file_path: str,
                               limit_pages: Optional[int] = None,
@@ -59,13 +73,17 @@ class SpineEngine:
                               manual_offset: Optional[int] = None,
                               force: bool = False,
                               force_ocr: bool = False,
-                              force_emergent: bool = False
+                              force_emergent: bool = False,
+                              tag_timeout: int = 300,
                               ) -> Dict[str, Any]:
         """
         Ingest document: Support local files and Feishu cloud URLs.
+
+        Args:
+            tag_timeout: 等待语义标注的超时秒数。30 用于测试，300 用于生产。
         """
         is_url = file_path.startswith("http")
-        
+
         # 1. Get content and fingerprint
         if is_url:
             print(f"[CloudLoader] Detecting cloud document link, capturing content...")
@@ -78,7 +96,7 @@ class SpineEngine:
             p = Path(file_path)
             filename = p.name
             is_pdf = p.suffix.lower() == ".pdf"
-            
+
             if not is_pdf:
                 print(f"[UniversalLoader] Detecting non-PDF local file, executing generic conversion...")
                 doc_content_md = await universal_loader.load_to_markdown(file_path)
@@ -103,37 +121,46 @@ class SpineEngine:
                 orch = EmergentPdfOrchestrator(self.alchemist, self.store)
             else:
                 orch = StandardPdfOrchestrator(self.alchemist, self.store)
-            return await orch.ingest(file_path, file_hash, engine=self, ctx=ctx)
+            return await orch.ingest(file_path, file_hash, engine=self, ctx=ctx,
+                                     tag_timeout=tag_timeout)
 
         # Generic text / Cloud document routing
         orch = StructuredTextOrchestrator(self.store)
-        return await orch.ingest(file_path, file_hash, engine=self, ctx=ctx)
+        return await orch.ingest(file_path, file_hash, engine=self, ctx=ctx,
+                                 tag_timeout=tag_timeout)
 
     async def hybrid_ask(self, query: str, doc_id: str = "all",
                          chat_id: Optional[str] = None,
                          enable_online: bool = False,
                          sync_to_bitable: bool = False,
-                         return_card: bool = True) -> List[Dict]:
+                         return_card: bool = True,
+                         limit: int = 10,
+                         api_key: Optional[str] = None) -> List[Dict]:
         """
-        Retrieval QA: Supports Aily interactive card protocol.
+        Retrieval QA: Runs LogicCourt full graph (PLAN→HARVEST→AUDIT→SYNTHESIZE→EVOLVE).
         """
-        from backend.app.services.intelligence.retrieval.retrieval_coordinator import (
-            RetrievalCoordinator,
+        from backend.app.services.intelligence.retrieval.graph.coordinator import logic_court
+        from backend.app.services.intelligence.retrieval.graph.adapter import (
+            create_initial_court_state,
+            adapt_court_state_to_hybrid_output,
         )
         from backend.app.services.intelligence.aily_presenter import aily_presenter
 
-        coordinator = RetrievalCoordinator()
-        result = await coordinator.retrieve(query=query, enable_online=enable_online)
+        # Phase 1: Run LogicCourt full graph
+        initial_state = create_initial_court_state(query)
+        court_state = await logic_court.run_from_state(initial_state)
+
+        # Phase 2: Adapt CourtState back to callers' expected format
+        result = adapt_court_state_to_hybrid_output(court_state)
 
         # 1. Construct standard text result
         final_results = [{
             "text": result.get("final_answer", "Unable to generate result."),
-            "breadcrumb": "RetrievalCoordinator Result",
+            "breadcrumb": "LogicCourt Result",
             "color": result.get("color", "YELLOW"),
             "result_metadata": {
                 "confidence": result.get("confidence", 0.0),
                 "cited_sources": result.get("cited_sources", []),
-                "knowledge_update": result.get("knowledge_update", {}),
             },
         }]
 
@@ -142,24 +169,15 @@ class SpineEngine:
             card_json = aily_presenter.format_result_to_card(result, query)
             final_results[0]["interactive_card"] = card_json
 
-        # 2. Apply knowledge update to Git
-        knowledge_update = result.get("knowledge_update", {})
-        if knowledge_update and knowledge_update.get("has_delta"):
-            from backend.app.services.knowledge.metabolism_manager import get_metabolism_manager
-            metabolism = get_metabolism_manager()
-            git_results = await metabolism.apply(knowledge_update)
-            print(f"[SpineEngine] Applied {len(git_results)} knowledge updates to Git")
-
-        # 3. Ingest new knowledge into A-MEM
-        source_results = result.get("source_results", [])
-        if source_results and self.memory:
-            for src in source_results:
-                for chunk in src.get("evidence_chunks", []):
-                    await self.memory.ingest_memory({
-                        "content": chunk.get("content", ""),
-                        "logic_tags": chunk.get("logic_tags", []),
-                        "document_id": src.get("doc_id", ""),
-                    })
+        # 2. Ingest new knowledge into A-MEM
+        if self.memory:
+            evidence_pool = court_state.get("evidence_pool", [])
+            for chunk in evidence_pool:
+                await self.memory.ingest_memory({
+                    "content": chunk.get("content", ""),
+                    "logic_tags": chunk.get("claims", chunk.get("logic_tags", [])),
+                    "document_id": chunk.get("doc_id", ""),
+                })
 
         # 4. Reporting logic
         target_chat = chat_id or settings.FEISHU_DEFAULT_CHAT_ID

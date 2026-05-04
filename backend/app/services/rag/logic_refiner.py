@@ -47,14 +47,8 @@ class LogicRefiner:
             return fallback_res
 
         try:
-            # 1. 🚀 [V2.0] 使用 KeyBERT 提取语义标签
-            loop = asyncio.get_running_loop()
-            tags = await loop.run_in_executor(
-                None, 
-                self.extractor.extract_keywords, 
-                chunk_content, 
-                20 
-            )
+            # 1. 🚀 [V3.0] 使用云端 LLM 提取语义标签
+            tags = await self.extractor.extract_keywords(chunk_content, 20)
             
             # 2. 🚀 [V2.1] 关键词重心向量化 (Keyword-Centric Embedding)
             chunk_embedding = [0.0] * 1024

@@ -61,7 +61,7 @@ def diff(
             diff_text = engine.diff_chunks(chunk_id, history[1]["hash"], history[0]["hash"])
         
         # 封装成卡片发送
-        from app.infra.lark_card_builder import LarkCardBuilder
+        from spine_interaction.cards.builder import LarkCardBuilder
         builder = LarkCardBuilder()
         verdict_mock = {
             "text": f"🔍 **逻辑演变 Diff (Git)**\n```diff\n{diff_text}\n```",

@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     LLM_PROVIDER: str = "doubao"
     LLM_API_KEY: Optional[str] = None
     LLM_BASE_URL: str = "https://ark.cn-beijing.volces.com/api/v3"
-    LLM_MODEL_NAME: str = "doubao-2-0"
+    LLM_MODEL_NAME: str = "doubao-2.0"
     LLM_ENDPOINT: Optional[str] = None
 
     @property

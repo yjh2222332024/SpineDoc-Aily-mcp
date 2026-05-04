@@ -69,26 +69,39 @@ class ColorConfidenceCalculator:
         has_conflict: bool = False
     ) -> Tuple[ConfidenceColor, float]:
         """
-        核心判定逻辑
+        核心判定逻辑：引入稳定性锚定。
         """
         # 1. 冲突判定
         if has_conflict:
             return ConfidenceColor.RED, 0.0
 
-        # 2. 维度评分 (Delegated)
+        # 2. 维度评分
         domain = urlparse(chunk.get('source_url', '')).netloc
         stats_raw = self.domain_stats.get(domain)
         stats = DomainStats(**stats_raw) if stats_raw else None
         
         w_auth = self.authority_model.get_score(domain, stats)
-        w_recency = self.decay_model.calculate_decay(
-            chunk.get('published_date'),
-            chunk.get('query_type', 'RESEARCH')
-        )
+        
+        # 🚀 [V175.0] 主权修正：稳定性锚定 (Stability Anchoring)
+        stability = float(chunk.get('stability', 0.5))
+        if stability >= 0.8:
+            # 🛡️ 架构师守则：稳定知识不随时间腐烂
+            w_recency = 1.0
+            print(f"⚓ [Confidence] Stability Anchor Active ({stability:.2f}) -> Suppressing time decay.")
+        else:
+            w_recency = self.decay_model.calculate_decay(
+                chunk.get('published_date'),
+                chunk.get('query_type', 'RESEARCH')
+            )
+        
         w_corrob = 1 - (1 / independent_sources) if independent_sources > 0 else 0.5
 
-        # 3. 综合计算
+        # 3. 综合计算 (稳定性加权)
         final_score = w_auth * w_recency * (0.8 + 0.2 * w_corrob)
+        
+        # 如果稳定性极高，强行保底分
+        if stability >= 0.95:
+            final_score = max(final_score, 0.95)
 
         # 4. 颜色映射
         color = self._map_to_color(final_score)

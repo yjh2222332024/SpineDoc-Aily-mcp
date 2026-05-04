@@ -46,7 +46,7 @@ class AmemAdapter(IAgenticMemory):
             retriever = CloudRetriever(table_id=table_id)
             llm_ctrl = LLMController(
                 backend="openai",
-                model=settings.LLM_MODEL_NAME,
+                model=settings.REAL_LLM_MODEL,
                 api_key=settings.LLM_API_KEY,
             )
             self.system = AgenticMemorySystem(

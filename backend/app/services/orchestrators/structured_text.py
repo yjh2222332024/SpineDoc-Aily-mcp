@@ -21,7 +21,7 @@ class StructuredTextOrchestrator(BaseIngestOrchestrator):
         from backend.app.services.feishu.bitable_ledger import bitable_ledger
         self.store = store or bitable_ledger
 
-    async def ingest(self, file_path: str, file_hash: str, engine, ctx: Optional[IngestContext] = None):
+    async def ingest(self, file_path: str, file_hash: str, engine, ctx: Optional[IngestContext] = None, tag_timeout: int = 300):
         ctx = ctx or IngestContext()
         p = Path(file_path)
         
@@ -53,8 +53,8 @@ class StructuredTextOrchestrator(BaseIngestOrchestrator):
         db_doc = Document(filename=p.name, file_hash=file_hash, total_pages=1)
 
         result = await _finalize_ingestion(
-            db_doc, synthetic_spine, raw_chunks, engine, 
-            skip_bitable=False, store=self.store
+            db_doc, synthetic_spine, raw_chunks, engine,
+            skip_bitable=False, store=self.store, tag_timeout=tag_timeout
         )
         print(f"✅ [StructuredText] 落库完成。")
         return result
@@ -83,14 +83,26 @@ class StructuredTextOrchestrator(BaseIngestOrchestrator):
     async def _slice_by_outline(self, filename: str, toc: list[SpineNode], content_md: str) -> list:
         lines = content_md.split("\n")
         segments = []
+        import hashlib
         for node in toc:
             block = "\n".join(lines[node.physical_start - 1 : node.physical_end]).strip()
             if block:
+                # 🚀 物理确权：生成逻辑座标
+                logic_coord = f"P{node.logical_page}-{node.physical_start}"
                 segments.append({
-                    "content": block, "page_number": 1, "breadcrumb": node.title
+                    "content": block, 
+                    "page_number": node.logical_page, 
+                    "breadcrumb": node.title,
+                    "logic_coord": logic_coord
                 })
         return segments
 
     def _emergent_slice(self, filename: str, content: str) -> list:
         paragraphs = [p.strip() for p in content.split("\n\n") if p.strip()]
-        return [{"content": p, "page_number": 1, "breadcrumb": filename} for p in paragraphs]
+        import hashlib
+        return [{
+            "content": p, 
+            "page_number": 1, 
+            "breadcrumb": filename,
+            "logic_coord": f"P1-{hashlib.md5(p.encode()).hexdigest()[:8]}"
+        } for p in paragraphs]

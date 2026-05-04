@@ -8,35 +8,33 @@ import fitz
 from backend.app.services.toc.emergent_orchestrator import (
     emergent_orchestrator,
 )
-from backend.app.services.ocr.body_alchemist import PdfTextExtractor
+from backend.app.services.ocr.body_alchemist import BodyAlchemist
 from backend.app.services.ocr.ocr_process_utils import purge_vram
 from backend.app.core.models import Document, ProcessingStatus
 from backend.app.infra.loaders.pdf_tiered_loader import TieredPdfLoader
 
 from . import (
     BaseIngestOrchestrator, IngestContext, _finalize_ingestion,
-    _check_duplicate_and_commit, split_tiered_to_page_map,
+    split_tiered_to_page_map,
+    _compute_embeddings_and_cluster,
 )
 
 
 class EmergentPdfOrchestrator(BaseIngestOrchestrator):
     """PDF without TOC - Emergent Pipeline"""
 
-    def __init__(self, alchemist: PdfTextExtractor, store=None):
+    def __init__(self, alchemist: BodyAlchemist, store=None):
         from backend.app.services.feishu.bitable_ledger import bitable_ledger
         self.alchemist = alchemist
         self.store = store or bitable_ledger
 
     async def ingest(
-        self, file_path, file_hash, engine, ctx=None,
+        self, file_path, file_hash, engine, ctx=None, tag_timeout=300,
     ):
         ctx = ctx or IngestContext()
         p = Path(file_path)
 
         # --- 1. Deduplication (Cloud-Native) ---
-        # Note: _check_duplicate_and_commit now returns None by default as local DB is purged.
-
-        need_ocr = ctx.force_ocr
 
         with fitz.open(str(p)) as doc_obj:
             total_pages = (
@@ -71,7 +69,7 @@ class EmergentPdfOrchestrator(BaseIngestOrchestrator):
             await self.store.save_chunks_batch(doc_record_id, raw_chunks)
 
             # Phase: Wait for Enrichment
-            enriched_data = await self.store.wait_for_tags(doc_record_id)
+            enriched_data = await self.store.wait_for_tags(doc_record_id, timeout=tag_timeout)
 
             # Phase: Late Distillation
             from backend.app.services.toc.latent_distiller import latent_distiller
@@ -121,6 +119,8 @@ class EmergentPdfOrchestrator(BaseIngestOrchestrator):
             )
             
             await _finalize_ingestion(temp_db_doc, synthetic_spine, enriched_data, engine, skip_bitable=True)
+            await _compute_embeddings_and_cluster(enriched_data, self.store)
+            await self.store.update_document_status(doc_record_id, "PROCESSED")
 
             purge_vram()
             print(f"[Pipeline] Emergent pipeline completed.")

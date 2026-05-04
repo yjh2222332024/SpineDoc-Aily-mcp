@@ -1,7 +1,7 @@
 import asyncio
 from pathlib import Path
 from backend.app.services.orchestrators.ingestion_service import DocumentIngestionService
-from backend.app.services.ocr.body_alchemist import PdfTextExtractor
+from backend.app.services.ocr.body_alchemist import BodyAlchemist
 from backend.app.services.feishu.bitable_ledger import bitable_ledger
 
 async def verify_single_doc():
@@ -9,7 +9,7 @@ async def verify_single_doc():
     # 明确只针对这一篇
     target_file = "docs/20260424_milestone_convergence_log.md"
     
-    alchemist = PdfTextExtractor()
+    alchemist = BodyAlchemist()
     ingestion_service = DocumentIngestionService(alchemist, store=bitable_ledger)
     
     print(f"📄 正在对 {target_file} 执行原子入库...")

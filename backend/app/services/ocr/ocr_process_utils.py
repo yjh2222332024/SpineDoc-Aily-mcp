@@ -58,14 +58,21 @@ class AdaptiveOCRWorker:
         self._initialize()
     
     def _initialize(self):
-        """初始化视觉专家集群"""
-        # 1. 🚀 [V1.8.0] 加载确定性感知兵 (Paddle + GOT)
+        """初始化视觉专家集群（延迟加载，不在这里加载重型模型）"""
+        # 1. 🚀 [V1.8.0] 确定性感知兵 PaddleWorker（已经是延迟加载）
         try:
             self.paddle_worker = PaddleWorker()
-            self.got_worker = GOTWorker()
-            print("🛡️ [OCR] 确定性感知链 (Paddle + GOT-OCR 2.0) 已就绪")
+            print("🛡️ [OCR] PaddleWorker 已就绪（延迟加载）")
         except Exception as e:
-            print(f"⚠️ [OCR] GOT 感知链加载失败: {e}")
+            print(f"⚠️ [OCR] PaddleWorker 加载失败: {e}")
+
+        # 2. GOTWorker 延迟加载，不在这里 raise
+        try:
+            self.got_worker = GOTWorker()
+            print("🛡️ [OCR] GOTWorker 已就绪")
+        except Exception as e:
+            print(f"⚠️ [OCR] GOTWorker 加载失败，将使用云端降级: {e}")
+            self.got_worker = None
 
         # 2. 初始化目录专用 VLM
         vlm_key = settings.EMBEDDING_API_KEY

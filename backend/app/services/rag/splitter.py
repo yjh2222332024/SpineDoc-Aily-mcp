@@ -6,6 +6,7 @@ SpineDoc 结构化分片引擎 (V4.0 语义切片版)
 """
 # 🔥 修复 Python 路径问题（Windows 专用）
 import sys
+import hashlib
 from pathlib import Path
 project_root = Path(__file__).parent.parent.parent  # 跳到项目根目录
 sys.path.append(str(project_root))
@@ -26,9 +27,9 @@ class StructuralSplitter:
     DEFAULT_SEPARATORS = ["\n\n", "\n", "。", "！", "？", ". ", " "]
 
     def __init__(self, 
-                 chunk_size: int = 800, 
-                 chunk_overlap: int = 150,
-                 use_semantic_split: bool = False):
+                 chunk_size: int = 1200, 
+                 chunk_overlap: int = 200,
+                 use_semantic_split: bool = True):
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.use_semantic_split = use_semantic_split
@@ -39,17 +40,32 @@ class StructuralSplitter:
 
     def _init_semantic_engine(self):
         try:
-            self.semantic_splitter = SemanticSplitter(threshold=0.45)
+            self.semantic_splitter = SemanticSplitter(threshold=0.55)
             logger.info("✅ 语义切片器已加载")
         except Exception as e:
             logger.warning(f"⚠️ 语义切片器加载失败：{e}")
 
     async def _split_text_smart(self, text: str) -> List[str]:
-        """智能路由：优先使用递归切分，除非显式开启语义黑盒"""
+        """智能路由：优先使用语义切片，除非未开启或引擎加载失败"""
         if self.use_semantic_split and self.semantic_splitter:
-            return await self._split_by_semantic(text)
+            return await self._split_by_semantic(text, min_chunk_len=200)
         
         return self._split_recursively(text, self.DEFAULT_SEPARATORS)
+
+    async def _split_by_semantic(self, text: str, min_chunk_len: int = 200) -> List[str]:
+        """
+        使用云端语义切片 (Jina-based)
+        """
+        if self.semantic_splitter is None:
+            return self._split_by_fixed_size(text)
+        
+        try:
+            chunks = await self.semantic_splitter.split_text(text, min_chunk_len=min_chunk_len)
+            # 过滤太短的 chunk
+            return [c for c in chunks if len(c) >= 30]
+        except Exception as e:
+            logger.warning(f"⚠️ 语义切片失败，降级为递归切分：{e}")
+            return self._split_recursively(text, self.DEFAULT_SEPARATORS)
 
     def _split_recursively(self, text: str, separators: List[str]) -> List[str]:
         if len(text) <= self.chunk_size:
@@ -93,25 +109,9 @@ class StructuralSplitter:
             return previous_chunk
         return previous_chunk[-self.chunk_overlap:]
 
-    async def _split_by_semantic(self, text: str, min_chunk_len: int = 300) -> List[str]:
-        """
-        使用语义切片（优先）
-        """
-        if self.semantic_splitter is None:
-            return self._split_by_fixed_size(text)
-        
-        try:
-            # 🚀 补上缺失的 await
-            chunks = await self.semantic_splitter.split_text(text, min_chunk_len=min_chunk_len)
-            # 过滤太短的 chunk
-            return [c for c in chunks if len(c) >= 30]
-        except Exception as e:
-            logger.warning(f"⚠️ 语义切片失败，降级为固定字数切分：{e}")
-            return self._split_by_fixed_size(text)
-
     def _split_by_fixed_size(self, text: str) -> List[str]:
         """
-        固定字数切分（兜底）
+        固定字数切分 (兜底)
         """
         if len(text) <= self.chunk_size:
             return [text]
@@ -166,11 +166,15 @@ class StructuralSplitter:
                 page_matches = re.findall(r'【页码：P(\d+)】', clean_text)
                 curr_page = int(page_matches[-1]) if page_matches else p_start
 
+                # 🚀 物理确权：生成逻辑座标
+                logic_coord = f"P{curr_page}-{hashlib.md5(clean_text.encode()).hexdigest()[:8]}"
+
                 yield {
                     "id": str(uuid.uuid4()),
                     "content": clean_text,
                     "page_number": curr_page,
                     "breadcrumb": title,
+                    "logic_coord": logic_coord,
                     "metadata_json": {
                         "p_start": p_start,
                         "p_end": p_end,
@@ -191,7 +195,7 @@ class StructuralSplitter:
         🚀 V4.0 新增：全量文档语义切片（带进度监控）
         """
         total_pages = len(doc)
-        buffer_size = 1  # 🚀 [V63.0] 极致精细化：逐页推送，利用 Bitable AI 进行高密度反哺
+        buffer_size = 5  # 每 5 页切一次，减少 API 调用次数
         buffer_text = ""
         buffer_start_page = 1
 
@@ -211,7 +215,7 @@ class StructuralSplitter:
             else:
                 buffer_text += page_tag + doc[p_idx].get_text()
             
-            # 每 5 页或最后一页，进行切片
+            # 每 1 页或最后一页，进行切片 (V63.0 已改为 buffer_size=1)
             if (p_idx + 1) % buffer_size == 0 or (p_idx + 1) == total_pages:
                 if buffer_text:
                     chunks = await self._split_text_smart(buffer_text)
@@ -235,7 +239,7 @@ class StructuralSplitter:
                                 "p_start": buffer_start_page,
                                 "p_end": p_idx + 1,
                                 "toc_title": "Full Document",
-                                "split_method": "recursive_structural"
+                                "split_method": "semantic_full"
                             }
                         }
                 
@@ -244,4 +248,4 @@ class StructuralSplitter:
         print(f"✅ [Splitter] 全量文档切分流水线执行完毕。")
 
 
-structural_splitter = StructuralSplitter(use_semantic_split=False)
+structural_splitter = StructuralSplitter(use_semantic_split=True)

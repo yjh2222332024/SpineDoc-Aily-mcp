@@ -1,7 +1,7 @@
 import json
 import logging
 from typing import List, Dict, Any, Optional
-from openai import AsyncOpenAI
+from backend.app.infra.llm_client import get_llm_client
 from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -12,10 +12,7 @@ class ConflictDetector:
     Responsibility: Evidence Analysis + LLM Communication.
     """
     def __init__(self, client=None):
-        self.client = client or AsyncOpenAI(
-            api_key=settings.LLM_API_KEY,
-            base_url=settings.LLM_BASE_URL
-        )
+        self.client = client or get_llm_client()
 
     async def detect(self, source_results: List[Dict], query: str) -> List[Dict]:
         """
@@ -28,12 +25,15 @@ class ConflictDetector:
         prompt = self._build_prompt(query, evidence_summaries)
 
         try:
-            response = await self.client.chat.completions.create(
-                model=settings.LLM_MODEL_NAME,
+            kwargs = dict(
+                model=settings.REAL_LLM_MODEL,
                 messages=[{"role": "user", "content": prompt}],
-                response_format={"type": "json_object"},
-                temperature=0.1
+                temperature=0.1,
             )
+            model_name = settings.REAL_LLM_MODEL.lower()
+            if "gpt" in model_name or "deepseek" in model_name:
+                kwargs["response_format"] = {"type": "json_object"}
+            response = await self.client.chat.completions.create(**kwargs)
             data = json.loads(response.choices[0].message.content)
             return data.get("conflicts", [])
         except Exception as e:

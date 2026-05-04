@@ -13,7 +13,7 @@ class CircuitState(Enum):
 
 class CircuitBreaker:
     """
-    🚀 [V22.0] 工业级熔断器
+    🏛️ 工业级熔断器
     """
     def __init__(self, failure_threshold=3, recovery_timeout=30):
         self.failure_threshold = failure_threshold

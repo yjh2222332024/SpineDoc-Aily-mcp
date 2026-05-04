@@ -11,7 +11,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, List
 from backend.app.core.interfaces import IFeishuReporter
-from backend.app.infra.lark_card_builder import LarkCardBuilder
+from spine_interaction.cards.builder import LarkCardBuilder
 
 logger = logging.getLogger(__name__)
 

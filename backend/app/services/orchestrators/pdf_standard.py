@@ -12,33 +12,31 @@ from backend.app.services.parser import hybrid_parser
 from backend.app.services.toc.base import SpineNode
 from backend.app.services.toc.manager import toc_manager
 from backend.app.services.toc.aligner import LogicAligner
-from backend.app.services.ocr.body_alchemist import PdfTextExtractor
+from backend.app.services.ocr.body_alchemist import BodyAlchemist
 from backend.app.services.ocr.ocr_process_utils import purge_vram
 from backend.app.core.models import Document, ProcessingStatus
 from backend.app.infra.loaders.pdf_tiered_loader import TieredPdfLoader
 
 from . import (
     BaseIngestOrchestrator, IngestContext, _finalize_ingestion,
-    _check_duplicate_and_commit, split_tiered_to_page_map,
+    split_tiered_to_page_map,
 )
 
 
 class StandardPdfOrchestrator(BaseIngestOrchestrator):
     """PDF with TOC - Standard Pipeline"""
 
-    def __init__(self, alchemist: PdfTextExtractor, store=None):
+    def __init__(self, alchemist: BodyAlchemist, store=None):
         from backend.app.services.feishu.bitable_ledger import bitable_ledger
         self.alchemist = alchemist
         self.store = store or bitable_ledger
 
     async def ingest(
-        self, file_path, file_hash, engine, ctx=None,
+        self, file_path, file_hash, engine, ctx=None, tag_timeout=300,
     ):
         ctx = ctx or IngestContext()
         p = Path(file_path)
 
-        # --- Deduplication (Cloud-Native) ---
-        # Note: _check_duplicate_and_commit now returns None by default as local DB is purged.
         # Cloud-level deduplication is handled by bitable_ledger.get_or_create_document.
 
         # --- Logic Sovereignty Detection (HITL priority) ---
@@ -67,7 +65,7 @@ class StandardPdfOrchestrator(BaseIngestOrchestrator):
         
         if not enriched_toc:
             return await self._fall_through(
-                file_path, file_hash, engine, ctx,
+                file_path, file_hash, engine, ctx, tag_timeout=tag_timeout,
             )
 
         # --- Page Calibration (Offset alignment) ---
@@ -81,9 +79,8 @@ class StandardPdfOrchestrator(BaseIngestOrchestrator):
 
         with fitz.open(str(p)) as doc_obj:
             # Physical inspection
-            is_scanned = False 
-            need_ocr = False
-            
+            is_scanned = False
+
             total_pages = (
                 min(len(doc_obj), ctx.limit_pages)
                 if ctx.limit_pages
@@ -113,7 +110,7 @@ class StandardPdfOrchestrator(BaseIngestOrchestrator):
 
             async for seg in structural_splitter.split_by_toc(
                 doc_obj, enriched_toc,
-                ocr_context=page_markdowns if need_ocr else None,
+                ocr_context=None,
                 page_text_map=page_text_map or None,
             ):
                 # 1. Shadow document synchronization (Feishu Doc)
@@ -149,7 +146,7 @@ class StandardPdfOrchestrator(BaseIngestOrchestrator):
                 filename=p.name, file_hash=file_hash,
                 total_pages=total_pages
             )
-            await _finalize_ingestion(temp_db_doc, enriched_toc, refined_chunks, engine, store=self.store)
+            await _finalize_ingestion(temp_db_doc, enriched_toc, refined_chunks, engine, store=self.store, tag_timeout=tag_timeout)
             
             print(f"[Pipeline] Ingestion completed. Data persisted.")
             purge_vram()
@@ -161,30 +158,9 @@ class StandardPdfOrchestrator(BaseIngestOrchestrator):
             "toc": enriched_toc
         }
 
-    async def _trigger_async_summary(self, doc_rec_id: str, node, content: str):
-        """Async summary generation"""
-        from backend.app.services.toc.latent_distiller import latent_distiller
-
-        try:
-            preview = content[:2000]
-            summary = await latent_distiller.client.chat.completions.create(
-                model=latent_distiller.model,
-                messages=[{"role": "user", "content": f"Generate a concise summary (under 50 words) for the following content:\n{preview}"}]
-            )
-            node_data = {
-                "title": node.title,
-                "level": node.level,
-                "logical_page": node.logical_page,
-                "summary": summary.choices[0].message.content
-            }
-            await self.store.save_toc_item(doc_rec_id, node_data)
-            print(f"[Summary] Chapter '{node.title}' summary generated and synced.")
-        except Exception as e:
-            print(f"⚠️ [Summary] Chapter summary sync failed: {e}")
-
-    async def _fall_through(self, file_path, file_hash, engine, ctx):
+    async def _fall_through(self, file_path, file_hash, engine, ctx, tag_timeout=300):
         from .pdf_emergent import EmergentPdfOrchestrator
         orch = EmergentPdfOrchestrator(self.alchemist, self.store)
         return await orch.ingest(
-            file_path, file_hash, engine, ctx,
+            file_path, file_hash, engine, ctx, tag_timeout=tag_timeout,
         )

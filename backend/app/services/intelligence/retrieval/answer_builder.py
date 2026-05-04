@@ -13,7 +13,7 @@ Architecture Philosophy:
 import json
 import logging
 from typing import List, Dict, Any
-from openai import AsyncOpenAI
+from backend.app.infra.llm_client import get_llm_client
 from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -30,10 +30,7 @@ class AnswerBuilder:
     """
 
     def __init__(self):
-        self.client = AsyncOpenAI(
-            api_key=settings.LLM_API_KEY,
-            base_url=settings.LLM_BASE_URL
-        )
+        self.client = get_llm_client()
 
     async def build_answer(
         self,
@@ -78,7 +75,7 @@ Please based on the above materials, write a well-structured, easy-to-understand
 
         try:
             response = await self.client.chat.completions.create(
-                model=settings.LLM_MODEL_NAME,
+                model=settings.REAL_LLM_MODEL,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_msg}
