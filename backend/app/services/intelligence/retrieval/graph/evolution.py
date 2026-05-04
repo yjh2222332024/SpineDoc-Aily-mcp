@@ -13,13 +13,16 @@ import asyncio
 import hashlib
 import json
 from typing import Dict, Any, List
-from .schema import CourtState
+from .schema import CourtState, GraphExecutionState
 from backend.app.services.feishu.bitable_ledger import bitable_ledger
 from backend.app.services.intelligence.clustering.cluster_engine import cluster_engine
 
 logger = logging.getLogger(__name__)
 
-class EvolutionNode:
+# 向后兼容别名
+CourtState = GraphExecutionState
+
+class KnowledgeBackfillNode:
     """
     🚀 [V200.0] 演化节点：将‘绝对客观成果’物理固化，建立多代传承。
     """
@@ -82,14 +85,14 @@ class EvolutionNode:
                     "正文内容": fact,
                     "逻辑摘要": f"主权演化共识-G{generation}-{i}",
                     "Git版本": f"v2.0-evolved-g{generation}",
-                    "语义标签": "共识,演化成果",
-                    "星系关联": g_ids,
-                    
-                    # 🚀 物理补完：回归最稳健的 Bitable 列表契约
-                    "文档关联": [str(sovereign_root_id)] if sovereign_root_id else [],
+                    "物理页码": 0,
+                    "逻辑坐标": f"E-G{generation}-{i}",
+                    "逻辑面包屑": "主权演化共识",
+
+                    # 🚀 物理补完：使用 save_chunks_batch 验证过的格式
+                    "文档关联": str(sovereign_root_id) if sovereign_root_id else "",
                     "逻辑指纹": fingerprint,
                     "元数据": meta_json,
-                    "父级关联": parent_ids
                 })
 
             # C. 启动物理回调
@@ -100,4 +103,7 @@ class EvolutionNode:
         except Exception as e:
             logger.error(f"❌ [Evolution] 物理回调失败: {e}", exc_info=True)
 
-evolution_node = EvolutionNode()
+evolution_node = KnowledgeBackfillNode()
+
+# 向后兼容实例别名
+EvolutionNode = KnowledgeBackfillNode

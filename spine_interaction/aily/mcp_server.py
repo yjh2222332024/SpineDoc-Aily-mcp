@@ -1,118 +1,273 @@
-
 """
 🤖 SpineDoc MCP Server - AI 逻辑质证协议接口
 ===========================================
-职责：提供符合 Model Context Protocol (MCP) 标准的工具集，供飞书 Aily 或其他 AI 代理直接调用。
+职责：提供符合 Model Context Protocol (MCP) 标准的工具集，供 AI 代理直接调用。
 架构：属于 Interaction Layer，作为 LLM 与 Backend Engine 之间的标准化桥梁。
+
+工具设计：
+  - spinedoc_ingest:    导入文档 → doc_id（幂等）
+  - spinedoc_ask:       单文档质证（走 documents→chunks 直路）
+  - spinedoc_ask_all:   跨文档质证（走 galaxy→chunks 原逻辑）
+  - spinedoc_list_docs: 列出已导入文档
 """
 
 import os
 import sys
-import asyncio
 import json
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional
 
 from mcp.server.fastmcp import FastMCP, Context
-from pydantic import BaseModel, Field, ConfigDict
 
-# 🏛️ 架构锚定
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
-# 导入后端引擎与契约
 from backend.app.services.spine_engine import SpineEngine
 from backend.app.infra.lark_cli_reporter import LarkCliReporter
 from backend.app.infra.memory.amem_adapter import AmemAdapter
-from spine_interaction.contracts.verdict import AuditVerdict
+from backend.app.services.feishu.bitable_ledger import bitable_ledger
 
-# 初始化 MCP 服务器
-# 命名规范：{service}_mcp
 mcp = FastMCP("spinedoc_mcp")
 
-# --- 1. 输入模型定义 ---
 
-class AuditInput(BaseModel):
-    """SpineDoc 逻辑审计工具输入参数"""
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    file_path: str = Field(..., description="文件路径或飞书云端 URL (如: https://xxx.feishu.cn/docx/xxx)")
-    query: str = Field(..., description="需要审计的具体逻辑问题 (如: 检查该合同是否存在违约金计算冲突)")
-    chat_id: str = Field(..., description="飞书会话 ID，用于结果卡片投射")
-    sync_to_bitable: bool = Field(default=True, description="是否将审计结论同步到 Bitable 资产库")
-
-# --- 2. 工具注册 ---
+# ─────────────────────────────────────────────────
+#  工具 1: 导入文档
+# ─────────────────────────────────────────────────
 
 @mcp.tool(
-    name="spinedoc_audit",
+    name="spinedoc_ingest",
     annotations={
-        "title": "执行逻辑审计",
-        "readOnlyHint": False,    # 因为涉及同步到 Bitable，不是纯只读
+        "title": "导入文档到知识库",
+        "readOnlyHint": False,
         "destructiveHint": False,
-        "idempotentHint": False   # 每次审计结果可能随知识库进化而不同
+        "idempotentHint": True,
     }
 )
-async def spinedoc_audit(params: AuditInput, ctx: Context) -> str:
+async def spinedoc_ingest(file_path: str, ctx: Context) -> str:
     """
-    对指定的文档执行深度逻辑一致性审计。
-    
-    该工具会启动 SpineEngine 逻辑流水线，识别文档中的语义矛盾，
-    并将结果以互动卡片的形式发送到指定的飞书会话中。
-    同时，它会返回一个结构化的 JSON 报文供 AI 代理进一步分析。
+    将文档导入到 SpineDoc 知识库，等待 Bitable AI 完成摘要与标签孵化后返回 doc_id。
+    重复导入相同文件会返回已有 doc_id（幂等）。
+    支持 PDF 本地文件或飞书云文档 URL。
     """
-    await ctx.log_info(f"🚀 [MCP] 启动逻辑审计流程 | 问题: {params.query}")
-    
+    await ctx.log_info(f"📥 [MCP] 开始导入文档: {file_path}")
+
     try:
-        # 1. 准备基础设施
         reporter = LarkCliReporter()
         memory = AmemAdapter()
         engine = SpineEngine(reporter=reporter, memory=memory)
 
-        await ctx.report_progress(0.1, "正在导入文档并提取脊梁...")
-        
-        # 2. 调用核心引擎 (Backend Logic)
-        ingest_res = await engine.ingest_document(params.file_path)
-        doc_id = ingest_res["id"]
-        
-        await ctx.report_progress(0.4, "正在进行跨维度逻辑质证...")
-        
-        # 执行联邦质证
-        # 这里的结果已经是经过引擎处理的结构化数据
-        raw_result = await engine.hybrid_ask(
-            query=params.query,
-            doc_id=doc_id,
-            chat_id=params.chat_id,
-            sync_to_bitable=params.sync_to_bitable
-        )
+        await ctx.report_progress(0.1, "正在解析文档...")
+        ingest_res = await engine.ingest_document(file_path)
 
-        await ctx.report_progress(0.9, "审计完成，正在封装报文...")
+        doc_id = ingest_res.get("id", "")
+        filename = ingest_res.get("filename", Path(file_path).name)
+        status = ingest_res.get("status", "unknown")
 
-        # 3. 契约校验 (Contract Enforcement)
-        # 确保输出符合 Interaction Layer 的 Verdict 契约
-        res_meta = raw_result.get("result_metadata", {})
-        verdict = AuditVerdict(
-            id=str(raw_result.get("id", doc_id)),
-            query=params.query,
-            text=raw_result.get("text", raw_result.get("final_answer", "无结论")),
-            confidence=raw_result.get("confidence", 0.0),
-            color=raw_result.get("color", "YELLOW"),
-            cited_sources=res_meta.get("cited_sources", []),
-            phase_meta=res_meta.get("_phase_meta"),
-            resolved_conflicts=res_meta.get("resolved_conflicts", [])
-        )
-
-        await ctx.log_info("✅ [MCP] 逻辑审计圆满完成，已投射卡片。")
-        
-        # 返回 JSON 报文给 AI 代理
-        return verdict.model_dump_json(indent=2)
+        result = {
+            "doc_id": doc_id,
+            "filename": filename,
+            "status": status,
+            "chunk_count": ingest_res.get("chunk_count", 0),
+        }
+        await ctx.log_info(f"✅ [MCP] 导入完成: {filename} → {doc_id[:16]}...")
+        return json.dumps(result, ensure_ascii=False, indent=2)
 
     except Exception as e:
-        error_msg = f"❌ [MCP] 审计失败: {str(e)}"
+        error_msg = f"❌ [MCP] 导入失败: {str(e)}"
         await ctx.log_error(error_msg)
-        return json.dumps({"status": "error", "message": error_msg})
+        return json.dumps({"status": "error", "message": error_msg}, ensure_ascii=False)
 
-# --- 3. 运行配置 ---
+
+# ─────────────────────────────────────────────────
+#  工具 2: 单文档质证
+# ─────────────────────────────────────────────────
+
+@mcp.tool(
+    name="spinedoc_ask",
+    annotations={
+        "title": "对已导入文档进行逻辑质证",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": False,
+    }
+)
+async def spinedoc_ask(doc_id: str, query: str, ctx: Context) -> str:
+    """
+    对已导入到知识库的单个文档发起逻辑质证，返回判决书与证据溯源。
+    内部走 documents→chunks 直路，不经过星系路由，速度更快。
+    doc_id 从 spinedoc_ingest 或 spinedoc_list_docs 获取。
+    """
+    await ctx.log_info(f"🔍 [MCP] 单文档质证 | doc_id={doc_id[:16]}... | query={query[:40]}...")
+
+    try:
+        reporter = LarkCliReporter()
+        memory = AmemAdapter()
+        engine = SpineEngine(reporter=reporter, memory=memory)
+
+        await ctx.report_progress(0.2, "正在执行逻辑质证...")
+
+        # hybrid_ask 返回 List[Dict]: [0]=主结果, [1:]=证据溯源
+        raw_results = await engine.hybrid_ask(
+            query=query,
+            doc_id=doc_id,
+            return_card=False,
+        )
+
+        await ctx.report_progress(0.8, "正在封装报文...")
+
+        # 主结果
+        main = raw_results[0] if raw_results else {}
+        result_meta = main.get("result_metadata", {})
+
+        verdict = {
+            "text": main.get("text", "无结论"),
+            "confidence": result_meta.get("confidence", 0.0),
+            "color": main.get("color", "YELLOW"),
+            "cited_sources": result_meta.get("cited_sources", []),
+        }
+
+        # 证据溯源
+        evidence_trace = []
+        for item in raw_results[1:]:
+            evidence_trace.append({
+                "text": item.get("text", "")[:200],
+                "breadcrumb": item.get("breadcrumb", ""),
+                "page_number": item.get("page_number", 0),
+                "color": item.get("color", "YELLOW"),
+                "confidence": item.get("confidence", 0.0),
+                "origin": item.get("origin", "UNKNOWN"),
+            })
+
+        output = {
+            "verdict": verdict,
+            "evidence_trace": evidence_trace,
+            "evidence_count": len(evidence_trace),
+            "phase_log": main.get("phase_log", []),
+        }
+
+        await ctx.log_info(f"✅ [MCP] 单文档质证完成 | confidence={verdict['confidence']:.2f} | evidence={evidence_trace}")
+        return json.dumps(output, ensure_ascii=False, indent=2)
+
+    except Exception as e:
+        error_msg = f"❌ [MCP] 质证失败: {str(e)}"
+        await ctx.log_error(error_msg)
+        return json.dumps({"status": "error", "message": error_msg}, ensure_ascii=False)
+
+
+# ─────────────────────────────────────────────────
+#  工具 3: 跨文档质证
+# ─────────────────────────────────────────────────
+
+@mcp.tool(
+    name="spinedoc_ask_all",
+    annotations={
+        "title": "跨全部文档进行逻辑质证",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": False,
+    }
+)
+async def spinedoc_ask_all(query: str, ctx: Context) -> str:
+    """
+    跨全部已导入文档进行逻辑质证，走 galaxy→chunks 星系路由路径。
+    适用于需要对比多份文档或查找跨文档关联的场景。
+    """
+    await ctx.log_info(f"🔍 [MCP] 跨文档质证 | query={query[:40]}...")
+
+    try:
+        reporter = LarkCliReporter()
+        memory = AmemAdapter()
+        engine = SpineEngine(reporter=reporter, memory=memory)
+
+        await ctx.report_progress(0.2, "正在执行跨文档逻辑质证...")
+
+        raw_results = await engine.hybrid_ask(
+            query=query,
+            doc_id="all",
+            return_card=False,
+        )
+
+        await ctx.report_progress(0.8, "正在封装报文...")
+
+        main = raw_results[0] if raw_results else {}
+        result_meta = main.get("result_metadata", {})
+
+        verdict = {
+            "text": main.get("text", "无结论"),
+            "confidence": result_meta.get("confidence", 0.0),
+            "color": main.get("color", "YELLOW"),
+            "cited_sources": result_meta.get("cited_sources", []),
+        }
+
+        evidence_trace = []
+        for item in raw_results[1:]:
+            evidence_trace.append({
+                "text": item.get("text", "")[:200],
+                "breadcrumb": item.get("breadcrumb", ""),
+                "page_number": item.get("page_number", 0),
+                "color": item.get("color", "YELLOW"),
+                "confidence": item.get("confidence", 0.0),
+                "origin": item.get("origin", "UNKNOWN"),
+            })
+
+        output = {
+            "verdict": verdict,
+            "evidence_trace": evidence_trace,
+            "evidence_count": len(evidence_trace),
+            "phase_log": main.get("phase_log", []),
+        }
+
+        await ctx.log_info(f"✅ [MCP] 跨文档质证完成 | confidence={verdict['confidence']:.2f}")
+        return json.dumps(output, ensure_ascii=False, indent=2)
+
+    except Exception as e:
+        error_msg = f"❌ [MCP] 质证失败: {str(e)}"
+        await ctx.log_error(error_msg)
+        return json.dumps({"status": "error", "message": error_msg}, ensure_ascii=False)
+
+
+# ─────────────────────────────────────────────────
+#  工具 4: 列出已导入文档
+# ─────────────────────────────────────────────────
+
+@mcp.tool(
+    name="spinedoc_list_docs",
+    annotations={
+        "title": "列出知识库中所有文档",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+    }
+)
+async def spinedoc_list_docs(ctx: Context) -> str:
+    """
+    列出知识库中所有已导入的文档及其基本信息（文件名、处理状态、总页数）。
+    返回的 doc_id 可用于 spinedoc_ask 工具。
+    """
+    await ctx.log_info("📋 [MCP] 列出所有文档")
+
+    try:
+        docs = await bitable_ledger.list_documents()
+        output = {
+            "documents": docs,
+            "total": len(docs),
+        }
+        return json.dumps(output, ensure_ascii=False, indent=2)
+
+    except Exception as e:
+        error_msg = f"❌ [MCP] 列出文档失败: {str(e)}"
+        await ctx.log_error(error_msg)
+        return json.dumps({"status": "error", "message": error_msg}, ensure_ascii=False)
+
+
+# ─────────────────────────────────────────────────
+#  运行入口
+# ─────────────────────────────────────────────────
+
+def main():
+    """MCP server entry point for pyproject.toml scripts."""
+    mcp.run()
+
 
 if __name__ == "__main__":
-    # 默认使用 stdio 模式，方便 Aily 通过命令行直接集成
-    mcp.run()
+    main()

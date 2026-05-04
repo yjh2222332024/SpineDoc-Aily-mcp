@@ -16,7 +16,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from backend.app.services.spine_engine import SpineEngine
-from backend.app.services.intelligence.court.color_confidence import (
+from backend.app.services.intelligence.retrieval.color_confidence import (
     COLOR_ICONS,
     COLOR_LABELS,
     ConfidenceColor,
@@ -147,7 +147,7 @@ def ingest(
                 # 🚀 接收结构化结果
                 result = await engine.ingest_document(
                     str(f), force=force, limit_pages=limit, manual_toc_range=manual_range,
-                    stop_words_path=stop_words, force_ocr=ocr
+                    force_ocr=ocr
                 )
 
             watchdog_task.cancel() # 解析成功，关闭看门狗

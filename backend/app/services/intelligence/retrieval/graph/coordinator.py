@@ -1,48 +1,49 @@
 """
-LogicCourtCoordinator - The Multi-Agent Graph Engine
+RetrievalGraphOrchestrator - The Multi-Agent Graph Engine
 ===================================================
 Responsibility:
 1. Orchestrate the flow between specialized nodes.
-2. Manage the centralized CourtState.
+2. Manage the centralized execution state.
 3. Drive the system from Query to Evolution.
 """
 
+import asyncio
 import logging
 import time
 from typing import Dict, Any
-from .schema import CourtState
+from .schema import GraphExecutionState
 from .planner import planner_agent
 from .harvester import harvester_node
 from .auditor import auditor_node
 from .synthesizer import synthesizer_node
 from .evolution import evolution_node
+from ..constants import RetrievalPhase
 
 logger = logging.getLogger(__name__)
 
-class LogicCourtCoordinator:
+
+class RetrievalGraphOrchestrator:
     """
-    🚀 [V205.0] 联邦法院协调器：主权检索系统的中央引擎。
+    🚀 [V205.0] 检索图编排器：主权检索系统的中央引擎。
+    替代旧名称：LogicCourtCoordinator
     """
     def __init__(self, memory=None):
         self.nodes = {
-            "PLAN": planner_agent.plan,
-            "HARVEST": harvester_node.harvest,
-            "AUDIT": auditor_node.audit,
-            "SYNTHESIZE": synthesizer_node.synthesize,
-            "EVOLVE": evolution_node.evolve
+            RetrievalPhase.PLAN: planner_agent.plan,
+            RetrievalPhase.HARVEST: harvester_node.harvest,
+            RetrievalPhase.AUDIT: auditor_node.audit,
+            RetrievalPhase.SYNTHESIZE: synthesizer_node.synthesize,
+            RetrievalPhase.EVOLVE: evolution_node.evolve
         }
-        # 将 memory 注入到 harvester_node
         if memory:
             harvester_node.memory = memory
 
     async def run(self, query: str, memory=None) -> Dict[str, Any]:
-        """
-        驱动逻辑法院执行全链路质证
-        """
+        """驱动检索图执行全链路"""
         if memory:
             harvester_node.memory = memory
 
-        state: CourtState = {
+        state: GraphExecutionState = {
             "query": query,
             "sub_queries": [],
             "internal_prior": "",
@@ -51,7 +52,7 @@ class LogicCourtCoordinator:
             "claim_weights": {},
             "agreed_claims": [],
             "conflicts": [],
-            "next_step": "PLAN",
+            "next_step": RetrievalPhase.QUERY_DECOMPOSITION,
             "iteration": 0,
             "verdict": None,
             "final_answer": None,
@@ -59,54 +60,95 @@ class LogicCourtCoordinator:
             "re_harvest_count": 0,
         }
 
-        print(f"🏛️ [LogicCourt] 开始受理案件: {query[:30]}...")
+        print(f"🏛️ [RetrievalGraph] 开始执行: {query[:30]}...")
         return await self._graph_loop(state)
 
-    async def run_from_state(self, state: CourtState) -> CourtState:
-        """
-        Run the graph loop from a pre-populated state.
-        Skips PLAN/HARVEST if state.next_step is already past them.
-        """
-        print(f"🏛️ [LogicCourt] 从 {state.get('next_step', '?')} 阶段继续庭审...")
+    async def run_from_state(self, state: GraphExecutionState) -> GraphExecutionState:
+        """从预填充状态继续执行"""
+        print(f"🏛️ [RetrievalGraph] 从 {state.get('next_step', '?')} 阶段继续...")
         return await self._graph_loop(state)
 
-    async def _graph_loop(self, state: CourtState, max_duration: int = 180) -> CourtState:
-        """
-        Shared graph loop: executes nodes in sequence until END or max iterations.
-        Each node returns the FULL replacement for its output fields (not incremental).
-        Includes 3-minute timeout protection to prevent infinite loops.
-        """
+    async def _graph_loop(self, state: GraphExecutionState, max_duration: int = 600) -> GraphExecutionState:
         start_time = time.time()
+        state.setdefault("phase_log", [])
 
-        while state["next_step"] != "END" and state["iteration"] < 10:
-            # 超时保护
+        while state["next_step"] != RetrievalPhase.FINALIZED and state["iteration"] < 10:
             if time.time() - start_time > max_duration:
-                print("⏰ [LogicCourt] 超时 (3min)，强制终止迭代")
                 return self._force_finalize(state)
 
             current_step = state["next_step"]
             node_func = self.nodes.get(current_step)
 
             if not node_func:
-                logger.error(f"❌ [LogicCourt] 未定义的节点步骤: {current_step}")
+                logger.error(f"❌ [RetrievalGraph] 未定义的节点步骤: {current_step}")
+                break
+
+            phase_start = time.time()
+
+            if current_step == RetrievalPhase.KNOWLEDGE_BACKFILL:
+                asyncio.ensure_future(node_func(state))
+                state["next_step"] = RetrievalPhase.FINALIZED
+                state["iteration"] += 1
+                state["phase_log"].append({
+                    "step": RetrievalPhase.KNOWLEDGE_BACKFILL, "status": "dispatched",
+                    "duration_s": round(time.time() - phase_start, 1),
+                    "detail": "异步回填中",
+                })
                 break
 
             update = await node_func(state)
             state.update(update)
 
-        print(f"🏁 [LogicCourt] 庭审结束，输出最终裁定。")
+            state["phase_log"].append({
+                "step": current_step,
+                "status": "done",
+                "duration_s": round(time.time() - phase_start, 1),
+                "detail": _extract_phase_detail(current_step, update),
+            })
+
         return state
 
-    def _force_finalize(self, state: CourtState) -> CourtState:
-        """
-        强制终结：超时或达到最大迭代时，返回当前状态作为最终结果。
-        """
-        print(f"⚠️ [LogicCourt] 执行强制终结，当前迭代次数: {state.get('iteration', 0)}")
+    @staticmethod
+    def _force_finalize(state: GraphExecutionState) -> GraphExecutionState:
+        """强制终结：超时或达到最大迭代时，返回当前状态作为最终结果。"""
+        print(f"⚠️ [RetrievalGraph] 执行强制终结，当前迭代次数: {state.get('iteration', 0)}")
 
-        state["next_step"] = "END"
+        state["next_step"] = RetrievalPhase.FINALIZED
         if not state.get("final_answer"):
             state["final_answer"] = "系统超时未能完成完整推理，请重试或简化查询。"
 
         return state
 
-logic_court = LogicCourtCoordinator()
+
+# 向后兼容别名
+CourtState = GraphExecutionState
+LogicCourtCoordinator = RetrievalGraphOrchestrator
+
+retrieval_graph = RetrievalGraphOrchestrator()
+# 向后兼容别名
+logic_court = retrieval_graph
+
+
+def _extract_phase_detail(step: str, update: Dict[str, Any]) -> str:
+    """Extract a human-readable detail from a node's update for phase_log."""
+    if step == RetrievalPhase.EVIDENCE_GATHERING or step == "HARVEST":
+        pool = update.get("evidence_pool", [])
+        return f"{len(pool)} 条证据"
+    if step == RetrievalPhase.EVIDENCE_VALIDATION or step == "AUDIT":
+        conflicts = update.get("conflicts", [])
+        pool = update.get("evidence_pool", [])
+        parts = []
+        if conflicts:
+            parts.append(f"{len(conflicts)} 处冲突")
+        if update.get("investigation_order"):
+            parts.append("已签发补充侦查")
+        parts.append(f"{len(pool)} 条活跃")
+        return " | ".join(parts) if parts else "通过"
+    if step == RetrievalPhase.VERDICT_SYNTHESIS or step == "SYNTHESIZE":
+        verdict = update.get("verdict", {})
+        consensus = verdict.get("internal_consensus", []) if verdict else []
+        return f"{len(consensus)} 条客观真理" if consensus else "已判决"
+    if step == RetrievalPhase.QUERY_DECOMPOSITION or step == "PLAN":
+        missions = update.get("sub_queries", [])
+        return f"{len(missions)} 个子查询"
+    return ""

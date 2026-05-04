@@ -1,8 +1,12 @@
 """
-SpineDoc Aily 联邦检索桥接器 (AilyBridge) - 2026 生产级版
-=========================================================
-职责：利用飞书 Aily 技能 API 触发工作流，并精准解析召回的逻辑分片。
-特性：支持双重 JSON 解析，从嵌套 Markdown 中萃取 Spine 节点。
+⚠️ DEPRECATED — SpineDoc Aily 联邦检索桥接器 (AilyBridge)
+==========================================================
+此模块已被弃用。替代路径：
+    Aily → MCP (spinedoc_ask) → SpineEngine.hybrid_ask() → LogicCourt
+
+原因：AilyBridge 方向反了（我们调 Aily），正确的集成方向是 Aily 调我们。
+当前 `lark_doc_loader.py` 仍使用 `_get_tenant_token()` 获取飞书凭证，
+该功能将在后续迁移到独立的飞书认证模块。
 """
 import json
 import httpx

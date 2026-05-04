@@ -41,7 +41,7 @@ class LarkCliReporter(IFeishuReporter):
 
     async def report_result(self, result: Dict[str, Any], chat_id: str) -> bool:
         """通过飞书发送精美的互动卡片报告"""
-        # 优先使用 AilyPresenter 格式的卡片（白盒化程度高），否则回退到 LarkCardBuilder
+        # 优先使用引擎预构建的卡片（含 phase_log 时间线），否则回退到 LarkCardBuilder
         if result.get("interactive_card"):
             card_json = result["interactive_card"]
         else:

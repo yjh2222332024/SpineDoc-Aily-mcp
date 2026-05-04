@@ -6,14 +6,16 @@ from typing import Dict, Any
 from .schema import CourtState
 
 
-def create_initial_court_state(query: str) -> CourtState:
+def create_initial_court_state(query: str, doc_id: str = "all") -> CourtState:
     """
     Create a bare CourtState for a fresh LogicCourt run.
-    The graph starts from PLAN, and HarvesterNode handles all evidence collection.
+    For single-doc queries, skip PLAN (no sub-query splitting needed).
     """
+    is_single_doc = bool(doc_id and doc_id != "all")
     return CourtState(
         query=query,
-        sub_queries=[],
+        doc_id=doc_id,
+        sub_queries=[query] if is_single_doc else [],
         evidence_pool=[],
         L3_archive=[],
         claim_weights={},
@@ -23,9 +25,10 @@ def create_initial_court_state(query: str) -> CourtState:
         target_galaxy_ids=[],
         investigation_order=None,
         re_harvest_count=0,
-        next_step="PLAN",
+        next_step="HARVEST" if is_single_doc else "PLAN",
         iteration=0,
         final_answer=None,
+        phase_log=[],   # 🚀 [V230.0] 阶段时间线
     )
 
 
@@ -74,4 +77,5 @@ def adapt_court_state_to_hybrid_output(state: CourtState) -> Dict[str, Any]:
         "color": color,
         "cited_sources": cited,
         "reasoning": reasoning,
+        "phase_log": state.get("phase_log", []),     # 🚀 [V230.0] 阶段时间线
     }

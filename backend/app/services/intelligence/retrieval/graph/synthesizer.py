@@ -15,7 +15,7 @@ from .schema import CourtState
 
 logger = logging.getLogger(__name__)
 
-class SynthesizerNode:
+class VerdictSynthesisNode:
     """
     🚀 [V190.0] 终极裁定节点：区分‘绝对客观真理’与‘用户交互陈述’。
     """
@@ -42,6 +42,8 @@ class SynthesizerNode:
 2. 撰写【助手回答】(Assistant Answer)：这是一段对用户友好的、丝滑的自然语言陈述，必须包含对信源的引用（如 [本地主权] 或 [联网证人]）。
 3. 如果存在无法解决的冲突，请在【冲突备忘】中列出。
 
+语言要求：必须使用中文（简体）输出全部内容。禁止输出英文。
+
 请严格输出 JSON 格式：
 {{
     "internal_consensus": ["原子事实1", "原子事实2"],
@@ -51,36 +53,8 @@ class SynthesizerNode:
 }}
 """
         try:
-            # 🚀 物理裁定：执行双路输出合成
             verdict = await llm_service.chat_completion(prompt, response_format="json")
-
             print(f"🏁 [SynthesizerNode] 判决签署完成。包含 {len(verdict.get('internal_consensus', []))} 条客观真理。")
-
-            # 用 AnswerBuilder 生成用户友好回答（Mentor/Chief Registrar 双人格）
-            from ..answer_builder import AnswerBuilder
-            builder = AnswerBuilder()
-
-            # 构建 source_results 格式给 AnswerBuilder
-            source_results = []
-            src_map: Dict[str, Dict] = {}
-            for e in evidence_pool:
-                src_name = e.get("source_name", "Unknown")
-                if src_name not in src_map:
-                    src_map[src_name] = {
-                        "source_name": src_name,
-                        "doc_id": e.get("doc_id", ""),
-                        "evidence_chunks": [],
-                    }
-                src_map[src_name]["evidence_chunks"].append(e)
-            source_results = list(src_map.values())
-
-            user_answer = await builder.build_answer(
-                query=state["query"],
-                final_result={"reasoning": verdict.get("assistant_answer", "Court verdict synthesized.")},
-                source_results=source_results,
-                temperature=0.6
-            )
-            verdict["assistant_answer"] = user_answer
 
             return {
                 "verdict": verdict,
@@ -101,4 +75,4 @@ class SynthesizerNode:
             lines.append(f"- [{e['id']}] (来源: {origin}, 权重: {w:.2f}): {e.get('claims')}")
         return "\n".join(lines)
 
-synthesizer_node = SynthesizerNode()
+synthesizer_node = VerdictSynthesisNode()

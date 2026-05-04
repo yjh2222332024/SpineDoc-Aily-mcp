@@ -144,10 +144,10 @@ class SpineEngine:
             create_initial_court_state,
             adapt_court_state_to_hybrid_output,
         )
-        from backend.app.services.intelligence.aily_presenter import aily_presenter
+        from spine_interaction.cards.builder import LarkCardBuilder
 
         # Phase 1: Run LogicCourt full graph
-        initial_state = create_initial_court_state(query)
+        initial_state = create_initial_court_state(query, doc_id=doc_id)
         court_state = await logic_court.run_from_state(initial_state)
 
         # Phase 2: Adapt CourtState back to callers' expected format
@@ -162,11 +162,36 @@ class SpineEngine:
                 "confidence": result.get("confidence", 0.0),
                 "cited_sources": result.get("cited_sources", []),
             },
+            "phase_log": result.get("phase_log", []),   # 🚀 [V230.0] 阶段时间线
         }]
 
-        # 🚀 [V102.1] Aily white-box enhancement: inject interactive card
+        # 🚀 [V210.0] 证据溯源：将证据链追加到结果列表，供 CLI 渲染溯源表格
+        evidence_pool = court_state.get("evidence_pool", [])
+        seen_ids = set()
+        for e in evidence_pool:
+            eid = e.get("id", "")
+            if eid and eid not in seen_ids:
+                seen_ids.add(eid)
+                raw_color = e.get("color", "YELLOW")
+                # 归一化颜色值：处理 "ConfidenceColor.YELLOW" → "YELLOW"
+                if "." in str(raw_color):
+                    raw_color = str(raw_color).split(".")[-1]
+                claim_text = "; ".join(e.get("claims", []))[:200]
+                final_results.append({
+                    "text": claim_text or e.get("summary", e.get("content", "[PRUNED]"))[:200],
+                    "breadcrumb": e.get("breadcrumb", e.get("origin", "Unknown")),
+                    "page_number": e.get("page_number", 0),
+                    "color": raw_color,
+                    "confidence": e.get("confidence", 0.0),
+                    "origin": e.get("origin", "UNKNOWN"),
+                })
+
+        # 🚀 [V102.1] Inject interactive card (LarkCardBuilder with phase_log timeline)
         if return_card:
-            card_json = aily_presenter.format_result_to_card(result, query)
+            card_json = LarkCardBuilder().build_result_card(
+                final_results[0], query=query,
+                evidence_trace=final_results[1:] if len(final_results) > 1 else None,
+            )
             final_results[0]["interactive_card"] = card_json
 
         # 2. Ingest new knowledge into A-MEM

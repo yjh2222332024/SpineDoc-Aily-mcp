@@ -1,10 +1,12 @@
 """
-SovereignSentry - Multi-Stage Expert Router (MoE-LMLR)
+LocalRetriever - Multi-Stage Expert Router (MoE-LMLR)
 =====================================================
 Responsibility:
 1. Physical Expert: Scan Bitable metadata (filenames, tags).
 2. Galaxy Expert: Vector collision with Galaxy centroids.
 3. Decision Gating: Lock semantic territories before harvesting.
+
+替代旧名称：SovereignSentry
 """
 
 import json
@@ -15,26 +17,52 @@ import numpy as np
 from typing import List, Dict, Any, Optional, Tuple
 from backend.app.services.feishu.bitable_ledger import bitable_ledger
 from backend.app.services.ingestion.embedding import embedding_service
+from .constants import (
+    SIMILARITY_THRESHOLD,
+    PYRAMID_FALLBACK_THRESHOLD,
+    VECTOR_SIMILARITY_THRESHOLD,
+    DIRECT_NAME_MATCH_SCORE,
+    KEYWORD_MATCH_SCORE,
+    PRECISION_SAMPLE_LIMIT,
+    SINGLE_DOC_STABILITY,
+    SINGLE_DOC_CONFIDENCE,
+)
 
 logger = logging.getLogger(__name__)
 
-class SovereignSentry:
+class LocalRetriever:
+    """
+    🚀 [V150.0] 本地检索器：金字塔重排检索。
+    替代旧名称：SovereignSentry
+    """
     def __init__(self):
-        self.similarity_threshold = 0.65
+        self.similarity_threshold = SIMILARITY_THRESHOLD
 
-    async def route_query(self, query: str, limit: int = 3) -> List[Dict[str, Any]]:
+    async def route_query(self, query: str, limit: int = 3, pre_located_galaxies: List[Dict] = None) -> List[Dict[str, Any]]:
         """
         🚀 [V150.0] 主权哨兵：金字塔重排检索
         逻辑：星系撞击 -> 领地收割 -> 云端重排 -> 金字塔回退
+
+        Args:
+            pre_located_galaxies: 预定位的星系列表，跳过重复定位
         """
         from backend.app.services.ingestion.zhipu_reranker import zhipu_reranker
-        
+
         print(f"🛡️ [SovereignSentry] 哨兵就位，开始主权质询: {query[:30]}...")
 
-        # 1. 物理专家与星系专家：锁定主权领地
-        physical_hits = await self._physical_expert(query)
-        galaxy_hits = await self._galaxy_expert(query)
-        locked_territories = self._gate_decision(physical_hits, galaxy_hits)
+        # 1. 物理专家与星系专家：锁定主权领地（如果有预定位则跳过）
+        if pre_located_galaxies:
+            # pre_located_galaxies 可能是 List[Dict] (territory objects) 或 List[str] (galaxy IDs)
+            if pre_located_galaxies and isinstance(pre_located_galaxies[0], str):
+                # 是 galaxy ID 列表，需要转换为 territory 格式
+                locked_territories = [{"source_id": gid, "source_name": "Pre-located"} for gid in pre_located_galaxies]
+            else:
+                locked_territories = pre_located_galaxies
+            print(f"📡 [SemanticExpert] 复用预定位领地 {len(locked_territories)} 个")
+        else:
+            physical_hits = await self._physical_expert(query)
+            galaxy_hits = await self._galaxy_expert(query)
+            locked_territories = self._gate_decision(physical_hits, galaxy_hits)
         
         if not locked_territories:
             print("⚠️ [SovereignSentry] 撞击微弱，主权定位失败。")
@@ -47,7 +75,7 @@ class SovereignSentry:
         # 利用 V150.0 的反向收割逻辑，直接拉取分片内容
         candidates = await bitable_ledger.search_chunks(
             galaxy_ids=galaxy_ids,
-            limit=30 # 精准采样
+            limit=PRECISION_SAMPLE_LIMIT  # 精准采样
         )
         
         if not candidates:
@@ -74,7 +102,7 @@ class SovereignSentry:
         top_score = scored_chunks[0]["score"] if scored_chunks else 0.0
         
         # 🚀 [金字塔回退] 如果细节分片得分不足，上浮到星系共识摘要 (Level 1)
-        if top_score < 0.35:
+        if top_score < PYRAMID_FALLBACK_THRESHOLD:
             print(f"🔼 [PyramidFallback] 细节匹配度过低 ({top_score:.2f})，正在上浮至星系共识层...")
             # 搜索该星系内的 L1 节点 (Level=1)
             # 注意：此处的 search_chunks 逻辑需支持 Level 过滤或通过坐标匹配
@@ -86,6 +114,50 @@ class SovereignSentry:
         final_evidence = scored_chunks[:limit]
         print(f"🏁 [SovereignSentry] 质询结束，锁定 {len(final_evidence)} 条高精度细节证据。")
         return final_evidence
+
+    async def route_query_by_document(self, doc_id: str, query: str, limit: int = 5) -> List[Dict]:
+        """🚀 [V220.0] 单文档直路：跳过星系定位，在目标文档分片内直接语义重排。"""
+        from backend.app.services.ingestion.zhipu_reranker import zhipu_reranker
+
+        print(f"🛡️ [SovereignSentry] 单文档直路 | doc_id={doc_id[:8]}... | query={query[:30]}...")
+
+        candidates = await bitable_ledger.fetch_chunks_by_document(doc_id, limit=15)
+        if not candidates:
+            print("⚠️ [SovereignSentry] 文档内未发现分片。")
+            return []
+
+        candidate_texts = [c.get("content", "") for c in candidates]
+        rerank_results = await zhipu_reranker.rerank(query, candidate_texts)
+
+        scored = []
+        for res in rerank_results:
+            idx = res.get("index")
+            score = res.get("relevance_score", 0.0)
+            if idx is not None and idx < len(candidates):
+                chunk = candidates[idx]
+                chunk["score"] = score
+                scored.append(chunk)
+
+        scored.sort(key=lambda x: x["score"], reverse=True)
+        final = scored[:limit]
+
+        for e in final:
+            e["claims"] = [e.get("summary", e.get("content", ""))]
+            e["stability"] = SINGLE_DOC_STABILITY
+            e["origin"] = "LOCAL_GALAXY"
+            e["is_sovereign"] = True
+            e["color"] = "GREEN"
+            e["confidence"] = SINGLE_DOC_CONFIDENCE
+
+        print(f"🏁 [SovereignSentry] 单文档收割完成，锁定 {len(final)} 条证据。")
+        return final
+
+    async def pre_locate_galaxies(self, query: str) -> List[Dict]:
+        """🚀 [Dedupe] 预先定位星系，返回锁定领土列表"""
+        physical_hits = await self._physical_expert(query)
+        galaxy_hits = await self._galaxy_expert(query)
+        locked = self._gate_decision(physical_hits, galaxy_hits)
+        return locked
 
     async def _fetch_galaxy_consensus(self, galaxy_ids: List[str]) -> List[Dict]:
         """
@@ -121,12 +193,12 @@ class SovereignSentry:
 
             # 星系名称直接匹配
             if query_lower in name or any(w in name for w in query_words):
-                hits.append({"id": g["id"], "name": g["name"], "score": 0.6})
+                hits.append({"id": g["id"], "name": g["name"], "score": DIRECT_NAME_MATCH_SCORE})
                 continue
 
             # 锚点关键词匹配
             if keywords and (query_lower in keywords or any(w in keywords for w in query_words)):
-                hits.append({"id": g["id"], "name": g["name"], "score": 0.5})
+                hits.append({"id": g["id"], "name": g["name"], "score": KEYWORD_MATCH_SCORE})
 
         return hits
 
@@ -168,7 +240,7 @@ class SovereignSentry:
             
             # 余弦相似度
             score = float(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
-            if score > 0.5: # 哨兵的第一道门槛放宽到 0.5
+            if score > VECTOR_SIMILARITY_THRESHOLD:  # 哨兵的第一道门槛
                 impact_results.append({
                     "id": g["id"],
                     "name": g["name"],
@@ -233,3 +305,7 @@ class SovereignSentry:
                 })
             except: continue
         return results
+
+
+# 向后兼容别名
+SovereignSentry = LocalRetriever

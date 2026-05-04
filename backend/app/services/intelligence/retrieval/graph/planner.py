@@ -10,11 +10,14 @@ Responsibility:
 import logging
 from typing import Dict, Any
 from backend.app.services.ingestion.llm_service import llm_service
-from .schema import CourtState
+from .schema import CourtState, GraphExecutionState
+
+# 向后兼容别名（定义在类之后）
+CourtState = GraphExecutionState
 
 logger = logging.getLogger(__name__)
 
-class PlannerAgent:
+class QueryDecompositionAgent:
     """
     🚀 [V180.0] 战略规划代理：负责将主权挑战拆解为原子取证任务。
     """
@@ -53,4 +56,7 @@ class PlannerAgent:
                 "next_step": "HARVEST"
             }
 
-planner_agent = PlannerAgent()
+planner_agent = QueryDecompositionAgent()
+
+# 向后兼容别名
+PlannerAgent = QueryDecompositionAgent

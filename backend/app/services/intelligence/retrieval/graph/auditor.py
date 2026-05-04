@@ -9,10 +9,20 @@ Responsibility:
 
 import logging
 from typing import List, Dict, Any, Optional
-from .schema import CourtState
+from .schema import CourtState, GraphExecutionState
 from ..utils.conflict_detector import ConflictDetector
+from ..constants import (
+    ARCHIVE_WEIGHT_THRESHOLD,
+    UNCERTAINTY_WEIGHT_DIFF,
+    MIN_WEIGHT_THRESHOLD,
+    DEFAULT_WEIGHT,
+    MAX_SUPPLEMENTARY_SEARCHES,
+)
 
 logger = logging.getLogger(__name__)
+
+# 向后兼容别名
+CourtState = GraphExecutionState
 
 _detector = ConflictDetector()
 
@@ -41,9 +51,10 @@ async def _detect_conflicts_llm(pool: List[Dict], query: str) -> List[Dict]:
     return await _detector.detect(source_results, query)
 
 
-class AuditorNode:
+class EvidenceValidationNode:
     """
-    🚀 [V185.0] 审计法院节点：负责识别逻辑冲突并执行状态降权。
+    🚀 [V185.0] 证据验证节点：负责识别逻辑冲突并执行状态降权。
+    替代旧名称：AuditorNode
     """
     async def audit(self, state: CourtState) -> Dict[str, Any]:
         pool = state.get("evidence_pool", [])
@@ -84,7 +95,7 @@ class AuditorNode:
         active_pool = []
         for e in pool:
             weight = weights.get(e["id"], 1.0)
-            if weight < 0.2:
+            if weight < ARCHIVE_WEIGHT_THRESHOLD:
                 print(f"❄️ [AuditorNode] 证据 {e['id']} 置信度过低 ({weight:.2f})，标记为 L3 归档。")
                 archive_candidates.append(e)
             else:
@@ -96,8 +107,12 @@ class AuditorNode:
                     "score": e.get("score", 0.0),
                     "confidence": e.get("confidence", 0.0),
                     "color": e.get("color"),
+                    "summary": e.get("summary", ""),       # 保留逻辑摘要
+                    "breadcrumb": e.get("breadcrumb", ""), # 保留面包屑（AnswerBuilder 用）
+                    "page_number": e.get("page_number", 0),# 保留页码（AnswerBuilder 用）
+                    "doc_record_id": e.get("doc_record_id", ""),  # 保留文档 ID
                     # 只有归档文件才保留原始全文，活跃池只留精华
-                    "content": "[PRUNED]" 
+                    "content": "[PRUNED]"
                 }
                 active_pool.append(pruned_e)
 
@@ -127,7 +142,7 @@ class AuditorNode:
         检查是否有无法确定胜负的冲突 — 双方权重接近（diff < 0.3）且都 > 0.2。
         如需要且未超过补充侦查上限，返回 investigation_order。
         """
-        if re_harvest_count >= 1:
+        if re_harvest_count >= MAX_SUPPLEMENTARY_SEARCHES:
             return None  # 已经补充侦查过一次，不再重复
 
         for c in conflicts:
@@ -137,10 +152,10 @@ class AuditorNode:
             ev_ids = [p["chunk_id"] for p in packages if "chunk_id" in p]
             if len(ev_ids) < 2:
                 continue
-            w_a = weights.get(ev_ids[0], 0.5)
-            w_b = weights.get(ev_ids[1], 0.5)
+            w_a = weights.get(ev_ids[0], DEFAULT_WEIGHT)
+            w_b = weights.get(ev_ids[1], DEFAULT_WEIGHT)
             # 双方权重接近且都不低 — 无法明确裁决
-            if abs(w_a - w_b) < 0.3 and w_a > 0.2 and w_b > 0.2:
+            if abs(w_a - w_b) < UNCERTAINTY_WEIGHT_DIFF and w_a > MIN_WEIGHT_THRESHOLD and w_b > MIN_WEIGHT_THRESHOLD:
                 topic = c.get("description") or c.get("topic") or "unknown"
                 return f"针对 '{topic}' 的争议需要更多证据以辅助裁决"
 
@@ -191,6 +206,12 @@ class AuditorNode:
             return res.get("weights", {})
         except Exception as e:
             logger.error(f"❌ [AuditorNode] 质证失败: {e}")
-            return {ev_a_id: 0.5, ev_b_id: 0.5} if ev_a_id and ev_b_id else {}
+            default_weights = {}
+            if ev_a_id: default_weights[ev_a_id] = DEFAULT_WEIGHT
+            if ev_b_id: default_weights[ev_b_id] = DEFAULT_WEIGHT
+            return default_weights
 
-auditor_node = AuditorNode()
+auditor_node = EvidenceValidationNode()
+
+# 向后兼容别名
+AuditorNode = EvidenceValidationNode

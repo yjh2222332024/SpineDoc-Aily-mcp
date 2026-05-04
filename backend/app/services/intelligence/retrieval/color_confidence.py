@@ -44,6 +44,18 @@ COLOR_DESCRIPTIONS = {
     ConfidenceColor.RED: "检测到冲突，需人工介入",
 }
 
+# 稳定性锚定阈值
+STABILITY_ANCHOR_THRESHOLD = 0.8
+STABILITY_FLOOR_THRESHOLD = 0.95
+DEFAULT_STABILITY = 0.5
+
+# 评分权重
+AUTH_WEIGHT = 0.8
+CORROB_WEIGHT = 0.2
+
+# 默认百分位
+DEFAULT_PERCENTILES = {'GREEN': 0.65, 'BLUE': 0.45, 'YELLOW': 0.25}
+
 logger = logging.getLogger(__name__)
 
 class ColorConfidenceCalculator:
@@ -83,8 +95,8 @@ class ColorConfidenceCalculator:
         w_auth = self.authority_model.get_score(domain, stats)
         
         # 🚀 [V175.0] 主权修正：稳定性锚定 (Stability Anchoring)
-        stability = float(chunk.get('stability', 0.5))
-        if stability >= 0.8:
+        stability = float(chunk.get('stability', DEFAULT_STABILITY))
+        if stability >= STABILITY_ANCHOR_THRESHOLD:
             # 🛡️ 架构师守则：稳定知识不随时间腐烂
             w_recency = 1.0
             print(f"⚓ [Confidence] Stability Anchor Active ({stability:.2f}) -> Suppressing time decay.")
@@ -93,22 +105,26 @@ class ColorConfidenceCalculator:
                 chunk.get('published_date'),
                 chunk.get('query_type', 'RESEARCH')
             )
-        
+
         w_corrob = 1 - (1 / independent_sources) if independent_sources > 0 else 0.5
 
         # 3. 综合计算 (稳定性加权)
-        final_score = w_auth * w_recency * (0.8 + 0.2 * w_corrob)
-        
+        final_score = w_auth * w_recency * (AUTH_WEIGHT + CORROB_WEIGHT * w_corrob)
+
         # 如果稳定性极高，强行保底分
-        if stability >= 0.95:
-            final_score = max(final_score, 0.95)
+        if stability >= STABILITY_FLOOR_THRESHOLD:
+            final_score = max(final_score, STABILITY_FLOOR_THRESHOLD)
 
         # 4. 颜色映射
         color = self._map_to_color(final_score)
         return color, round(final_score, 3)
 
     def _map_to_color(self, score: float) -> ConfidenceColor:
-        if score >= self.percentiles.get('GREEN', 0.65): return ConfidenceColor.GREEN
-        if score >= self.percentiles.get('BLUE', 0.45): return ConfidenceColor.BLUE
-        if score >= self.percentiles.get('YELLOW', 0.25): return ConfidenceColor.YELLOW
+        green_threshold = self.percentiles.get('GREEN') or DEFAULT_PERCENTILES['GREEN']
+        blue_threshold = self.percentiles.get('BLUE') or DEFAULT_PERCENTILES['BLUE']
+        yellow_threshold = self.percentiles.get('YELLOW') or DEFAULT_PERCENTILES['YELLOW']
+
+        if score >= green_threshold: return ConfidenceColor.GREEN
+        if score >= blue_threshold: return ConfidenceColor.BLUE
+        if score >= yellow_threshold: return ConfidenceColor.YELLOW
         return ConfidenceColor.RED
