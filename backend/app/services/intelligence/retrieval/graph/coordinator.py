@@ -86,13 +86,13 @@ class RetrievalGraphOrchestrator:
             phase_start = time.time()
 
             if current_step == RetrievalPhase.KNOWLEDGE_BACKFILL:
-                asyncio.ensure_future(node_func(state))
                 state["next_step"] = RetrievalPhase.FINALIZED
                 state["iteration"] += 1
                 state["phase_log"].append({
-                    "step": RetrievalPhase.KNOWLEDGE_BACKFILL, "status": "dispatched",
+                    "step": RetrievalPhase.KNOWLEDGE_BACKFILL, 
+                    "status": "pending_consent",
                     "duration_s": round(time.time() - phase_start, 1),
-                    "detail": "异步回填中",
+                    "detail": "等待审计官核准演化提案",
                 })
                 break
 

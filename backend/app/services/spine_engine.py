@@ -194,15 +194,16 @@ class SpineEngine:
             )
             final_results[0]["interactive_card"] = card_json
 
-        # 2. Ingest new knowledge into A-MEM
-        if self.memory:
-            evidence_pool = court_state.get("evidence_pool", [])
-            for chunk in evidence_pool:
-                await self.memory.ingest_memory({
-                    "content": chunk.get("content", ""),
-                    "logic_tags": chunk.get("claims", chunk.get("logic_tags", [])),
-                    "document_id": chunk.get("doc_id", ""),
-                })
+        # 🚀 [V240.0] Sovereign Evolution: Prepare a proposal instead of auto-ingesting.
+        evolution_proposal = []
+        evidence_pool = court_state.get("evidence_pool", [])
+        for chunk in evidence_pool:
+            evolution_proposal.append({
+                "content": chunk.get("content", ""),
+                "logic_tags": chunk.get("claims", chunk.get("logic_tags", [])),
+                "document_id": chunk.get("doc_id", ""),
+            })
+        final_results[0]["evolution_proposal"] = evolution_proposal
 
         # 4. Reporting logic
         target_chat = chat_id or settings.FEISHU_DEFAULT_CHAT_ID
@@ -212,7 +213,8 @@ class SpineEngine:
             )
 
         if sync_to_bitable:
-            await self.reporter.sync_asset(final_results[0], {})
+            # Pass the proposal to the reporter for potential "Pending Review" status
+            await self.reporter.sync_asset(final_results[0], {"proposal": evolution_proposal})
 
         return final_results
 
