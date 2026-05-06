@@ -24,19 +24,19 @@ async def run_evolution_demo():
     
     # 注意：为了让演示跑通，我们需要一个真实的 Bitable Chunk ID
     # 这里我们先随机取一个已有的 Chunk 进行关联测试，或者仅仅观察 Galaxy 的变化
-    print("\n🚀 [Demo] 开始投射测试分片...")
+    print("\n [Demo] 开始投射测试分片...")
     print(f"   标签: {test_chunk['logic_tags']}")
     
     # 我们直接调用核心投射方法
     # 注意：执行该方法会尝试更新 Bitable
     try:
         await scout.project_chunk_to_galaxy(test_chunk)
-        print("\n✅ [Demo] 演化逻辑执行完成。")
+        print("\n [Demo] 演化逻辑执行完成。")
     except Exception as e:
-        print(f"\n❌ [Demo] 演化失败: {str(e)}")
+        print(f"\n [Demo] 演化失败: {str(e)}")
 
     # 3. 验证变化
-    print("\n🔄 [Demo] 正在拉取演化后的最新状态...")
+    print("\n [Demo] 正在拉取演化后的最新状态...")
     new_galaxies = await scout._fetch_all_galaxies()
     for g in new_galaxies:
         print(f"   - {g['name']} (新成员数: {g['member_count']})")

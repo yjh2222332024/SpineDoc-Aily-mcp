@@ -37,18 +37,18 @@ class ConflictDetector:
             data = json.loads(response.choices[0].message.content)
             return data.get("conflicts", [])
         except Exception as e:
-            logger.error(f"❌ [Detector] LLM Conflict Detection Failed: {e}")
+            logger.error(f" [Detector] LLM Conflict Detection Failed: {e}")
             return []
 
     def _prepare_context(self, source_results: List[Dict]) -> List[Dict]:
         """准备用于 LLM 的上下文摘要"""
         summaries = []
         for result in source_results:
-            chunk_texts = [f"[P{c['page_number']}] {c['content'][:settings.CONTEXT_EVIDENCE_CONTENT_PREFIX]}..." 
+            chunk_texts = [f"[ID:{c['id']}][P{c['page_number']}] {c['content'][:settings.CONTEXT_EVIDENCE_CONTENT_PREFIX]}..."
                           for c in result['evidence_chunks'][:settings.CONTEXT_FALLBACK_CHUNKS]]
             summaries.append({
                 "source_name": result["source_name"],
-                "doc_id": result["doc_id"][:settings.CONTEXT_COMMIT_DOC_ID_PREFIX],
+                "doc_id": (result.get("doc_id") or "")[:settings.CONTEXT_COMMIT_DOC_ID_PREFIX],
                 "evidence_summary": "\n".join(chunk_texts)
             })
         return summaries
@@ -102,5 +102,6 @@ Note:
 - proposed_relationships is optional, only declare when you are certain relationships exist
 - rel_type must be one of the above enum values
 - strength range 0.0-1.0
+- chunk_id must be the actual chunk ID from [ID:...] prefix (e.g., [ID:recXXXX] → chunk_id = "recXXXX")
 - Do not force finding conflicts! If no obvious contradiction, return empty list!
 """

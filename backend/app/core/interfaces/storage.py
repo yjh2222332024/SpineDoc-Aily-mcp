@@ -2,7 +2,7 @@ from typing import Protocol, List, Dict, Any, Optional
 
 class IDocumentStore(Protocol):
     """
-    🏗️ Document Persistence Contract
+     Document Persistence Contract
     业务编排器只与此契约对话，不关心数据最后去了哪里。
     """
     async def get_or_create_document(self, filename: str, file_hash: str, total_pages: int, force: bool = False) -> str:

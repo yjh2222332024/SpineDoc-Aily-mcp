@@ -3,7 +3,7 @@ import json
 from backend.app.services.feishu.bitable_ledger import bitable_ledger
 
 async def verify_evolution():
-    print("🚀 [Verify] Searching for Evolved Knowledge in Bitable...")
+    print(" [Verify] Searching for Evolved Knowledge in Bitable...")
     
     table_id = bitable_ledger.tables['chunks']['id']
     url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{bitable_ledger.app_token}/tables/{table_id}/records/search"
@@ -23,7 +23,7 @@ async def verify_evolution():
     
     if resp.get("code") == 0:
         items = resp.get("data", {}).get("items", [])
-        print(f"✅ Success! Found {len(items)} evolved records.")
+        print(f" Success! Found {len(items)} evolved records.")
         for it in items:
             f = it.get("fields", {})
             print(f"\n--- Evolved Chunk {it['record_id']} ---")
@@ -31,7 +31,7 @@ async def verify_evolution():
             print(f"   Logic Summary: {bitable_ledger._plain_text(f.get('逻辑摘要'))}")
             print(f"   Galaxy Link: {f.get('星系关联')}")
     else:
-        print(f"❌ Failed: {resp.get('msg')}")
+        print(f" Failed: {resp.get('msg')}")
 
 if __name__ == "__main__":
     asyncio.run(verify_evolution())

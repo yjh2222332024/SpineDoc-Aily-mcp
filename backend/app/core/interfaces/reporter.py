@@ -3,7 +3,7 @@ from typing import Dict, Any
 
 class IFeishuReporter(ABC):
     """
-    🐦 飞书神经末梢接口
+     飞书神经末梢接口
     定义了系统如何向用户反馈逻辑结论和进化过程。
     """
     @abstractmethod

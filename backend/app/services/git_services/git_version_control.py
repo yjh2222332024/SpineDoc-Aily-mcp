@@ -24,7 +24,7 @@ class GitVersionControl:
     def __init__(self):
         self.git_manager = get_git_manager()
         self.metabolism_manager = get_metabolism_manager()
-        self._write_lock = asyncio.Lock()  # 🚀 [V52.9] 并发主权锁，防止多用户同时修改仓库
+        self._write_lock = asyncio.Lock()  #  [V52.9] 并发主权锁，防止多用户同时修改仓库
 
     def get_chunk_history(self, chunk_id: str, limit: int = 20) -> List[Dict]:
         # ... (原有逻辑保持不变)

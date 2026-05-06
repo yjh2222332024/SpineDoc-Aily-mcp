@@ -9,9 +9,9 @@ from typing import Optional
 class LarkAuth:
     def __init__(self):
         from backend.app.core.config import settings
-        self.app_id = (os.getenv("FEISHU_APP_ID") or settings.FEISHU_APP_ID).strip()
-        self.app_secret = (os.getenv("FEISHU_APP_SECRET") or settings.FEISHU_APP_SECRET).strip()
-        self.wiki_node_id = os.getenv("FEISHU_WIKI_NODE_ID", "O3WDwZtqGiVETqkdFghcH78vnLd").strip()
+        self.app_id = settings.FEISHU_APP_ID.strip()
+        self.app_secret = settings.FEISHU_APP_SECRET.strip()
+        self.wiki_node_id = settings.FEISHU_WIKI_NODE_ID.strip()
         self._tenant_token: Optional[str] = None
         self._obj_token: Optional[str] = None
 

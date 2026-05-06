@@ -1,325 +1,328 @@
-# 🛡️ SpineDoc (阅脊)
+# SpineDoc (阅脊) — 逻辑刺客级文档审计引擎
 
-**逻辑刺客级文档审计引擎** - 专为审计合同、论文、法律文书等长文档设计
+专为审计合同、论文、法律文书等长文档设计。不是"跟 PDF 聊天"那种玩具——它提取逻辑脊梁、检测矛盾、溯源证据，最后给出有置信度的判决书。
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-> **"不要只是与 PDF 聊天，去重构它们的逻辑。"**
+```
+Python 3.10+  |  飞书多维表格  |  MIT License
+```
 
 ---
 
-## 📖 什么是 SpineDoc？
+## 一、这玩意能干什么？
 
-SpineDoc 是一个面向**长文档审计**的智能知识引擎。它不仅能回答"文档说了什么"，更能揭示"逻辑是否自洽"、"证据是否充分"、"是否有隐藏矛盾"。
-
-### 核心能力
-
-| 能力 | 说明 |
+| 能力 | 本质 |
 |------|------|
-| 🦴 **逻辑脊梁提取** | 自动识别文档的 implicit structure，提取核心论证链条 |
-| ⚖️ **LogicCourt 联邦法庭** | 多智能体图引擎（PLAN→HARVEST→AUDIT→SYNTHESIZE→EVOLVE），四色置信度评估 |
-| 🌐 **WitnessExpert 联网证人** | 自动检索外部证据，与本地证据交叉验证 |
-| 🎯 **精准证据溯源** | 答案精确到页码和段落，附带来源颜色标识 |
-| 📊 **phase_log 白盒时间线** | 每个推理阶段的耗时/状态/结果数结构化输出，渲染为飞书互动卡片 |
-| 🧬 **主权演化** | 质证产生的共识自动回填知识库，形成持续进化闭环 |
-| 📜 **Git 版本追溯** | 每个语义切片都有 Git 历史，支持回滚和审计 |
+| **逻辑脊梁提取** | 从文档里抽出论证结构，不是简单的关键词匹配 |
+| **LogicCourt 联邦法庭** | PLAN → 采集 → 审计 → 判决 → 演化，每一步可追溯 |
+| **联网证人** | 本地证据不够？自动上网找，交叉验证 |
+| **证据溯源** | 每个结论带原文引用和置信度颜色标记 |
+| **主权演化** | AI 提演化方案，你核准了才落地，不做黑盒自动化 |
+| **Git 版本追溯** | 语义切片有 Git 历史，能回滚 |
 
-### 适用场景
-
-- 📄 **合同审查**：发现条款矛盾、责任不清、风险漏洞
-- 📑 **论文审计**：验证论证链条、检查引用完整性
-- ⚖️ **法律文书**：比对证据链、发现逻辑断层
-- 📊 **招股书/财报**：交叉验证数据一致性
+**适用场景**：合同审查找矛盾条款、论文审计查论证链条、法律文书比对证据链、招股书交叉验证数据。
 
 ---
 
-## 🚀 快速开始
+## 二、快速开始（手工配置）
 
-### 系统要求
+以下步骤从零开始，每步都确认了再做下一步。
 
-- Python 3.10+
-- 飞书 Bitable（作为知识库持久层）
-- lark-cli（用于飞书消息发送）
+### 2.1 系统要求
 
-### 获取 API Key
+- Windows 10/11
+- Python 3.10 或更高（[下载](https://www.python.org/downloads/)）
+- 一个飞书企业账号
+- 网络能访问飞书 API
 
-| 服务 | 用途 | 注册地址 |
-|------|------|---------|
-| 火山引擎 (Volcengine) | LLM doubao-2.0 | https://console.volcengine.com/ark |
-| SiliconFlow | 向量模型 + VLM | https://cloud.siliconflow.cn/ |
-| 飞书开放平台 | Bitable + 消息推送 | https://open.feishu.cn/ |
+### 2.2 克隆项目并创建虚拟环境
 
-### 配置
+打开命令提示符（cmd），执行：
 
-复制 `.env.example` 为 `.env` 并填入：
+```batch
+git clone <你的仓库地址> SpineDoc
+cd SpineDoc
+
+:: 创建虚拟环境（重要！不要把依赖装到全局）
+python -m venv .venv
+
+:: 激活虚拟环境
+.venv\Scripts\activate
+
+:: 安装依赖
+pip install -r requirements.txt
+```
+
+看见 `(.venv)` 出现在行首说明环境激活成功。
+
+如果 `pip install` 报错，检查 Python 版本是否 >= 3.10。
+
+### 2.3 注册 API Key
+
+你需要注册以下三个服务，**全部免费额度够用**：
+
+| 服务 | 用途 | 怎么注册 |
+|------|------|----------|
+| **火山引擎** | LLM 推理（豆包 2.0） | 打开 https://console.volcengine.com/ark → 创建 API Key → 创建推理接入点（Endpoint） |
+| **SiliconFlow** | 向量嵌入 + 视觉模型 | 打开 https://cloud.siliconflow.cn/ → 注册 → 创建 API Key |
+| **智谱** | 联网搜索 | 打开 https://open.bigmodel.cn/ → 注册 → 创建 API Key |
+
+**火山引擎特别注意**：
+1. 进入「推理接入点」页面
+2. 点击「创建推理接入点」
+3. 选择模型 `doubao-2.0-pro-256k`（或其他豆包模型）
+4. 创建完成后会得到一个 `ep-xxxxxxxxxxxx` 格式的 Endpoint ID
+5. 这个 Endpoint ID 就是 `LLM_ENDPOINT`
+
+### 2.4 下载 lark-cli
+
+SpineDoc 需要 `lark-cli.exe` 来下载飞书文档和发送消息。
+
+```batch
+:: 访问 Releases 页面下载最新版
+:: https://github.com/ConnectAI-E/Lark-CLI/releases
+
+:: 下载后把 lark-cli.exe 放到项目根目录的 bin/ 文件夹
+:: （没有就创建）
+mkdir bin
+:: 把下载的 lark-cli.exe 移动到 bin/ 目录下
+```
+
+飞书开放平台需要配置 App 权限。去 https://open.feishu.cn/app 创建企业自建应用：
+1. 创建应用 → 填写名称
+2. 「权限管理」→ 添加权限：
+   - `bitable:app`（多维表格）
+   - `drive:drive`（云文档）
+   - `im:message`（消息推送）
+   - `search:search`（搜索）
+3. 「安全设置」→ 添加服务器 IP（生产环境需要）
+4. 「凭证与基础信息」→ 拿到 `App ID` 和 `App Secret`
+5. **发布应用**（否则 API 调用会返回权限错误）
+
+### 2.5 创建飞书多维表格
+
+#### 2.5.1 创建一个多维表格
+
+1. 打开飞书 → 新建 → 多维表格
+2. 命名为 `SpineDoc`（你可以随意命名）
+3. 创建完成后，URL 里找到 `base_token`：
+   - URL 格式：`https://xxx.feishu.cn/base/BASE_TOKEN?table=...`
+   - 复制 `BASE_TOKEN` 这串字符
+
+#### 2.5.2 创建数据表
+
+你需要创建 4 个数据表。点击多维表格底部的 `+` 号新建表：
+
+**表 1：文档表**（记录导入的文档）
+| 字段名 | 字段类型 |
+|--------|----------|
+| 文件名 | 文本 |
+| 文件哈希 | 文本 |
+| 处理状态 | 文本（填入：PROCESSING / COMPLETED / FAILED） |
+| 总页数 | 数字 |
+
+**表 2：Chunk表**（存语义切片）
+| 字段名 | 字段类型 |
+|--------|----------|
+| 正文内容 | 文本 |
+| 逻辑摘要 | 文本 |
+| 语义标签 | 多选 |
+| 逻辑坐标 | 文本 |
+| 逻辑面包屑 | 文本 |
+| 逻辑指纹 | 文本 |
+| 向量表征 | 文本 |
+| Git版本 | 文本 |
+| 物理页码 | 数字 |
+| 元数据 | 文本 |
+| 记忆ID | 文本 |
+| 文档关联 | 关联 → 关联到「文档表」，单选 |
+| 星系关联 | 关联 → 关联到「星系表」，多选 |
+| 父级关联 | 关联 → 关联到本表（Chunk表），多选 |
+
+创建「关联字段」时，系统会提示选择关联哪个表和是否多选，按上面表格配。
+
+**表 3：脊梁表**（存文档目录结构）
+| 字段名 | 字段类型 |
+|--------|----------|
+| 标题 | 文本 |
+| 层级 | 数字 |
+| 逻辑页码 | 数字 |
+| 逻辑坐标 | 文本 |
+| 文档关联 | 关联 → 关联到「文档表」，单选 |
+
+**表 4：星系表**（跨文档聚类）
+| 字段名 | 字段类型 |
+|--------|----------|
+| 星系名称 | 文本 |
+| 重心向量 | 文本 |
+| 锚点关键词 | 多选 |
+| 成员总数 | 数字 |
+| 描述 | 文本 |
+| 锚点标签云 | 文本 |
+
+**表 5：记忆表**（A-MEM 记忆层，可选）
+| 字段名 | 字段类型 |
+|--------|----------|
+| 记忆ID | 文本 |
+| 正文内容 | 文本 |
+| 元数据 | 文本 |
+| 向量表征 | 文本 |
+
+创建完成后，每个表的 URL 里找到 `tblxxxxxxxx` 格式的 table_id。
+
+自己核对一下表名和字段是否完全一致。大小写也要对上。
+
+### 2.6 配置 .env 文件
+
+在项目根目录创建 `.env` 文件，填入以下内容（尖括号替换成你的实际值）：
 
 ```ini
-# 火山引擎 LLM
-LLM_API_KEY=your_ark_api_key
+# ═══════════════════════════════════════════
+# SpineDoc 环境配置（手工填写版）
+# ═══════════════════════════════════════════
+
+# ─── LLM（火山引擎豆包） ───
+LLM_API_KEY=<你的火山引擎 API Key>
 LLM_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
-LLM_MODEL_NAME=doubao-2.0
+LLM_ENDPOINT=ep-xxxxxxxxxxxx     ← 推理接入点 ID，不是模型名
 
-# 向量模型
-EMBEDDING_API_KEY=sk-xxxxxxxxx
-EMBEDDING_BASE_URL=https://api.siliconflow.cn/v1
-EMBEDDING_MODEL_NAME=BAAI/bge-m3
+# ─── 向量嵌入（SiliconFlow） ───
+EMBEDDING_API_KEY=sk-xxxxxxxxxxxx
 
-# 飞书 Bitable
-FEISHU_APP_ID=cli_xxxxxxxxx
-FEISHU_APP_SECRET=xxxxxxxxx
-FEISHU_BITABLE_TOKEN=xxxxxxxxx
+# ─── 联网搜索（智谱） ───
+ZHIPU_API_KEY=xxxxxxxxxx
+
+# ─── 飞书集成 ───
+FEISHU_APP_ID=cli_xxxxxxxxxxxx
+FEISHU_APP_SECRET=xxxxxxxxxxxx
+FEISHU_BITABLE_TOKEN=<Base Token>     ← 多维表格 URL 里的那串
+FEISHU_BITABLE_TABLE_ID=tblxxxxxxxx   ← 文档表的 table_id
+FEISHU_BITABLE_CHUNK_TABLE_ID=tblxxx ← Chunk表的 table_id
+FEISHU_BITABLE_TOC_TABLE_ID=tblxxx   ← 脊梁表的 table_id
+FEISHU_BITABLE_MEMORY_TABLE_ID=tblxxx← 记忆表的 table_id（和 FEISHU_BITABLE_CHUNK_TABLE_ID 可以填一样的值，共用 Chunk 表）
+FEISHU_BITABLE_GALAXY_TABLE_ID=tblxxx← 星系表的 table_id
+FEISHU_DEFAULT_CHAT_ID=oc_xxxxxxxxx  ← 通知消息发送到的群 ID（选填）
+
+# ─── OCR 熔炼（选填，处理 PDF 需要） ───
+ARK_API_KEY=
+ARK_ENDPOINT=
+
+# ─── Aily 桥接（选填） ───
+FEISHU_AILY_TOKEN=
 ```
 
-### 使用
+建好后用脚本来验证配置：
 
-```bash
-# 导入 PDF 文档
-python -m spine_interaction.cli ingest your_document.pdf
+```batch
+:: 激活虚拟环境（如果还没激活）
+.venv\Scripts\activate
 
-# 单文档质证
-python -m spine_interaction.cli ask "文档的核心论点是什么？" -d <doc_id>
-
-# 跨文档质证
-python -m spine_interaction.cli ask "所有文档中对 X 的描述是否一致？"
-
-# 列出文档
-python -m spine_interaction.cli list
-
-# 启动 MCP Server（供 Aily 等 AI 代理调用）
-spinedoc-mcp
+:: 验证配置完整性
+python scripts/diagnose_config.py
 ```
+
+如果报错说缺少某个配置项，回 2.5 和 2.6 对照填。
+
+### 2.7 检查配置
+
+所有配置完成后，用脚本验证：
+
+```batch
+python scripts/diagnose_config.py
+```
+
+如果报错说缺少某个配置项，回 2.5 和 2.6 对照填。
 
 ---
 
-## 🏛️ 架构概览
+## 三、快速开始（一键脚本）
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                        交互层 (Interaction Layer)                 │
-│                                                                  │
-│  ┌──────────┐  ┌──────────────┐  ┌──────────────────────────┐   │
-│  │   CLI    │  │  MCP Server  │  │  LarkCardBuilder          │   │
-│  │ (spine)  │  │ (4 tools)    │  │  (phase_log → 飞书卡片)   │   │
-│  └────┬─────┘  └──────┬───────┘  └────────────┬─────────────┘   │
-│       │               │                       │                  │
-│       └───────────────┼───────────────────────┘                  │
-│                       │                                          │
-│               ┌───────▼────────┐                                 │
-│               │  SpineEngine   │                                 │
-│               │  (核心引擎)      │                                 │
-│               └───────┬────────┘                                 │
-│                       │                                          │
-└───────────────────────┼──────────────────────────────────────────┘
-                        │
-┌───────────────────────┼──────────────────────────────────────────┐
-│                       ▼                                          │
-│            逻辑层 (Logic Layer)                                   │
-│                                                                  │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │              LogicCourt 联邦法庭图引擎                     │   │
-│  │                                                          │   │
-│  │   PLAN ──→ HARVEST ──→ AUDIT ──→ SYNTHESIZE ──→ EVOLVE  │   │
-│  │   路由拆分   证据采集     冲突审计    判决签署     异步回填 │   │
-│  │              │        │                                  │   │
-│  │         ┌────┴────────┴────┐                             │   │
-│  │         │  SovereignSentry │  ◁── 本地检索 + Reranker   │   │
-│  │         │  WitnessExpert   │  ◁── 联网检索 + Web Search │   │
-│  │         └─────────────────┘                             │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                                                  │
-│        每个阶段产出 → phase_log[{step, status, duration_s,      │
-│                        detail}] → 结构化透传至交互层             │
-│                                                                  │
-└──────────────────────────────────────────────────────────────────┘
-                        │
-┌───────────────────────┼──────────────────────────────────────────┐
-│                       ▼                                          │
-│            持久层 (Persistence Layer)                             │
-│                                                                  │
-│  ┌──────────────────┐  ┌──────────────────┐                      │
-│  │  飞书 Bitable     │  │  Git Version     │                      │
-│  │  (documents表 +   │  │  Control         │                      │
-│  │   chunks表)       │  │  (语义切片追溯)   │                      │
-│  └──────────────────┘  └──────────────────┘                      │
-│                                                                  │
-│  ┌──────────────────┐  ┌──────────────────┐                      │
-│  │  A-MEM           │  │  Galaxy 星系路由  │                      │
-│  │  (智能记忆层)     │  │  (跨文档聚类)     │                      │
-│  └──────────────────┘  └──────────────────┘                      │
-│                                                                  │
-└──────────────────────────────────────────────────────────────────┘
+**⚠️ 自动脚本尚未完全验证，推荐优先用手工配置。**
+
+如果仍想尝试：
+
+```batch
+:: 先确认 .venv 已激活，然后：
+setup_env.bat
 ```
 
-### LogicCourt 联邦法庭工作流
+按提示填入 App ID 和 App Secret，询问「是否一键创建」时输入 `y`。
+脚本会自动创建多维表格和数据表，写入 `.env` 和 manifest。
 
-SpineDoc 的核心推理引擎是一个多智能体图，每个阶段产出**结构化 phase_log**：
-
-| 阶段 | 职责 | phase_log 明细 |
-|------|------|----------------|
-| **PLAN** | 查询路由拆分（多文档时） | `N 个子查询` |
-| **HARVEST** | 本地 + 联网并行证据采集 | `N 条证据` |
-| **AUDIT** | 逻辑冲突检测 + 状态裁剪 | `N 处冲突 \| N 条活跃` |
-| **SYNTHESIZE** | 首席法官判决签署 | `N 条客观真理` |
-| **EVOLVE** | 异步共识回填知识库 | 异步 dispatch |
-
-phase_log 的结构：
-```json
-{"step": "HARVEST", "status": "done", "duration_s": 29.5, "detail": "7 条证据"}
-```
-
-### 单文档 vs 跨文档路径
-
-| 场景 | 路由 | 特点 |
-|------|------|------|
-| **单文档** (`-d <doc_id>`) | documents表 → chunks表 直路 | 跳过 PLAN，快 2x |
-| **跨文档** (`doc_id="all"`) | documents → galaxy → chunks 星系路由 | 聚类后发散检索 |
-
-### MCP Server (Model Context Protocol)
-
-提供 4 个标准化工具，供 Aily 等 AI 代理直接调用：
-
-| 工具 | 功能 |
-|------|------|
-| `spinedoc_ingest` | 导入文档（幂等） |
-| `spinedoc_ask` | 单文档质证 |
-| `spinedoc_ask_all` | 跨文档质证 |
-| `spinedoc_list_docs` | 列出已导入文档 |
-
-MCP 输出包含 `verdict` + `evidence_trace` + `phase_log` 三个结构化字段，Aily 拿到后可直接渲染飞书互动卡片。
-
-```bash
-# 启动 MCP Server
-spinedoc-mcp
-```
-
-### 飞书互动卡片 (phase_log 时间线)
-
-`LarkCardBuilder` 将 phase_log 渲染为飞书卡片可视化时间线：
-
-```
-┌─────────────────────────────────────┐
-│ 🔍 SpineDoc 检索分析报告            │
-├─────────────────────────────────────┤
-│ 🔍 查询：文档的核心架构是什么         │
-├─────────────────────────────────────┤
-│ 🟢 HARVEST      29s  7条证据       │
-│ 🟢 AUDIT         0s  无冲突         │
-│ 🟢 SYNTHESIZE   60s  9条客观真理    │
-│ 🟢 EVOLVE        0s  异步回填中     │
-├─────────────────────────────────────┤
-│ 判决书：根据检索结果...              │
-├─────────────────────────────────────┤
-│ 🎯 置信度: 0.95 🟢  📚 来源: 3个   │
-├─────────────────────────────────────┤
-│ 📎 证据溯源：                        │
-│ 🟢 [本地] 主张1... P5               │
-│ 🟡 [联网] 主张2...                   │
-├─────────────────────────────────────┤
-│ [🔍溯源]  [🚩报告偏差]              │
-└─────────────────────────────────────┘
-```
-
-### Aily 集成路径
-
-```
-用户 → 飞书 Aily
-  │  Aily 识别意图 → 调用 MCP tool
-  ▼
-MCP Server (spinedoc_ask)
-  │  LogicCourt 执行 → phase_log 记录
-  ▼
-JSON Response: {verdict, evidence_trace, phase_log}
-  │
-  ▼
-Aily 渲染飞书互动卡片（含可视化时间线）
-```
+但之前提到的表字段仍建议对照 2.5.2 手动核对。
 
 ---
 
-## 🔧 配置
+## 四、启动
 
-### 环境变量
+### 4.1 启动 MCP Server
 
-```ini
-# LLM（火山引擎 doubao-2.0）
-LLM_API_KEY=your_ark_api_key
-LLM_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
-LLM_MODEL_NAME=doubao-2.0
-
-# 向量模型
-EMBEDDING_API_KEY=sk-xxxxxxxxx
-EMBEDDING_BASE_URL=https://api.siliconflow.cn/v1
-EMBEDDING_MODEL_NAME=BAAI/bge-m3
-EMBEDDING_DIMENSION=1024
-
-# 飞书 (Bitable + 消息推送)
-FEISHU_APP_ID=cli_xxxxxxxxx
-FEISHU_APP_SECRET=xxxxxxxxx
-FEISHU_BITABLE_TOKEN=xxxxxxxxx
-FEISHU_DEFAULT_CHAT_ID=oc_xxxxxxxxx
-
-# 飞书 Aily 集成（可选）
-FEISHU_AILY_AUTH_ID=cli_xxxxxxxxx
-FEISHU_AILY_AUTH_SECRET=xxxxxxxxx
+```batch
+start_mcp.bat
 ```
 
-### 支持的其他 LLM
+看到 `MCP server running on port 7000` 说明启动成功。这个 Server 供 Aily 等 AI 代理调用，也用于调试。
 
-```ini
-# OpenAI
-LLM_BASE_URL=https://api.openai.com/v1
-LLM_MODEL_NAME=gpt-4o
+如果不走 Aily，直接用命令行：
 
-# 自定义
-LLM_BASE_URL=https://your-custom-api.com/v1
-LLM_MODEL_NAME=your-model-name
+```batch
+:: 导入文档
+.venv\Scripts\python.exe spine_setup.py --ingest <你的文档.pdf>
+
+:: 启动网页交互界面
+.venv\Scripts\python.exe spine_setup.py --interactive
 ```
+
+### 4.2 Aily 集成
+
+详见 `spine_interaction/aily/SKILL.md` 和 `spinedoc-logic-assassin.skill`。
+
+大致流程：
+1. MCP Server 跑在公网可访问的地址（或配合 FRP 内网穿透）
+2. 在 Aily 后台导入 `.skill` 文件作为 Agent 技能
+3. 用户发消息 → Aily 调用 MCP 工具 → SpineDoc 执行审计 → 返回判决书
 
 ---
 
-## ❓ 常见问题
+## 五、架构（几句话讲清楚）
 
-### Q: 为什么置信度都是 0.40？
-A: 0.40 是单文档检索的基准置信度。更高置信度需要：
-- 多文档 corroboration（0.60-0.80）
-- 联网证据支持（0.80-0.95）
-- 同行评审/权威来源（0.95+）
+```
+用户输入
+   │
+   ▼
+交互层：CLI / MCP / 飞书卡片
+   │
+   ▼
+逻辑层：LogicCourt 联邦法庭
+   ├─ PLAN      路由拆分
+   ├─ HARVEST   取证（本地 + 联网）
+   ├─ AUDIT     冲突审计 + 置信度计算
+   ├─ SYNTHESIZE 判决签署
+   └─ EVOLVE    演化提案（你核准才落地）
+   │
+   ▼
+持久层：Bitable 表 + Git 版本控制 + A-MEM 记忆
+```
 
-### Q: 导入文档后状态一直是 "Processing…"？
-A: 可能原因：
-1. Bitable 配置无效：检查 `FEISHU_BITABLE_TOKEN`
-2. API Key 无效：检查火山引擎凭证
-3. 飞书开放平台权限不足
-
-### Q: 联网搜索失败？
-A: 检查：
-1. 飞书 config API 是否配置了 Web Search 能力
-2. 网络连接是否正常
-3. 查看日志中的详细错误信息
+每个阶段产出结构化的 `phase_log`，从推理到响应全链路可追踪。
 
 ---
 
-## 📄 许可证
+## 六、常见问题
+
+**Q：置信度全是 0.40？**
+A：0.40 是单文档检索基准。多文档交叉验证能到 0.60-0.80，加联网证据能到 0.95。
+
+**Q：文档导入后状态一直是 Processing？**
+A：检查：Bitable Token 对不对、API Key 有没有额度、飞书应用是否已发布。
+
+**Q：Chunk 表里的字段 API 报错？**
+A：检查字段名是否完全一致，特别是「文档关联」这类关联字段的关联配置。
+
+**Q：一键脚本报错？**
+A：截图日志，提 Issue。目前脚本还没完全验证，手工配置更可靠。
+
+---
+
+## 许可证
 
 MIT License
-
----
-
-## 🙏 致谢
-
-- **火山引擎** - doubao-2.0 LLM 服务
-- **SiliconFlow** - 向量模型和 VLM
-- **智源研究院** - BAAI/bge 系列向量模型
-- **飞书** - Bitable 知识库 + 互动卡片生态
-
----
-
-## 📬 联系方式
-
-- GitHub Issues: [提交问题或建议](https://github.com/yjh2222332024/Spine-open/issues)
-- 邮箱：2857922968@qq.com
-
----
-
-**🚀 SpineDoc - 让逻辑漏洞无所遁形**

@@ -17,10 +17,10 @@ logger = logging.getLogger(__name__)
 
 class VerdictSynthesisNode:
     """
-    🚀 [V190.0] 终极裁定节点：区分‘绝对客观真理’与‘用户交互陈述’。
+     [V190.0] 终极裁定节点：区分‘绝对客观真理’与‘用户交互陈述’。
     """
     async def synthesize(self, state: CourtState) -> Dict[str, Any]:
-        print(f"⚖️ [SynthesizerNode] 首席法官入场，准备签署最终判决书...")
+        print(f" [SynthesizerNode] 首席法官入场，准备签署最终判决书...")
         
         # 1. 准备庭审材料
         # 只取高权重（> 0.4）的精华主张
@@ -28,7 +28,20 @@ class VerdictSynthesisNode:
         evidence_pool = state.get("evidence_pool", [])
         active_evidence = [e for e in evidence_pool if weights.get(e["id"], 1.0) >= 0.4]
         
-        # 2. 构造判决 Prompt
+        # 2. 空证据池：直接返回，不调用 LLM
+        if not active_evidence:
+            print(f" [SynthesizerNode] 证据池为空，跳过 LLM 裁决。")
+            return {
+                "verdict": {
+                    "internal_consensus": [],
+                    "assistant_answer": "知识库中暂未检索到与质询相关的文档片段。请确认文档已成功导入并完成语义孵化。",
+                    "unresolved_conflicts": [],
+                    "citations": []
+                },
+                "next_step": "EVOLVE"
+            }
+
+        # 3. 构造判决 Prompt
         prompt = f"""请作为联邦法院首席法官，根据以下经过审计的证据，签署最终裁定。
 
 【用户的原始质询】：
@@ -53,7 +66,7 @@ class VerdictSynthesisNode:
 }}
 """
         try:
-            verdict = await llm_service.chat_completion(prompt, response_format="json")
+            verdict = await llm_service.chat_completion(prompt, response_format="json", temperature=0.3)
             print(f"🏁 [SynthesizerNode] 判决签署完成。包含 {len(verdict.get('internal_consensus', []))} 条客观真理。")
 
             return {
@@ -61,7 +74,7 @@ class VerdictSynthesisNode:
                 "next_step": "EVOLVE"
             }
         except Exception as e:
-            logger.error(f"❌ [SynthesizerNode] 裁定过程崩溃: {e}")
+            logger.error(f" [SynthesizerNode] 裁定过程崩溃: {e}")
             return {
                 "final_answer": "法官由于物理原因暂时无法宣判，请重试。",
                 "next_step": "END"

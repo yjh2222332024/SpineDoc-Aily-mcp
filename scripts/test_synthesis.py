@@ -5,7 +5,7 @@ from backend.app.services.intelligence.retrieval.graph.synthesizer import synthe
 from backend.app.services.intelligence.retrieval.graph.schema import CourtState
 
 async def test_synthesis():
-    print("🚀 [AtomicTest] Starting SynthesizerNode Verdict Validation...\n")
+    print(" [AtomicTest] Starting SynthesizerNode Verdict Validation...\n")
     
     # 1. 模拟一个经过审计的状态 (Contains weights and conflicts)
     state: CourtState = {
@@ -41,10 +41,10 @@ async def test_synthesis():
     verdict = update.get("verdict", {})
     
     # 3. 物理确权
-    print("\n✅ Judge's Verdict (Internal Truth):")
+    print("\n Judge's Verdict (Internal Truth):")
     print(json.dumps(verdict.get("internal_consensus"), indent=4, ensure_ascii=False))
     
-    print("\n✅ Assistant's Narrative (User Facing):")
+    print("\n Assistant's Narrative (User Facing):")
     print(f"   ↳ {verdict.get('assistant_answer')}")
     
     print("\n📊 Citations Check:")

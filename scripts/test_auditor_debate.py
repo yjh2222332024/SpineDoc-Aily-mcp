@@ -4,7 +4,7 @@ from backend.app.services.intelligence.retrieval.graph.auditor import auditor_no
 from backend.app.services.intelligence.retrieval.graph.schema import CourtState
 
 async def test_auditor_debate():
-    print("🚀 [AtomicTest] Starting AuditorNode Debate & De-weighting Validation...\n")
+    print(" [AtomicTest] Starting AuditorNode Debate & De-weighting Validation...\n")
     
     # 1. 模拟注入冲突证据 (Synthetic Contradiction)
     state: CourtState = {
@@ -34,7 +34,7 @@ async def test_auditor_debate():
     }
     
     # 2. 执行审计与辩论
-    print("⚖️ Executing AUDIT node with debate...")
+    print(" Executing AUDIT node with debate...")
     update = await auditor_node.audit(state)
     
     # 3. 物理确权
@@ -42,7 +42,7 @@ async def test_auditor_debate():
     active_pool = update.get("evidence_pool", [])
     archive = update.get("L3_archive", [])
     
-    print("\n✅ Debate Results:")
+    print("\n Debate Results:")
     for eid, w in weights.items():
         print(f"   - Evidence {eid}: Weight = {w:.2f}")
     

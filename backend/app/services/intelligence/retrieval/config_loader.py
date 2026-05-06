@@ -1,5 +1,5 @@
 """
-🏛️ 置信度配置加载器 (Confidence Config Loader)
+ 置信度配置加载器 (Confidence Config Loader)
 ================================================
 从 backend/storage/ 加载用户自定义配置文件，提供回退默认值。
 """
@@ -71,7 +71,7 @@ DEFAULT_CONFIDENCE_CONFIG = {
 
 class ConfidenceConfigLoader:
     """
-    🏛️ 置信度配置加载器
+     置信度配置加载器
 
     从 backend/storage/ 加载用户自定义配置，支持热重载。
     """
@@ -135,7 +135,7 @@ class ConfidenceConfigLoader:
                     data.pop("description", None)
                 return data
         except (json.JSONDecodeError, IOError) as e:
-            print(f"⚠️ 配置文件 {filename} 加载失败：{e}，使用默认值")
+            print(f" 配置文件 {filename} 加载失败：{e}，使用默认值")
             return default
 
     def reload(self):

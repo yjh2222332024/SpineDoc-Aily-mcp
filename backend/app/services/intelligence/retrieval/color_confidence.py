@@ -24,10 +24,10 @@ class DomainStats:
 
 
 COLOR_ICONS = {
-    ConfidenceColor.GREEN: "🟢",
-    ConfidenceColor.BLUE: "🔵",
-    ConfidenceColor.YELLOW: "🟡",
-    ConfidenceColor.RED: "🔴",
+    ConfidenceColor.GREEN: "",
+    ConfidenceColor.BLUE: "",
+    ConfidenceColor.YELLOW: "",
+    ConfidenceColor.RED: "",
 }
 
 COLOR_LABELS = {
@@ -60,11 +60,11 @@ logger = logging.getLogger(__name__)
 
 class ColorConfidenceCalculator:
     """
-    🎨 重构后的四色置信度计算器 (V2.0)
+     重构后的四色置信度计算器 (V2.0)
     职责：编排各个评分模型，决定证据最终的‘颜色’。
     """
     def __init__(self, registry=None):
-        # 🛡️ 架构师纪律：通过 Registry 或注入来获取配置，避免模块顶层加载
+        #  架构师纪律：通过 Registry 或注入来获取配置，避免模块顶层加载
         from .config_loader import get_config_loader
         loader = get_config_loader()
         
@@ -94,10 +94,10 @@ class ColorConfidenceCalculator:
         
         w_auth = self.authority_model.get_score(domain, stats)
         
-        # 🚀 [V175.0] 主权修正：稳定性锚定 (Stability Anchoring)
+        #  [V175.0] 主权修正：稳定性锚定 (Stability Anchoring)
         stability = float(chunk.get('stability', DEFAULT_STABILITY))
         if stability >= STABILITY_ANCHOR_THRESHOLD:
-            # 🛡️ 架构师守则：稳定知识不随时间腐烂
+            #  架构师守则：稳定知识不随时间腐烂
             w_recency = 1.0
             print(f"⚓ [Confidence] Stability Anchor Active ({stability:.2f}) -> Suppressing time decay.")
         else:

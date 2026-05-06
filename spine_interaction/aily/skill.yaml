@@ -1,12 +1,12 @@
 
-# 🤖 SpineDoc Aily Skill Definition
+#  SpineDoc Aily Skill Definition
 # ==================================
 # 职责：描述 AI 如何调度 SpineDoc 的核心能力。
 
 name: SpineDoc_Logic_Assassin
 description: "专业的长文档逻辑审计工具。能够识别合同矛盾、法律风险和学术逻辑冲突，并生成带有证据链的飞书互动卡片报告。"
 
-# 🛠️ 技能工具集 (Tools)
+#  技能工具集 (Tools)
 tools:
   - name: audit_logic
     description: "对上传的文件或飞书云端文档执行逻辑一致性质询。"
@@ -24,7 +24,7 @@ tools:
           description: "当前会话的 chat_id，用于结果投射"
       required: [file_path, query, chat_id]
     
-    # 🚀 调度指令 (Execution Guide)
+    #  调度指令 (Execution Guide)
     # Aily 在调度此工具时，应通过系统 shell 执行以下命令：
     command_template: >
       python spine_interaction/cli_adapters/audit_entry.py audit 
@@ -32,7 +32,7 @@ tools:
       --query "{{query}}" 
       --chat-id "{{chat_id}}"
 
-# 🎭 交互规范 (Interaction Rules)
+#  交互规范 (Interaction Rules)
 interaction:
   - 过程透明：系统会自动投射带有进度时间线的互动卡片。
   - 证据导向：所有结论必须在卡片中附带物理页码。

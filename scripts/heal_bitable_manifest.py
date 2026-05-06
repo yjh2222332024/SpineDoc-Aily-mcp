@@ -1,6 +1,7 @@
 import asyncio
 import json
 from pathlib import Path
+from backend.app.core.config import settings
 from backend.app.services.feishu.bitable_ledger import bitable_ledger
 
 # 定义 逻辑 Key -> 飞书显示名称 的绝对映射
@@ -31,43 +32,47 @@ SCHEMA_MAP = {
 }
 
 async def heal_manifest():
-    manifest_path = Path("backend/storage/bitable_schema_manifest.json")
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    base_token = manifest["base_token"]
-    
-    print(f"🛠️ [Healer] 开始修复多维表格主权清单: {base_token}")
-    
+    base_token = settings.FEISHU_BITABLE_TOKEN
+    print(f" [Healer] 开始检查多维表格字段: {base_token}")
+
+    results = {}
     for table_key, field_map in SCHEMA_MAP.items():
-        if table_key not in manifest["tables"]:
-            print(f"⚠️ 跳过表 {table_key} (manifest 中未定义 ID)")
+        if table_key not in bitable_ledger.tables:
+            print(f" 跳过表 {table_key} (未配置)")
             continue
-            
-        table_id = manifest["tables"][table_key]["id"]
-        print(f"  - 正在同步表: {table_key} ({table_id})")
-        
+
+        table_id = bitable_ledger.tables[table_key]["id"]
+        if not table_id:
+            print(f" 跳过表 {table_key} (未配置 ID)")
+            continue
+
+        print(f"  - 正在检查表: {table_key} ({table_id})")
+
         url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{base_token}/tables/{table_id}/fields"
         resp = await bitable_ledger._api_request("GET", url)
-        
+
         if resp.get("code") != 0:
-            print(f"❌ 无法读取表 {table_key} 的字段信息: {resp.get('msg')}")
+            print(f" 无法读取表 {table_key} 的字段信息: {resp.get('msg')}")
             continue
-            
+
         actual_fields = {it["field_name"]: it["field_id"] for it in resp.get("data", {}).get("items", [])}
-        
-        # 更新 manifest 中的字段 ID
-        new_fields = {}
+
+        table_fields = {}
         for logic_key, display_name in field_map.items():
             if display_name in actual_fields:
-                new_fields[logic_key] = actual_fields[display_name]
-                print(f"    ✅ {logic_key} -> {display_name} (ID: {actual_fields[display_name]})")
+                table_fields[logic_key] = actual_fields[display_name]
+                print(f"     {logic_key} -> {display_name} (ID: {actual_fields[display_name]})")
             else:
-                print(f"    ❌ 找不到字段: {display_name} (已忽略)")
-        
-        manifest["tables"][table_key]["fields"] = new_fields
+                print(f"     找不到字段: {display_name} (已忽略)")
 
-    # 物理落盘
-    manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
-    print("\n🎉 [Healer] 主权清单已修复并同步至物理文件。")
+        results[table_key] = table_fields
+
+    # 输出 JSON 格式供参考
+    print("\n [Healer] 字段 ID 映射:")
+    print(json.dumps(results, indent=2, ensure_ascii=False))
+
+if __name__ == "__main__":
+    asyncio.run(heal_manifest())
 
 if __name__ == "__main__":
     asyncio.run(heal_manifest())

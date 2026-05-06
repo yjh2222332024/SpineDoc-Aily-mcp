@@ -1,13 +1,9 @@
 """
 SpineDoc Interfaces Facade
 """
-from .auditor import ISpineAuditor
 from .memory import IAgenticMemory
 from .reporter import IFeishuReporter
 from .storage import IDocumentStore
-
-# Legacy Aliases
-SpineReporter = IFeishuReporter
 
 # 默认空实现 (Null Objects)
 from typing import Dict, Any, List
@@ -19,3 +15,4 @@ class NullReporter(IFeishuReporter):
 class NullMemory(IAgenticMemory):
     async def ingest_memory(self, chunk_data: Dict[str, Any]) -> str: return ""
     async def evolve_network(self, node_id: str) -> List[Dict[str, Any]]: return []
+    async def query_memory(self, query: str, limit: int = 5) -> List[Dict[str, Any]]: return []

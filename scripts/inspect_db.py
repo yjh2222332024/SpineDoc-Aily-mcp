@@ -1,4 +1,4 @@
-"""🔍 数据库探查脚本 - 查看 TOC 树和切片概况"""
+""" 数据库探查脚本 - 查看 TOC 树和切片概况"""
 import sys
 sys.path.insert(0, '.')
 
@@ -12,13 +12,13 @@ async def inspect_db():
     async with store._session_maker() as session:
         # 1. 列出所有文档
         print("="*60)
-        print("📂 文档列表")
+        print(" 文档列表")
         print("="*60)
         stmt = select(Document).order_by(Document.created_at.desc())
         docs = (await session.execute(stmt)).scalars().all()
 
         for doc in docs:
-            print(f"\n📄 {doc.filename}")
+            print(f"\n {doc.filename}")
             print(f"   ID: {doc.id}")
             print(f"   总页数：{doc.total_pages}")
             print(f"   状态：{doc.status}")

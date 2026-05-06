@@ -40,13 +40,13 @@ class LarkShadowSynchronizer(LarkCliReporter):
             if process.returncode == 0:
                 resp = json.loads(stdout.decode())
                 self.current_doc_token = resp.get("data", {}).get("doc_id")
-                logger.info(f"✅ [ShadowSync] 影子文档创建成功: {self.current_doc_token}")
+                logger.info(f" [ShadowSync] 影子文档创建成功: {self.current_doc_token}")
                 return self.current_doc_token
             else:
-                logger.error(f"❌ [ShadowSync] 文档创建失败: {stderr.decode()}")
+                logger.error(f" [ShadowSync] 文档创建失败: {stderr.decode()}")
                 return None
         except Exception as e:
-            logger.error(f"❌ [ShadowSync] 初始化异常: {e}")
+            logger.error(f" [ShadowSync] 初始化异常: {e}")
             return None
 
     async def push_blocks(self, blocks: List[Dict[str, Any]], doc_format: str = "markdown"):

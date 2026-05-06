@@ -15,3 +15,8 @@ class IAgenticMemory(ABC):
     async def evolve_network(self, node_id: str) -> List[Dict[str, Any]]:
         """触发进化机制，寻找与现有知识库的支撑或冲突关系"""
         pass
+
+    @abstractmethod
+    async def query_memory(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """在记忆库中搜索相关逻辑片段"""
+        pass

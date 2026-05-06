@@ -4,7 +4,7 @@ from backend.app.services.intelligence.retrieval.graph.planner import planner_ag
 from backend.app.services.intelligence.retrieval.graph.schema import CourtState
 
 async def test_planning():
-    print("🚀 [AtomicTest] Starting Graph Planning & State Initialization...")
+    print(" [AtomicTest] Starting Graph Planning & State Initialization...")
     
     # 1. 模拟初始化状态 (The Genesis State)
     state: CourtState = {
@@ -18,7 +18,7 @@ async def test_planning():
         "final_answer": None
     }
     
-    print(f"📄 Initial Query: {state['query']}")
+    print(f" Initial Query: {state['query']}")
     
     # 2. 执行 Planner 节点
     update = await planner_agent.plan(state)
@@ -26,7 +26,7 @@ async def test_planning():
     # 3. 模拟状态合并 (The Graph Reducer)
     state.update(update)
     
-    print("\n✅ State Updated:")
+    print("\n State Updated:")
     print(f"   - Sub-queries ({len(state['sub_queries'])}):")
     for sq in state['sub_queries']:
         print(f"     ↳ {sq}")

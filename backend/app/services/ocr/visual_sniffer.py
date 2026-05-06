@@ -11,7 +11,7 @@ class VisualSaliencySniffer:
         try:
             doc = fitz.open(pdf_path)
         except Exception as e:
-            print(f"❌ 无法打开 PDF: {e}")
+            print(f" 无法打开 PDF: {e}")
             return []
 
         all_sizes = []

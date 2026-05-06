@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class FederatedLogicCourt:
     """
-    🚀 [V160.0] 联邦逻辑法院：SpineDoc 检索系统的最高权力机构。
+     [V160.0] 联邦逻辑法院：SpineDoc 检索系统的最高权力机构。
     职责：解耦编排本地主权证据与外部证人证言。
     """
     def __init__(self):
@@ -29,7 +29,7 @@ class FederatedLogicCourt:
         """
         执行联邦裁定
         """
-        print(f"🏛️ [FederatedCourt] 法院开庭，受理质询: {query[:30]}...")
+        print(f" [FederatedCourt] 法院开庭，受理质询: {query[:30]}...")
 
         # 1. 启动主权哨兵：收割本地证据
         local_evidence = await self.sentry.route_query(query, limit=5)
@@ -40,7 +40,7 @@ class FederatedLogicCourt:
         # 如果本地主权分数不足，或者属于开放性问题，唤醒证人
         witness_package = None
         if top_local_score < self.threshold_for_witness:
-            print(f"⚖️ [FederatedCourt] 本地主权置信度不足 ({top_local_score:.2f})，召唤联网证人...")
+            print(f" [FederatedCourt] 本地主权置信度不足 ({top_local_score:.2f})，召唤联网证人...")
             witness_package = await self.witness.retrieve([query])
         
         # 3. 证据会师与平权融合

@@ -19,18 +19,18 @@ async def run_standard_ingestion():
     doc_path = "ceshi_ocr/游戏收费乱象研究与治理.pdf"
     
     if not os.path.exists(doc_path):
-        print(f"❌ [Audit] 找不到目标文件: {doc_path}")
+        print(f" [Audit] 找不到目标文件: {doc_path}")
         return
 
-    print(f"\n🚀 [Audit] 启动物理脊梁收割：{doc_path}")
-    print(f"🛠️ [Audit] 策略：提取内置 TOC -> 物理页码对齐 -> 高精度区间采样\n")
+    print(f"\n [Audit] 启动物理脊梁收割：{doc_path}")
+    print(f" [Audit] 策略：提取内置 TOC -> 物理页码对齐 -> 高精度区间采样\n")
 
     try:
         # 使用 force=True 触发新逻辑
         result = await engine.ingest_document(doc_path, force=True)
         
         print("\n" + "🎮" * 20)
-        print(f"✅ [Audit] 任务圆满完成！")
+        print(f" [Audit] 任务圆满完成！")
         print(f"🔗 Bitable ID: {result.get('bitable_id')}")
         
         toc = result.get('toc', [])
@@ -43,7 +43,7 @@ async def run_standard_ingestion():
         print("🎮" * 20)
         
     except Exception as e:
-        print(f"\n❌ [Audit] 任务崩溃: {e}")
+        print(f"\n [Audit] 任务崩溃: {e}")
         import traceback
         traceback.print_exc()
 

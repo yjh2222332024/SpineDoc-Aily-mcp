@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class EmergentSpineOrchestrator:
     """
-    🚀 [V3.5] 涌现指挥官：ISR 领域的调度中枢。
+     [V3.5] 涌现指挥官：ISR 领域的调度中枢。
     职责：
     1. 驱动全量收割。
     2. 执行三层逻辑蒸馏。
@@ -34,7 +34,7 @@ class EmergentSpineOrchestrator:
                                         doc_obj: Any, 
                                         ocr_context: Optional[Dict[int, str]] = None) -> Tuple[List[Dict], List[SpineNode]]:
         """
-        🚀 核心：全自动逻辑涌现流水线
+         核心：全自动逻辑涌现流水线
         """
         print(f"🌊 [Orchestrator] 启动全自动逻辑涌现流水线: {filename}")
 
@@ -58,7 +58,7 @@ class EmergentSpineOrchestrator:
                                    doc_obj: Any, 
                                    ocr_context: Optional[Dict[int, str]] = None) -> List[Dict[str, Any]]:
         """
-        🚀 第一阶段：原子级数据采样
+         第一阶段：原子级数据采样
         """
         print(f"📥 [Emergent] 执行暴力全量收割...")
         raw_chunks = []

@@ -1,0 +1,10 @@
+serverAddr = "114.132.235.152"
+serverPort = 7005
+auth.token = "123456"
+
+[[proxies]]
+name = "spinedoc"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 7000
+remotePort = 7000

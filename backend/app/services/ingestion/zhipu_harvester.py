@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class ZhipuHarvester:
     """
-    🚀 [V120.0] 智谱白盒收割机：工业级云端检索算力。
+     [V120.0] 智谱白盒收割机：工业级云端检索算力。
     """
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or settings.ZHIPU_API_KEY
@@ -34,7 +34,7 @@ class ZhipuHarvester:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             resp = await client.request(method, url, json=payload, headers=headers)
             if resp.status_code != 200:
-                logger.error(f"❌ [Zhipu-API] Failed: {resp.text}")
+                logger.error(f" [Zhipu-API] Failed: {resp.text}")
                 return {}
             return resp.json()
 
@@ -44,9 +44,9 @@ class ZhipuHarvester:
                       galaxy_ids: Optional[List[str]] = None,
                       limit: int = 10) -> List[Dict]:
         """
-        🚀 执行白盒收割
+         执行白盒收割
         """
-        print(f"📡 [ZhipuHarvester] 启动白盒收割: {query[:20]} | 知识库: {knowledge_id}")
+        print(f" [ZhipuHarvester] 启动白盒收割: {query[:20]} | 知识库: {knowledge_id}")
         
         # 1. 构造过滤条件（主权领地限制）
         filter_data = {}
@@ -66,12 +66,12 @@ class ZhipuHarvester:
             "filter": filter_data if filter_data else None
         }
 
-        # 🚀 物理质询：调用智谱检索 API
+        #  物理质询：调用智谱检索 API
         resp = await self._api_request("POST", "search", payload)
         
         # 2. 逻辑收割
         hits = resp.get("list", [])
-        print(f"✅ [ZhipuHarvester] 收割完成，发现 {len(hits)} 条原始证据。")
+        print(f" [ZhipuHarvester] 收割完成，发现 {len(hits)} 条原始证据。")
         
         results = []
         for hit in hits:

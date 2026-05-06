@@ -3,7 +3,7 @@ import json
 from backend.app.services.feishu.bitable_ledger import bitable_ledger
 
 async def debug_bitable():
-    print("🚀 [Debug] Inspecting Chunks table directly...")
+    print(" [Debug] Inspecting Chunks table directly...")
     
     table_id = bitable_ledger.tables['chunks']['id']
     url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{bitable_ledger.app_token}/tables/{table_id}/records/search"
@@ -16,7 +16,7 @@ async def debug_bitable():
     ]
     
     for t in tests:
-        print(f"\n🔍 Testing: {t['name']}")
+        print(f"\n Testing: {t['name']}")
         resp = await bitable_ledger._api_request("POST", url, json_data=t['payload'])
         items = resp.get("data", {}).get("items", [])
         print(f"   ↳ Results: {len(items)}")

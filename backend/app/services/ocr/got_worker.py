@@ -36,7 +36,7 @@ class GOTWorker:
         cache_dir = str(base_cache / "GOT-OCR-2.0")
         os.makedirs(cache_dir, exist_ok=True)
 
-        print(f"🚀 [OCR-GOT] 正在加载模型 {self.model_id} (Cache: {cache_dir}) 到 {self.device}...")
+        print(f" [OCR-GOT] 正在加载模型 {self.model_id} (Cache: {cache_dir}) 到 {self.device}...")
 
         try:
             from transformers import AutoModelForImageTextToText, AutoProcessor
@@ -54,9 +54,9 @@ class GOTWorker:
                 cache_dir=cache_dir
             )
             self._loaded = True
-            print(f"✅ [OCR-GOT] 模型加载完成 (Device: {self.device})")
+            print(f" [OCR-GOT] 模型加载完成 (Device: {self.device})")
         except Exception as e:
-            print(f"❌ [OCR-GOT] 模型加载失败: {e}")
+            print(f" [OCR-GOT] 模型加载失败: {e}")
             self._loaded = True  # 标记已尝试，防止重复尝试
             raise e
 
@@ -73,10 +73,10 @@ class GOTWorker:
             return ""
         
         try:
-            # 🏛️ 转换为 PIL Image
+            #  转换为 PIL Image
             image = Image.fromarray(cv2.cvtColor(crop_np, cv2.COLOR_BGR2RGB))
             
-            # 🏛️ 关键配置：format=True 开启公式/表格的 Markdown 渲染
+            #  关键配置：format=True 开启公式/表格的 Markdown 渲染
             inputs = self.processor(image, return_tensors="pt", format=True).to(self.device, self.dtype)
             
             # 执行推理
@@ -92,7 +92,7 @@ class GOTWorker:
             # 解码
             content = self.processor.decode(generate_ids[0], skip_special_tokens=True).strip()
             
-            # 🏛️ 专业的后处理：移除 Chat Template 泄露产生的冗余标签
+            #  专业的后处理：移除 Chat Template 泄露产生的冗余标签
             # GOT-OCR-2.0-hf 有时会输出 system/user/assistant 的对话结构
             if "assistant" in content:
                 content = content.split("assistant")[-1].strip()
@@ -102,5 +102,5 @@ class GOTWorker:
             
             return content
         except Exception as e:
-            print(f"⚠️ [OCR-GOT] 精修失败: {e}")
+            print(f" [OCR-GOT] 精修失败: {e}")
             return ""

@@ -12,7 +12,7 @@ async def link_chunks_to_galaxies():
     chunks_table_id = "tblgTgxUGTUykcU2"
     galaxies_table_id = "tblUNoT6tTIWZtcF"
 
-    print(f"🚀 [Linker] 正在打通星系与分片的逻辑隧道...")
+    print(f" [Linker] 正在打通星系与分片的逻辑隧道...")
     async with httpx.AsyncClient() as client:
         # 1. 获取 Token
         resp = await client.post("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal", 
@@ -37,9 +37,9 @@ async def link_chunks_to_galaxies():
         
         if data.get("code") == 0:
             field_id = data["data"]["field"]["field_id"]
-            print(f"✅ [Linker] 关联成功！字段 ID: {field_id}")
+            print(f" [Linker] 关联成功！字段 ID: {field_id}")
         else:
-            print(f"⚠️ [Linker] 字段创建可能已存在或失败: {data.get('msg')}")
+            print(f" [Linker] 字段创建可能已存在或失败: {data.get('msg')}")
 
 if __name__ == "__main__":
     asyncio.run(link_chunks_to_galaxies())

@@ -10,43 +10,40 @@ from backend.app.infra.lark_cli_client import LarkCliClient
 
 logger = logging.getLogger(__name__)
 
+from typing import List
+from backend.app.core.interfaces.cloud_adapter import ICloudDocumentAdapter
+from .feishu_cloud_adapter import FeishuCloudAdapter
+
 class FileResolver:
-    def __init__(self, temp_dir: str = "backend/temp_uploads/"):
+    """
+    🧬 File Resolver - 多源文件解析适配器 (Uncle Bob 版)
+    ========================================
+    职责：协调各个 CloudAdapter 解决文件解析问题。
+    """
+    def __init__(self, 
+                 temp_dir: str = "backend/temp_uploads/",
+                 adapters: List[ICloudDocumentAdapter] = None):
         self.temp_dir = Path(temp_dir)
         self.temp_dir.mkdir(parents=True, exist_ok=True)
-        self.cli_client = LarkCliClient()
+        # 默认注入 FeishuAdapter，体现 OCP 原则
+        self.adapters = adapters or [FeishuCloudAdapter()]
 
     async def resolve(self, identifier: str) -> str:
         """
         解析标识符。
-        1. 如果是 URL，直接返回。
-        2. 如果符合 Feishu Token 模式，调用 CLI 下载。
+        1. URL 判定。
+        2. 询问适配器是否能处理。
         3. 否则视为本地路径。
         """
-        # 1. URL 判定
         if identifier.startswith("http"):
             return identifier
 
-        # 2. Feishu Token 判定 (box..., file..., doc...)
-        # Aily 上传通常返回 boxcn...
-        is_token = (
-            identifier.startswith("box") or 
-            identifier.startswith("file_") or 
-            identifier.startswith("doc")
-        )
-        
-        if is_token and len(identifier) > 10:
-            logger.info(f"🚚 [Resolver] 检测到飞书 Token: {identifier[:10]}... 正在下载...")
-            # 构造临时文件名，保留 token 作为名称
-            temp_path = self.temp_dir / f"aily_{identifier}.pdf"
-            
-            success = await self.cli_client.download_drive_file(identifier, str(temp_path))
-            if success and temp_path.exists():
-                logger.info(f"✅ [Resolver] 下载成功: {temp_path}")
-                return str(temp_path.absolute())
-            else:
-                logger.error(f"❌ [Resolver] 下载失败，回退到原始标识符")
-                return identifier
+        for adapter in self.adapters:
+            if adapter.can_handle(identifier):
+                temp_path = self.temp_dir / f"resolved_{identifier}.pdf"
+                success = await adapter.download(identifier, str(temp_path))
+                if success and temp_path.exists():
+                    return str(temp_path.absolute())
 
-        # 3. 默认视为本地路径
+        # 默认视为本地路径
         return identifier

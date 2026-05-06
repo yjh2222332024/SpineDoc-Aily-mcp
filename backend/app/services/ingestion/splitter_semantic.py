@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class SemanticSplitter:
     """
-    🚀 资深架构师：云端语义切片器
+     资深架构师：云端语义切片器
     职责：不按字数切，按“意思”切。通过云端向量计算语义连贯性。
     """
 
@@ -40,25 +40,25 @@ class SemanticSplitter:
             return []
 
         # 1. 句子分割 (基于标点符号)
-        # 🏛️ 纪律：保留标点，不要让句子在物理上断裂
+        #  纪律：保留标点，不要让句子在物理上断裂
         sentences = re.split(r'(?<=[。！？.!?])\s*', text)
         sentences = [s.strip() for s in sentences if s.strip()]
         
         if len(sentences) <= 1:
             return sentences
 
-        # 2. 🚀 云端批量获取向量 (一次往返，极致时延)
+        # 2.  云端批量获取向量 (一次往返，极致时延)
         try:
             embeddings_list = await embedding_service.get_embeddings(sentences)
             if not embeddings_list:
                 return [text]
             embeddings = np.array(embeddings_list)
         except Exception as e:
-            logger.error(f"⚠️ [Splitter] 云端向量获取失败，降级为原始文本: {e}")
+            logger.error(f" [Splitter] 云端向量获取失败，降级为原始文本: {e}")
             return [text]
 
         # 3. 计算相邻句子的余弦相似度
-        # 🏛️ 优化：利用 Numpy 向量化计算，不再使用 sklearn，保持轻量
+        #  优化：利用 Numpy 向量化计算，不再使用 sklearn，保持轻量
         breaks = []
         current_chunk_len = 0
         

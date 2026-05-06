@@ -11,26 +11,23 @@ import uuid
 import json
 import re
 from typing import List, Dict, Any, Optional, Tuple
-from openai import AsyncOpenAI
 from backend.app.core.config import settings
 from backend.app.services.toc.base import SpineNode
+from backend.app.infra.llm_client import get_llm_client
 
 logger = logging.getLogger(__name__)
 
 class LatentSpineDistiller:
     def __init__(self):
-        # 🚀 [V60.0] 动态路由：自动适配火山引擎/OpenAI 接口
-        self.client = AsyncOpenAI(
-            api_key=settings.REAL_LLM_KEY, 
-            base_url=settings.LLM_BASE_URL
-        )
+        #  [V60.0] 动态路由：自动适配火山引擎/OpenAI 接口
+        self.client = get_llm_client()
         self.model = settings.REAL_LLM_MODEL
 
     async def distill_emergent_spine(self, 
                                     doc_id: uuid.UUID, 
                                     refined_chunks: List[Dict[str, Any]]) -> List[SpineNode]:
         """
-        🚀 核心入口：构建三层逻辑金字塔 (-1 -> -2 -> -3)
+         核心入口：构建三层逻辑金字塔 (-1 -> -2 -> -3)
         """
         if not refined_chunks: return []
         
@@ -39,7 +36,7 @@ class LatentSpineDistiller:
         # 1. 准备 Level -1 指纹 (Atoms)
         fingerprints = []
         for idx, c in enumerate(refined_chunks):
-            # 🚀 [V63.0] 优先使用 Bitable AI 反哺的云端摘要
+            #  [V63.0] 优先使用 Bitable AI 反哺的云端摘要
             hook_content = c.get("summary", "")
             if not hook_content:
                 hook_content = c.get("content", "")[:settings.CONTEXT_CHUNK_PREVIEW_CONTENT]
@@ -70,7 +67,7 @@ class LatentSpineDistiller:
 
     def _fallback_partition(self, fingerprints: List[Dict], level: int) -> List[SpineNode]:
         """
-        🚀 架构师的降级方案：物理暴力分区，确保系统不挂起。
+         架构师的降级方案：物理暴力分区，确保系统不挂起。
         """
         nodes = []
         batch_size = 10
@@ -97,7 +94,7 @@ class LatentSpineDistiller:
         """
         prompt = f"""你是一个顶级的文档结构架构师。请根据以下文档分片的指纹（物理页码 p、语义标签 tags、逻辑摘要 summary），将其划分为具有逻辑意义的【子章节】。
         
-        🚀 核心聚类法则：
+         核心聚类法则：
         1. 重点观察【语义标签 tags】的聚集效应。如果连续多个分片具有相同或高度相关的标签，它们必须被划入同一个子章节。
         2. 当标签的主题发生明显转换时，即为切断边界。
         
@@ -148,7 +145,7 @@ class LatentSpineDistiller:
 
     async def _aggregate_to_level_3(self, doc_id: uuid.UUID, sub_nodes: List[SpineNode]) -> List[SpineNode]:
         """
-        🚀 [V3.5] 主权聚合：将子章节 (Level -2) 归并为大章节 (Level -3)
+         [V3.5] 主权聚合：将子章节 (Level -2) 归并为大章节 (Level -3)
         """
         if len(sub_nodes) <= 3: 
             return [] # 规模太小，不进行二次分层
@@ -207,7 +204,7 @@ class LatentSpineDistiller:
 
     def _ensure_physical_integrity(self, nodes: List[SpineNode], chunks: List[Dict]):
         """
-        🚀 架构师铁律：强制执行物理区间闭合
+         架构师铁律：强制执行物理区间闭合
         1. 确保所有节点的物理页码与对应的 Chunk 严格对齐。
         2. 确保同一层级的节点之间没有物理空隙。
         """

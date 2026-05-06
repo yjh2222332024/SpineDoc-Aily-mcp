@@ -21,7 +21,7 @@ class ARKLogicSmelter:
 
     async def smelt_toc(self, raw_blocks: List[Dict[str, Any]], page_context: str = "") -> List[Dict[str, Any]]:
         """
-        🚀 逻辑熔断：将 OCR 碎块重构为结构化 JSON。
+         逻辑熔断：将 OCR 碎块重构为结构化 JSON。
         """
         if not raw_blocks:
             return []
@@ -56,7 +56,7 @@ class ARKLogicSmelter:
 【原始文本碎块】
 {materials}
 
-✅ 输出规范：
+ 输出规范：
 1. 仅返回一个标准 JSON 数组。
 2. 数组中的每个对象包含：'title'(字符串), 'logical_page'(整数), 'level'(整数)。
 3. 严禁任何解释、说明或 Markdown 代码块包裹。
@@ -75,7 +75,7 @@ class ARKLogicSmelter:
 
             raw_content = response.choices[0].message.content.strip()
             
-            # 4. 🚀 [V54.5] 多重 JSON 过滤层
+            # 4.  [V54.5] 多重 JSON 过滤层
             # 4.1 移除可能存在的 Markdown 块
             clean_content = re.sub(r'```json\s*|\s*```', '', raw_content)
             # 4.2 正则物理打捞
@@ -98,15 +98,15 @@ class ARKLogicSmelter:
                             if item["title"]:
                                 refined_items.append(item)
                     
-                    print(f"✅ [Smelter] 逻辑重构完成: 原始 {len(data)} 项 -> 校验后 {len(refined_items)} 项")
+                    print(f" [Smelter] 逻辑重构完成: 原始 {len(data)} 项 -> 校验后 {len(refined_items)} 项")
                     return refined_items
                 except json.JSONDecodeError as je:
-                    print(f"❌ [Smelter] JSON 解析失败: {je} | 原始内容: {candidate_text[:100]}")
+                    print(f" [Smelter] JSON 解析失败: {je} | 原始内容: {candidate_text[:100]}")
             
             return []
 
         except Exception as e:
-            print(f"❌ [Smelter] 核心异常: {e}")
+            print(f" [Smelter] 核心异常: {e}")
             return []
 
     def _safe_int(self, val, default=0) -> int:

@@ -4,7 +4,7 @@ SpineDoc 结构化分片引擎 (V4.0 语义切片版)
 职责：执行物理分割，支持 TOC 结构化分片与全量 Markdown 分片。
      使用语义切片替代固定字数切分，保持语义完整性。
 """
-# 🔥 修复 Python 路径问题（Windows 专用）
+#  修复 Python 路径问题（Windows 专用）
 import sys
 import hashlib
 from pathlib import Path
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class StructuralSplitter:
     """
-    🚀 资深架构师：物理区间分割器 (V5.1 Clean Code 版)
+     资深架构师：物理区间分割器 (V5.1 Clean Code 版)
     职责：基于 TOC 逻辑区间执行递归结构化切分。
     """
     # 定义层级分隔符，体现 Aily 的结构优先原则
@@ -41,9 +41,9 @@ class StructuralSplitter:
     def _init_semantic_engine(self):
         try:
             self.semantic_splitter = SemanticSplitter(threshold=0.55)
-            logger.info("✅ 语义切片器已加载")
+            logger.info(" 语义切片器已加载")
         except Exception as e:
-            logger.warning(f"⚠️ 语义切片器加载失败：{e}")
+            logger.warning(f" 语义切片器加载失败：{e}")
 
     async def _split_text_smart(self, text: str) -> List[str]:
         """智能路由：优先使用语义切片，除非未开启或引擎加载失败"""
@@ -64,7 +64,7 @@ class StructuralSplitter:
             # 过滤太短的 chunk
             return [c for c in chunks if len(c) >= 30]
         except Exception as e:
-            logger.warning(f"⚠️ 语义切片失败，降级为递归切分：{e}")
+            logger.warning(f" 语义切片失败，降级为递归切分：{e}")
             return self._split_recursively(text, self.DEFAULT_SEPARATORS)
 
     def _split_recursively(self, text: str, separators: List[str]) -> List[str]:
@@ -166,7 +166,7 @@ class StructuralSplitter:
                 page_matches = re.findall(r'【页码：P(\d+)】', clean_text)
                 curr_page = int(page_matches[-1]) if page_matches else p_start
 
-                # 🚀 物理确权：生成逻辑座标
+                #  物理确权：生成逻辑座标
                 logic_coord = f"P{curr_page}-{hashlib.md5(clean_text.encode()).hexdigest()[:8]}"
 
                 yield {
@@ -192,7 +192,7 @@ class StructuralSplitter:
                                   ocr_context: Optional[Dict[int, str]] = None,
                                   page_text_map: Optional[Dict[int, str]] = None) -> AsyncGenerator[Dict[str, Any], None]:
         """
-        🚀 V4.0 新增：全量文档语义切片（带进度监控）
+         V4.0 新增：全量文档语义切片（带进度监控）
         """
         total_pages = len(doc)
         buffer_size = 5  # 每 5 页切一次，减少 API 调用次数
@@ -245,7 +245,7 @@ class StructuralSplitter:
                 
                 buffer_text = ""
                 buffer_start_page = p_idx + 2
-        print(f"✅ [Splitter] 全量文档切分流水线执行完毕。")
+        print(f" [Splitter] 全量文档切分流水线执行完毕。")
 
 
 structural_splitter = StructuralSplitter(use_semantic_split=True)

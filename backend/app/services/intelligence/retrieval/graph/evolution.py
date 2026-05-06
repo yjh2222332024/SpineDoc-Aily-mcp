@@ -24,7 +24,7 @@ CourtState = GraphExecutionState
 
 class KnowledgeBackfillNode:
     """
-    🚀 [V200.0] 演化节点：将‘绝对客观成果’物理固化，建立多代传承。
+     [V200.0] 演化节点：将‘绝对客观成果’物理固化，建立多代传承。
     """
     async def evolve(self, state: CourtState) -> Dict[str, Any]:
         verdict = state.get("verdict", {})
@@ -32,13 +32,13 @@ class KnowledgeBackfillNode:
         conflicts = verdict.get("unresolved_conflicts", [])
         
         if not consensus and not conflicts:
-            print("⚠️ [EvolutionNode] 无可演化成果，封印状态。")
+            print(" [EvolutionNode] 无可演化成果，封印状态。")
             return {"next_step": "END"}
 
         print(f"🧬 [EvolutionNode] 正在执行主权演化：处理 {len(consensus)} 条新共识...")
 
         # 1. 物理回填：将新共识写入 Bitable
-        # 🚀 物理确权：确保在会话结束前完成落库
+        #  物理确权：确保在会话结束前完成落库
         await self._backfill_to_bitable(consensus, state)
 
         # 2. 逻辑反哺：如果存在冲突，记录到‘逻辑墓地’
@@ -78,7 +78,7 @@ class KnowledgeBackfillNode:
                 }, ensure_ascii=False)
 
                 # 3. 提取父代关联 (取触发进化的核心证据作为父节点)
-                # 🚀 架构泛化：父级关联不再仅仅是 TOC，而是 Lineage
+                #  架构泛化：父级关联不再仅仅是 TOC，而是 Lineage
                 parent_ids = [g_ids[0]] if g_ids else []
 
                 new_records.append({
@@ -89,7 +89,7 @@ class KnowledgeBackfillNode:
                     "逻辑坐标": f"E-G{generation}-{i}",
                     "逻辑面包屑": "主权演化共识",
 
-                    # 🚀 物理补完：使用 save_chunks_batch 验证过的格式
+                    #  物理补完：使用 save_chunks_batch 验证过的格式
                     "文档关联": str(sovereign_root_id) if sovereign_root_id else "",
                     "逻辑指纹": fingerprint,
                     "元数据": meta_json,
@@ -97,11 +97,11 @@ class KnowledgeBackfillNode:
 
             # C. 启动物理回调
             if new_records:
-                print(f"💾 [Evolution] 正在向根文档 {sovereign_root_id} 回调 {len(new_records)} 条客观真理...")
+                print(f" [Evolution] 正在向根文档 {sovereign_root_id} 回调 {len(new_records)} 条客观真理...")
                 await bitable_ledger.backfill_consensus(new_records)
             
         except Exception as e:
-            logger.error(f"❌ [Evolution] 物理回调失败: {e}", exc_info=True)
+            logger.error(f" [Evolution] 物理回调失败: {e}", exc_info=True)
 
 evolution_node = KnowledgeBackfillNode()
 

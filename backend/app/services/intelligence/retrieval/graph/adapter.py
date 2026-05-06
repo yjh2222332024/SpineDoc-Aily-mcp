@@ -28,7 +28,7 @@ def create_initial_court_state(query: str, doc_id: str = "all") -> CourtState:
         next_step="HARVEST" if is_single_doc else "PLAN",
         iteration=0,
         final_answer=None,
-        phase_log=[],   # 🚀 [V230.0] 阶段时间线
+        phase_log=[],   #  [V230.0] 阶段时间线
     )
 
 
@@ -77,5 +77,5 @@ def adapt_court_state_to_hybrid_output(state: CourtState) -> Dict[str, Any]:
         "color": color,
         "cited_sources": cited,
         "reasoning": reasoning,
-        "phase_log": state.get("phase_log", []),     # 🚀 [V230.0] 阶段时间线
+        "phase_log": state.get("phase_log", []),     #  [V230.0] 阶段时间线
     }

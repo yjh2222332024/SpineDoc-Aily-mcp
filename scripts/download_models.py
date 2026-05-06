@@ -219,7 +219,7 @@ class ModelDownloader:
 
     def download_all(self, required_only: bool = False, use_mirror: bool = False) -> bool:
         """下载所有必需模型"""
-        print_section("📦 模型下载")
+        print_section(" 模型下载")
 
         models_to_download = [
             mid for mid, info in MODELS.items()
@@ -336,7 +336,7 @@ def main():
             downloader.download_all(required_only=True, use_mirror=use_mirror)
 
         print(f"\n{Colors.GREEN}{'=' * 60}")
-        print("🚀 模型下载完成!")
+        print(" 模型下载完成!")
         print(f"{'=' * 60}{Colors.RESET}\n")
 
 if __name__ == "__main__":

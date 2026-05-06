@@ -10,7 +10,7 @@ async def create_galaxy_table():
     app_secret = os.getenv("FEISHU_APP_SECRET")
     wiki_node_id = "O3WDwZtqGiVETqkdFghcH78vnLd"
 
-    print(f"🚀 [Setup] 正在获取飞书令牌...")
+    print(f" [Setup] 正在获取飞书令牌...")
     async with httpx.AsyncClient() as client:
         # 1. Get Token
         resp = await client.post("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal", 
@@ -22,7 +22,7 @@ async def create_galaxy_table():
         wiki_url = f"https://open.feishu.cn/open-apis/wiki/v2/spaces/get_node?token={wiki_node_id}"
         resp = await client.get(wiki_url, headers=headers)
         base_token = resp.json()["data"]["node"]["obj_token"]
-        print(f"🏛️ [Setup] 找到多维表格 Base Token: {base_token}")
+        print(f" [Setup] 找到多维表格 Base Token: {base_token}")
 
         # 3. Create Table
         create_url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{base_token}/tables"
@@ -35,11 +35,11 @@ async def create_galaxy_table():
         resp = await client.post(create_url, json=payload, headers=headers)
         table_data = resp.json()
         if table_data.get("code") != 0:
-            print(f"❌ [Setup] 创建表格失败: {table_data}")
+            print(f" [Setup] 创建表格失败: {table_data}")
             return
 
         table_id = table_data["data"]["table_id"]
-        print(f"✅ [Setup] 成功创建星系表! ID: {table_id}")
+        print(f" [Setup] 成功创建星系表! ID: {table_id}")
 
         # 4. Create Fields
         fields_url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{base_token}/tables/{table_id}/fields"
@@ -59,12 +59,12 @@ async def create_galaxy_table():
             if f_resp.json().get("code") == 0:
                 print(f"   ↳ 字段创建成功: {f['field_name']}")
             else:
-                print(f"   ⚠️ 字段 '{f['field_name']}' 创建异常 (可能已存在): {f_resp.json().get('msg')}")
+                print(f"    字段 '{f['field_name']}' 创建异常 (可能已存在): {f_resp.json().get('msg')}")
 
-        print("\n" + "⭐" * 30)
+        print("\n" + "" * 30)
         print(f"请将以下配置添加到你的 .env 文件中：")
         print(f"FEISHU_BITABLE_GALAXY_TABLE_ID={table_id}")
-        print("⭐" * 30)
+        print("" * 30)
 
 if __name__ == "__main__":
     asyncio.run(create_galaxy_table())

@@ -21,7 +21,7 @@ class KeywordExtractor:
     """
     _instance = None
     
-    # 🏛️ 硬性纪律：学术脚手架词汇 (Boilerplate)
+    #  硬性纪律：学术脚手架词汇 (Boilerplate)
     ACADEMIC_BOILERPLATE = {
         "training details", "data processing", "experimental results", "proposed method",
         "performance evaluation", "future work", "related work", "implementation details",
@@ -52,7 +52,7 @@ class KeywordExtractor:
 
     async def extract_keywords(self, text: str, top_n: int = 10) -> List[str]:
         """
-        🚀 [V3.0] 云端确权提取：使用 LLM 替代本地 KeyBERT
+         [V3.0] 云端确权提取：使用 LLM 替代本地 KeyBERT
         """
         if not text:
             return []
@@ -70,7 +70,7 @@ class KeywordExtractor:
             resp = await llm_service.chat_completion(prompt, response_format="json")
             keywords = resp.get("keywords", [])
             
-            # 🛡️ 物理过滤：应用本地停用词与黑名单
+            #  物理过滤：应用本地停用词与黑名单
             clean_keywords = []
             for kw in keywords:
                 kw_clean = kw.strip().lower()
@@ -81,7 +81,7 @@ class KeywordExtractor:
                 
             return clean_keywords[:top_n]
         except Exception as e:
-            print(f"⚠️ [Keywords] 云端提取失败: {e}")
+            print(f" [Keywords] 云端提取失败: {e}")
             return []
 
 def get_keyword_extractor():

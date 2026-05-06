@@ -5,7 +5,7 @@ from backend.app.services.intelligence.retrieval.graph.harvester import harveste
 from backend.app.services.intelligence.retrieval.graph.schema import CourtState
 
 async def test_graph_harvesting():
-    print("🚀 [AtomicTest] Starting Graph-based Parallel Harvesting Validation...\n")
+    print(" [AtomicTest] Starting Graph-based Parallel Harvesting Validation...\n")
     
     # 1. 模拟初始状态
     state: CourtState = {
@@ -24,7 +24,7 @@ async def test_graph_harvesting():
     state.update(plan_update)
     
     # 3. 节点 B：并行收割
-    print(f"\n⚡ Entering HARVEST node with {len(state['sub_queries'])} sub-queries...")
+    print(f"\n Entering HARVEST node with {len(state['sub_queries'])} sub-queries...")
     harvest_update = await harvester_node.harvest(state)
     
     # 模拟 Reducer：追加证据
@@ -32,7 +32,7 @@ async def test_graph_harvesting():
     state["next_step"] = harvest_update["next_step"]
     
     # 4. 物理确权
-    print("\n✅ Harvesting Phase Complete:")
+    print("\n Harvesting Phase Complete:")
     print(f"   - Evidence Pool Size: {len(state['evidence_pool'])}")
     
     # 检查证据多样性
@@ -43,7 +43,7 @@ async def test_graph_harvesting():
     print(f"   - Online Witness pieces: {online_count}")
     
     if state['evidence_pool']:
-        print(f"\n🔍 Sample Evidence from Pool:")
+        print(f"\n Sample Evidence from Pool:")
         sample = state['evidence_pool'][0]
         print(f"   - Origin: {sample['origin']}")
         print(f"   - Content: {sample.get('content', '')[:100]}...")

@@ -3,7 +3,7 @@ from backend.app.services.intelligence.retrieval.graph.auditor import auditor_no
 from backend.app.services.intelligence.retrieval.graph.schema import CourtState
 
 async def test_conflict_detection():
-    print("🚀 [AtomicTest] Starting AuditorNode Conflict Detection Validation...")
+    print(" [AtomicTest] Starting AuditorNode Conflict Detection Validation...")
     
     # 1. 模拟注入冲突证据 (Synthetic Contradiction)
     state: CourtState = {
@@ -39,14 +39,14 @@ async def test_conflict_detection():
     }
     
     # 2. 执行审计
-    print("\n⚖️ Executing AUDIT node...")
+    print("\n Executing AUDIT node...")
     update = await auditor_node.audit(state)
     
     # 3. 物理确权
     conflicts = update.get("conflicts", [])
     weights = update.get("claim_weights", {})
     
-    print("\n✅ Audit Complete:")
+    print("\n Audit Complete:")
     print(f"   - Conflicts Found: {len(conflicts)}")
     for c in conflicts:
         print(f"     ↳ Topic: {c['topic']} | Desc: {c['description']}")

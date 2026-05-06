@@ -5,7 +5,7 @@ from backend.app.services.intelligence.retrieval.graph.auditor import auditor_no
 from backend.app.services.intelligence.retrieval.graph.schema import CourtState
 
 async def test_auditor_pruning():
-    print("🚀 [AtomicTest] Starting AuditorNode State Pruning Validation...\n")
+    print(" [AtomicTest] Starting AuditorNode State Pruning Validation...\n")
     
     # 1. 模拟重度状态 (Evidence with long content)
     long_text = "这是一段非常非常长的文档内容..." * 100
@@ -33,14 +33,14 @@ async def test_auditor_pruning():
     print(f"📊 Initial State Size: {initial_size} bytes")
     
     # 2. 执行审计与剪枝
-    print("⚖️ Executing AUDIT node with state pruning...")
+    print(" Executing AUDIT node with state pruning...")
     update = await auditor_node.audit(state)
     
     # 3. 物理确权
     pruned_pool = update.get("evidence_pool", [])
     final_size = sys.getsizeof(str(pruned_pool))
     
-    print(f"\n✅ Pruning Complete:")
+    print(f"\n Pruning Complete:")
     print(f"   - Final State Size: {final_size} bytes")
     print(f"   - Compression Ratio: {(1 - final_size/initial_size)*100:.1f}%")
     

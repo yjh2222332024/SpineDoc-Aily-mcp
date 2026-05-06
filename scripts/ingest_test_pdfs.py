@@ -26,22 +26,22 @@ async def run_ingestion():
         print(f"\n🦴 [Ingest] 正在处理: {doc1} (预计路由至 Emergent 管道)")
         try:
             result1 = await engine.ingest_document(doc1, force=True)
-            print(f"✅ [Ingest] {doc1} 处理完成。Bitable ID: {result1.get('bitable_id')}")
+            print(f" [Ingest] {doc1} 处理完成。Bitable ID: {result1.get('bitable_id')}")
         except Exception as e:
-            print(f"❌ [Ingest] {doc1} 失败: {e}")
+            print(f" [Ingest] {doc1} 失败: {e}")
     else:
-        print(f"⚠️ [Ingest] 未找到文件: {doc1}")
+        print(f" [Ingest] 未找到文件: {doc1}")
 
     # 2. 游戏收费 (Standard)
     if os.path.exists(doc2):
         print(f"\n🦴 [Ingest] 正在处理: {doc2} (预计路由至 Standard 管道)")
         try:
             result2 = await engine.ingest_document(doc2, force=True)
-            print(f"✅ [Ingest] {doc2} 处理完成。Bitable ID: {result2.get('bitable_id')}")
+            print(f" [Ingest] {doc2} 处理完成。Bitable ID: {result2.get('bitable_id')}")
         except Exception as e:
-            print(f"❌ [Ingest] {doc2} 失败: {e}")
+            print(f" [Ingest] {doc2} 失败: {e}")
     else:
-        print(f"⚠️ [Ingest] 未找到文件: {doc2}")
+        print(f" [Ingest] 未找到文件: {doc2}")
 
 if __name__ == "__main__":
     asyncio.run(run_ingestion())

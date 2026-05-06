@@ -4,7 +4,7 @@ from backend.app.services.intelligence.retrieval.graph.evolution import evolutio
 from backend.app.services.intelligence.retrieval.graph.schema import CourtState
 
 async def test_evolution_logic():
-    print("🚀 [AtomicTest] Starting EvolutionNode Logic Validation...\n")
+    print(" [AtomicTest] Starting EvolutionNode Logic Validation...\n")
     
     # 1. 模拟宣判后的状态
     state: CourtState = {
@@ -32,9 +32,9 @@ async def test_evolution_logic():
     update = await evolution_node.evolve(state)
     
     # 3. 物理确权
-    print("\n✅ Evolution Signal Captured:")
+    print("\n Evolution Signal Captured:")
     print(f"   - Next Step: {update.get('next_step')}")
-    print(f"   - Knowledge Backfill: Check background logs for '💾 [Evolution]'")
+    print(f"   - Knowledge Backfill: Check background logs for ' [Evolution]'")
     
     # 验证是否指向终点
     if update.get("next_step") == "END":

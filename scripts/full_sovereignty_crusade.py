@@ -22,7 +22,7 @@ async def calculate_file_hash(path: Path) -> str:
     return hasher.hexdigest()
 
 async def main():
-    print("🚀 [Crusade] Starting Full Sovereignty Confirmation...")
+    print(" [Crusade] Starting Full Sovereignty Confirmation...")
     engine = SpineEngine()
     docs_dir = Path("docs")
     
@@ -30,16 +30,16 @@ async def main():
     assets = list(docs_dir.glob("**/*.md")) + list(docs_dir.glob("**/*.pdf"))
     assets.sort(key=lambda x: x.stat().st_mtime)
     
-    print(f"📦 Found {len(assets)} physical assets. Beginning ingestion...")
+    print(f" Found {len(assets)} physical assets. Beginning ingestion...")
 
     results = {"success": 0, "fail": 0, "skipped": 0}
     
     for i, asset in enumerate(assets):
-        print(f"\n🛡️ [{i+1}/{len(assets)}] Processing: {asset.name}")
+        print(f"\n [{i+1}/{len(assets)}] Processing: {asset.name}")
         try:
             file_hash = await calculate_file_hash(asset)
             
-            # 🚀 Execute Atomic Ingestion
+            #  Execute Atomic Ingestion
             result = await engine.ingest(
                 str(asset), 
                 file_hash=file_hash,
@@ -47,17 +47,17 @@ async def main():
             )
             
             if result.get("bitable_id"):
-                print(f"✅ Success: {asset.name} (Bitable: {result['bitable_id']})")
+                print(f" Success: {asset.name} (Bitable: {result['bitable_id']})")
                 results["success"] += 1
             else:
-                print(f"⚠️ Warning: {asset.name} completed but ID is None (possibly skipped?)")
+                print(f" Warning: {asset.name} completed but ID is None (possibly skipped?)")
                 results["skipped"] += 1
                 
         except Exception as e:
-            print(f"❌ Failed: {asset.name} | Error: {e}")
+            print(f" Failed: {asset.name} | Error: {e}")
             results["fail"] += 1
             
-        # 🛡️ Defensive Interval: Let the cloud breathe
+        #  Defensive Interval: Let the cloud breathe
         await asyncio.sleep(2)
 
     print("\n" + "="*50)

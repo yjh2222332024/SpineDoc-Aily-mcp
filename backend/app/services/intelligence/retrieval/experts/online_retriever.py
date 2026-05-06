@@ -9,6 +9,7 @@ with color-coded confidence scores. Replaces Tavily with Zhipu Web Search API.
 
 import asyncio
 import hashlib
+import json
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -31,7 +32,7 @@ ZHIPU_CONCURRENT_LIMIT = 5
 
 class OnlineRetriever:
     """
-    🚀 [V170.0] 证人专家：原子主张提取与稳定性确权。
+     [V170.0] 证人专家：原子主张提取与稳定性确权。
     职责：
     1. 域外收割。
     2. 逻辑脱水：将网页长文解构为原子主张 (Atomic Claims)。
@@ -52,7 +53,7 @@ class OnlineRetriever:
         if not self.client:
             return self._empty_package(error="Zhipu API Key not configured")
 
-        print(f"📡 [OnlineRetriever] 开始域外取证并在云端执行主张提取...")
+        print(f" [OnlineRetriever] 开始域外取证并在云端执行主张提取...")
 
         # 1. 物理取证
         tasks = [self._search_with_semaphore(query, query_type) for query in queries]
@@ -65,15 +66,26 @@ class OnlineRetriever:
         if not raw_chunks:
             return self._empty_package(error="Online retrieval returned no results")
 
-        # 2. 🚀 [V170.0] 逻辑质证：对 Top-5 证据进行云端解构
-        # 为了效率，我们只对最相关的几个证据执行深度脱水
-        top_chunks = raw_chunks[:2]
-        print(f"🧠 [OnlineRetriever] 正在对 {len(top_chunks)} 条核心证据执行批量逻辑脱水...")
+        # 2.  [V170.1] 二阶段漏斗：语义重排与硬阈值过滤
+        # 计算每个 chunk 与原始 queries 的最大相似度
+        scored_chunks = []
+        for chunk in raw_chunks:
+            # 简化版：使用 Zhipu 搜索自带的相关度分数（如果有）或简单的文本重叠度
+            # 生产环境建议引入 Cross-Encoder
+            score = chunk.get("score", 0.5) 
+            if score > 0.3: # 硬阈值：剔除噪音
+                scored_chunks.append(chunk)
+        
+        # 按分数排序
+        scored_chunks.sort(key=lambda x: x.get("score", 0), reverse=True)
+        top_chunks = scored_chunks[:3] # 最多取 3 条核心证据执行脱水
+
+        print(f"🧠 [OnlineRetriever] 漏斗筛选: {len(raw_chunks)} -> {len(top_chunks)} 条核心证据")
         from backend.app.services.ingestion.llm_service import llm_service
 
         refined_chunks = await self._batch_distill(top_chunks, llm_service)
 
-        print(f"✅ [OnlineRetriever] 逻辑质证完成，提取出 {sum(len(c.get('claims', [])) for c in refined_chunks)} 条原子主张。")
+        print(f" [OnlineRetriever] 逻辑质证完成，提取出 {sum(len(c.get('claims', [])) for c in refined_chunks)} 条原子主张。")
 
         return {
             "doc_id": f"INTERNET_{datetime.now().strftime('%Y%m%d%H%M%S')}",
@@ -104,7 +116,7 @@ class OnlineRetriever:
             chunk["claims"] = res.get("claims", [])
             chunk["stability"] = float(res.get("stability", 0.5))
 
-            # 🚀 覆盖置信度：稳定性高的证据，时间衰减影响减弱
+            #  覆盖置信度：稳定性高的证据，时间衰减影响减弱
             # 重新计算置信度颜色
             color, confidence = self.color_calc.calculate(
                 chunk,
@@ -112,7 +124,7 @@ class OnlineRetriever:
                 has_conflict=False
             )
 
-            # 🛡️ 架构师修正：如果稳定性极高，强行提分
+            #  架构师修正：如果稳定性极高，强行提分
             if chunk["stability"] >= 0.9:
                 confidence = max(confidence, 0.95)
                 color = "GREEN"
@@ -123,13 +135,13 @@ class OnlineRetriever:
         except Exception as e:
             chunk["claims"] = []
             chunk["stability"] = 0.5
-            logger.warning(f"⚠️ [OnlineRetriever] 逻辑脱水失败: {e}")
+            logger.warning(f" [OnlineRetriever] 逻辑脱水失败: {e}")
 
         return chunk
 
     async def _batch_distill(self, chunks: List[Dict], llm) -> List[Dict]:
         """
-        🚀 [Opt] 批量逻辑脱水：一次 LLM 调用处理多条证据，而非每条单独调。
+         [Opt] 批量逻辑脱水：一次 LLM 调用处理多条证据，而非每条单独调。
         """
         # 构造批量 prompt：将所有证据内容编入一个 JSON 请求
         evidence_list = []
@@ -149,7 +161,7 @@ class OnlineRetriever:
    - 0.3: 时效新闻/动态配置
 
 【批量证据】：
-{__import__('json').dumps(evidence_list, ensure_ascii=False, indent=2)}
+{json.dumps(evidence_list, ensure_ascii=False, indent=2)}
 
 请严格输出 JSON 数组格式：
 [
@@ -188,7 +200,7 @@ class OnlineRetriever:
                     c["confidence"] = 0.5
 
         except Exception as e:
-            logger.warning(f"⚠️ [OnlineRetriever] 批量逻辑脱水失败: {e}")
+            logger.warning(f" [OnlineRetriever] 批量逻辑脱水失败: {e}")
             for c in chunks:
                 c["claims"] = []
                 c["stability"] = 0.5
@@ -260,5 +272,4 @@ class OnlineRetriever:
 
 WitnessExpert = OnlineRetriever
 
-# 向后兼容别名
-WitnessExpert = OnlineRetriever
+

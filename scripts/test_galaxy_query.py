@@ -6,7 +6,7 @@ from backend.app.services.intelligence.court.federated_court import FederatedCou
 
 async def test_query():
     query = "武汉大学国家网络安全学院推免规则"
-    print(f"🔍 测试查询：{query}")
+    print(f" 测试查询：{query}")
     print("=" * 80)
 
     court = FederatedCourt()

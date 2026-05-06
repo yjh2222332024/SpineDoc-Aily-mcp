@@ -11,11 +11,11 @@ from backend.app.core.interfaces.storage import IDocumentStore
 
 logger = logging.getLogger(__name__)
 
-# 🚀 [RateLimit] 全局信号量，防止触发飞书熔断
+#  [RateLimit] 全局信号量，防止触发飞书熔断
 _rate_limiter = asyncio.Semaphore(10)  # 最大 10 并发（更保守）
 _retry_delay = 0.3  # 初始重试延迟（秒）
 
-# 🚀 [Cache] 请求去重缓存，同一 chunk 5 秒内不重复拉取
+#  [Cache] 请求去重缓存，同一 chunk 5 秒内不重复拉取
 _chunk_cache: Dict[str, tuple[float, Dict]] = {}  # {record_id: (timestamp, data)}
 _cache_ttl = 5.0  # 缓存 5 秒
 
@@ -28,13 +28,15 @@ class BitableLedger(IDocumentStore):
     def __init__(self, auth=None):
         from backend.app.services.feishu.auth import lark_auth
         self.auth = auth or lark_auth
-        
-        manifest_path = "backend/storage/bitable_schema_manifest.json"
-        with open(manifest_path, "r", encoding="utf-8") as f:
-            self.manifest = json.load(f)
-            
-        self.tables = self.manifest["tables"]
-        self.app_token = self.manifest["base_token"]
+
+        self.tables = {
+            "documents": {"id": settings.FEISHU_BITABLE_TABLE_ID},
+            "chunks": {"id": settings.FEISHU_BITABLE_CHUNK_TABLE_ID},
+            "toc": {"id": settings.FEISHU_BITABLE_TOC_TABLE_ID},
+            "memory": {"id": settings.FEISHU_BITABLE_MEMORY_TABLE_ID},
+            "galaxies": {"id": settings.FEISHU_BITABLE_GALAXY_TABLE_ID},
+        }
+        self.app_token = settings.FEISHU_BITABLE_TOKEN
 
     @staticmethod
     def _plain_text(val) -> str:
@@ -43,34 +45,34 @@ class BitableLedger(IDocumentStore):
         return str(val) if val else ""
 
     async def _api_request(self, method: str, url: str, json_data: Dict = None, params: Dict = None, max_retries: int = 3) -> Dict:
-        # 🛡️ 架构师守则：URL 必须是纯净的。现场打印最终物理座标。
+        #  架构师守则：URL 必须是纯净的。现场打印最终物理座标。
         print(f"DEBUG_FINAL_URL: {url}")
 
         for attempt in range(max_retries):
             try:
-                async with _rate_limiter:  # 🚀 全局并发控制
+                async with _rate_limiter:  #  全局并发控制
                     token = await self.auth.get_tenant_access_token()
                     async with httpx.AsyncClient(trust_env=False, timeout=30.0) as client:
                         headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
                         resp = await client.request(method, url, json=json_data, params=params, headers=headers)
                         data = resp.json()
 
-                        # 🚀 [RateLimit] 检测熔断
+                        #  [RateLimit] 检测熔断
                         if data.get("code") == 99991663 or "frequency limit" in str(data.get("msg", "")).lower():
                             if attempt < max_retries - 1:
                                 wait = _retry_delay * (2 ** attempt)  # 指数退避
-                                logger.warning(f"⚠️ [Bitable-API] 触发限流，等待 {wait:.1f}s 后重试 ({attempt + 1}/{max_retries})")
+                                logger.warning(f" [Bitable-API] 触发限流，等待 {wait:.1f}s 后重试 ({attempt + 1}/{max_retries})")
                                 await asyncio.sleep(wait)
                                 continue
 
                         if data.get("code") != 0:
-                            logger.error(f"❌ [Bitable-API] Failed: {data.get('msg')} | URL: {url}")
+                            logger.error(f" [Bitable-API] Failed: {data.get('msg')} | URL: {url}")
                         return data
 
             except Exception as e:
                 if attempt < max_retries - 1:
                     wait = _retry_delay * (2 ** attempt)
-                    logger.warning(f"⚠️ [Bitable-API] 网络异常 {e}，等待 {wait:.1f}s 后重试")
+                    logger.warning(f" [Bitable-API] 网络异常 {e}，等待 {wait:.1f}s 后重试")
                     await asyncio.sleep(wait)
                     continue
                 raise
@@ -82,7 +84,7 @@ class BitableLedger(IDocumentStore):
 
     def _extract_record_id(self, field_value: Any) -> List[str]:
         """
-        🚀 [V155.0] 物理提取强化：全兼容 Bitable Link 字段
+         [V155.0] 物理提取强化：全兼容 Bitable Link 字段
         支持：Bare record_id, {"link_record_ids": []}, [{"record_ids": []}, ...]
         """
         if not field_value:
@@ -114,7 +116,7 @@ class BitableLedger(IDocumentStore):
         return [str(field_value)]
 
     async def find_document_by_hash(self, file_hash: str) -> Optional[str]:
-        """🚀 [V85.0] 确权查询：改用 POST /search 接口，彻底解决 InvalidFilter 问题"""
+        """ [V85.0] 确权查询：改用 POST /search 接口，彻底解决 InvalidFilter 问题"""
         table_id = self.tables['documents']['id']
         url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{self.app_token}/tables/{table_id}/records/search"
         
@@ -129,12 +131,28 @@ class BitableLedger(IDocumentStore):
         items = resp.get("data", {}).get("items", [])
         return items[0].get("record_id") if items else None
 
+    async def find_by_fingerprint(self, fingerprint: str) -> Optional[str]:
+        """ [V290.0] 按逻辑指纹查找已存在的 chunk，用于演化去重"""
+        table_id = self.tables['chunks']['id']
+        url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{self.app_token}/tables/{table_id}/records/search"
+
+        payload = {
+            "filter": {
+                "conjunction": "and",
+                "conditions": [{"field_name": "逻辑指纹", "operator": "is", "value": [fingerprint]}]
+            }
+        }
+
+        resp = await self._api_request("POST", url, json_data=payload)
+        items = resp.get("data", {}).get("items", [])
+        return items[0].get("record_id") if items else None
+
     async def get_or_create_document(self, filename: str, file_hash: str, total_pages: int, force: bool = False) -> str:
         if not force:
             existing_id = await self.find_document_by_hash(file_hash)
             if existing_id: return existing_id
         
-        # 🚀 物理确权：严禁重复 POST
+        #  物理确权：严禁重复 POST
         url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{self.app_token}/tables/{self.tables['documents']['id']}/records"
         fields = {
             "文件名": filename,
@@ -146,13 +164,13 @@ class BitableLedger(IDocumentStore):
         return resp.get("data", {}).get("record", {}).get("record_id")
 
     async def get_or_create_sovereign_root(self) -> str:
-        """🚀 获取或创建用于挂载演化成果的虚拟根文档"""
+        """ 获取或创建用于挂载演化成果的虚拟根文档"""
         SOVEREIGN_HASH = "SOVEREIGN_EVOLUTION_ROOT"
         existing_id = await self.find_document_by_hash(SOVEREIGN_HASH)
         if existing_id: 
             return existing_id
         
-        # 🚀 物理确权：不存在则创建
+        #  物理确权：不存在则创建
         url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{self.app_token}/tables/{self.tables['documents']['id']}/records"
         fields = {
             "文件名": "云端主权演化共识库.sovereign",
@@ -195,11 +213,11 @@ class BitableLedger(IDocumentStore):
 
     async def backfill_consensus(self, records: List[Dict[str, Any]]):
         """
-        🚀 [V160.0] 物理回填：直接将精加工的客观共识写入 Bitable。
+         [V160.0] 物理回填：直接将精加工的客观共识写入 Bitable。
         不进行二次加工，确保主权钢印不丢失。
         """
-        # 🛡️ 架构师守则：强制使用物理常量 ID，杜绝环境污染。
-        table_id = "tblgTgxUGTUykcU2"
+        #  架构师守则：强制使用物理常量 ID，杜绝环境污染。
+        table_id = self.tables['chunks']['id']
         url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{self.app_token}/tables/{table_id}/records/batch_create"
 
         # 尝试完整格式
@@ -207,11 +225,11 @@ class BitableLedger(IDocumentStore):
 
         resp = await self._api_request("POST", url, json_data=payload)
         if resp.get("code") == 0:
-            print(f"✅ [BitableLedger] 成功物理回填 {len(records)} 条主权演化共识。")
+            print(f" [BitableLedger] 成功物理回填 {len(records)} 条主权演化共识。")
             return
 
         # 若失败，降级为纯文本字段（去掉关联字段）
-        logger.warning(f"⚠️ [BitableLedger] 回填失败 ({resp.get('msg')})，降级重试...")
+        logger.warning(f" [BitableLedger] 回填失败 ({resp.get('msg')})，降级重试...")
         fallback_records = []
         for r in records:
             fallback = {k: v for k, v in r.items()
@@ -221,9 +239,9 @@ class BitableLedger(IDocumentStore):
         fallback_payload = {"records": [{"fields": r} for r in fallback_records]}
         resp2 = await self._api_request("POST", url, json_data=fallback_payload)
         if resp2.get("code") == 0:
-            print(f"✅ [BitableLedger] 成功物理回填 {len(fallback_records)} 条（降级模式）。")
+            print(f" [BitableLedger] 成功物理回填 {len(fallback_records)} 条（降级模式）。")
         else:
-            logger.error(f"❌ [BitableLedger] 降级回填也失败: {resp2.get('msg')}")
+            logger.error(f" [BitableLedger] 降级回填也失败: {resp2.get('msg')}")
 
     async def save_toc_items_batch(self, doc_rec_id: str, toc_items: List[Dict[str, Any]]):
         """批量保存脊梁结构"""
@@ -245,7 +263,7 @@ class BitableLedger(IDocumentStore):
 
     async def wait_for_completion(self, doc_rec_id: str, expected_chunk_ids: List[str], timeout: int = 300) -> List[Dict[str, Any]]:
         """
-        🛡️ 语义反哺确权：轮询捕获 Bitable AI 生成的“逻辑摘要”与“语义标签”。
+         语义反哺确权：轮询捕获 Bitable AI 生成的“逻辑摘要”与“语义标签”。
         """
         table_id = self.tables['chunks']['id']
         url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{self.app_token}/tables/{table_id}/records/search"
@@ -259,7 +277,7 @@ class BitableLedger(IDocumentStore):
             resp = await self._api_request("POST", url, json_data=payload)
             items = resp.get("data", {}).get("items", [])
             
-            # 🚀 物理确权：只筛选本次确权的 ID
+            #  物理确权：只筛选本次确权的 ID
             current_items = [it for it in items if it.get("record_id") in expected_chunk_ids]
             
             # 检查 AI 字段是否已全部孵化（摘要 + 标签）
@@ -304,10 +322,14 @@ class BitableLedger(IDocumentStore):
         url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{self.app_token}/tables/{table_id}/records/{doc_rec_id}"
         await self._api_request("PUT", url, {"fields": {"处理状态": status}})
 
-    async def fetch_chunks_by_galaxy(self, galaxy_rec_id: str) -> List[Dict]:
+    async def fetch_chunks_by_galaxy(self, galaxy_rec_id: str, limit: int = 50,
+                                       has_summary: bool = False) -> List[Dict]:
         table_id = self.tables['chunks']['id']
         url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{self.app_token}/tables/{table_id}/records/search"
-        payload = {"filter": {"conjunction": "and", "conditions": [{"field_name": "星系关联", "operator": "contains", "value": [galaxy_rec_id]}]}}
+        conditions = [{"field_name": "星系关联", "operator": "contains", "value": [galaxy_rec_id]}]
+        if has_summary:
+            conditions.append({"field_name": "逻辑摘要", "operator": "is_not_empty"})
+        payload = {"filter": {"conjunction": "and", "conditions": conditions}, "page_size": limit}
         resp = await self._api_request("POST", url, json_data=payload)
         items = resp.get("data", {}).get("items", [])
         return [{
@@ -315,10 +337,10 @@ class BitableLedger(IDocumentStore):
             "doc_record_id": self._extract_record_id(it["fields"].get("文档关联")),
             "summary": self._plain_text(it["fields"].get("逻辑摘要", "")),
             "content": self._plain_text(it["fields"].get("正文内容", ""))
-        } for it in items]
+        } for it in items[:limit]]
 
     async def list_documents(self) -> List[Dict]:
-        """🚀 [V220.0] 列出所有文档记录"""
+        """ [V220.0] 列出所有文档记录"""
         table_id = self.tables['documents']['id']
         url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{self.app_token}/tables/{table_id}/records"
         resp = await self._api_request("GET", url)
@@ -336,7 +358,7 @@ class BitableLedger(IDocumentStore):
         return results
 
     async def fetch_chunks_by_document(self, doc_record_id: str, limit: int = 50) -> List[Dict]:
-        """🚀 [V220.0] 物理确权：从 documents 表下路，直接收割分片。"""
+        """ [V220.0] 物理确权：从 documents 表下路，直接收割分片。"""
         table_id = self.tables['chunks']['id']
         url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{self.app_token}/tables/{table_id}/records/search"
         payload = {
@@ -353,7 +375,7 @@ class BitableLedger(IDocumentStore):
             f = it.get("fields", {})
             results.append({
                 "id": it["record_id"],
-                "doc_record_id": doc_record_id,
+                "doc_id": doc_record_id,
                 "summary": self._plain_text(f.get("逻辑摘要", "")),
                 "content": self._plain_text(f.get("正文内容", "")),
                 "logic_tags": f.get("语义标签", []),
@@ -362,13 +384,37 @@ class BitableLedger(IDocumentStore):
             })
         return results
 
+    async def get_chunk(self, record_id: str) -> Optional[Dict]:
+        """ [V310.0] 单条 chunk 记录查询，用于证据原文恢复。"""
+        table_id = self.tables['chunks']['id']
+        url = (f"https://open.feishu.cn/open-apis/bitable/v1/apps/"
+               f"{self.app_token}/tables/{table_id}/records/{record_id}")
+        resp = await self._api_request("GET", url)
+        record = resp.get("data", {}).get("record", {})
+        if not record:
+            return None
+        f = record.get("fields", {})
+        return {
+            "id": record["record_id"],
+            "content": self._plain_text(f.get("正文内容", "")),
+            "claims": [self._plain_text(f.get("逻辑摘要", ""))],
+            "origin": "LOCAL",
+            "confidence": 0.85,
+            "color": "GREEN",
+            "stability": 0.85,
+            "doc_id": next(iter(self._extract_record_id(f.get("文档关联", ""))), ""),
+            "breadcrumb": self._plain_text(f.get("逻辑面包屑", "")),
+            "page_number": f.get("物理页码", 0),
+            "summary": self._plain_text(f.get("逻辑摘要", "")),
+        }
+
     async def search_chunks(self, query: str = "",
                             doc_record_id: Optional[str] = None, 
                             galaxy_ids: Optional[List[str]] = None,
                             tags: Optional[List[str]] = None,
                             limit: int = 50) -> List[Dict]:
         """
-        🚀 [V150.0] 反向主权会师：从星系反向收割分片，彻底解决物理过滤失效。
+         [V150.0] 反向主权会师：从星系反向收割分片，彻底解决物理过滤失效。
         """
         clean_table_id = str(self.tables['chunks']['id']).strip()
         
@@ -389,11 +435,11 @@ class BitableLedger(IDocumentStore):
         
         # 2. 精准收割：并发拉取分片正文（带去重缓存）
         if not target_chunk_ids:
-            print("⚠️ [search_chunks] 领地内无分片 ID 索引。")
+            print(" [search_chunks] 领地内无分片 ID 索引。")
             return []
 
-        # 🚀 [Dedupe] 去重：过滤掉 5 秒内已缓存的 chunk
-        results = []  # 🚀 初始化 results
+        #  [Dedupe] 去重：过滤掉 5 秒内已缓存的 chunk
+        results = []  #  初始化 results
         now = asyncio.get_event_loop().time()
         new_cids = []
         for cid in target_chunk_ids:
@@ -406,12 +452,12 @@ class BitableLedger(IDocumentStore):
         target_chunk_ids = new_cids
 
         if not target_chunk_ids:
-            print(f"📦 [DirectHarvest] 全部命中缓存，返回 {len(results)} 条带座标证据。")
+            print(f" [DirectHarvest] 全部命中缓存，返回 {len(results)} 条带座标证据。")
             return results
 
-        # 🚀 物理确权：对 ID 列表执行并发 GET（先去重）
+        #  物理确权：对 ID 列表执行并发 GET（先去重）
         unique_cids = list(set(target_chunk_ids))[:limit]
-        print(f"📡 [DirectHarvest] 正在并发收割 {len(unique_cids)} 条分片...")
+        print(f" [DirectHarvest] 正在并发收割 {len(unique_cids)} 条分片...")
         
         tasks = []
         for cid in unique_cids:
@@ -425,7 +471,7 @@ class BitableLedger(IDocumentStore):
                 it = resp.get("data", {}).get("record", {})
                 f = it.get("fields", {})
 
-                # 🚀 物理确权：显式解析星系关联 ID
+                #  物理确权：显式解析星系关联 ID
                 g_links = f.get("星系关联")
                 g_ids = self._extract_record_id(g_links)
 
@@ -436,13 +482,14 @@ class BitableLedger(IDocumentStore):
                     "logic_tags": f.get("语义标签", []),
                     "breadcrumb": self._plain_text(f.get("逻辑面包屑", "")),
                     "page_number": f.get("物理页码", 0),
-                    "galaxy_ids": g_ids  # 🚀 回填星系座标
+                    "galaxy_ids": g_ids,  #  回填星系座标
+                    "doc_id": next(iter(self._extract_record_id(f.get("文档关联", ""))), "")
                 }
-                # 🚀 [Cache] 写入缓存
+                #  [Cache] 写入缓存
                 _chunk_cache[it["record_id"]] = (now, chunk_data)
                 results.append(chunk_data)
         
-        print(f"📦 [DirectHarvest] 物理刺杀完成，成功收割 {len(results)} 条带座标证据。")
+        print(f" [DirectHarvest] 物理刺杀完成，成功收割 {len(results)} 条带座标证据。")
         return results
 
 bitable_ledger = BitableLedger()

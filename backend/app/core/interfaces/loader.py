@@ -4,7 +4,7 @@ from typing import Dict, Any
 
 class IDocumentLoader(ABC):
     """
-    📄 文档加载器接口
+     文档加载器接口
     负责将各种物理格式转化为 SpineDoc 核心理解的结构化文本。
     """
     @abstractmethod

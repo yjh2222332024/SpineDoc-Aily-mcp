@@ -15,7 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
-# 🏛️ 路径锚定
+#  路径锚定
 project_root = Path(__file__).resolve().parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
@@ -34,7 +34,7 @@ def cosine_similarity(v1: np.ndarray, v2: np.ndarray) -> float:
 
 async def generate_industrial_thesaurus(threshold: float = 0.72):
     print("\n" + "🔭 " * 20)
-    print(f"🚀 [Thesaurus v2.0] 启动工业级重组 (阈值: {threshold})")
+    print(f" [Thesaurus v2.0] 启动工业级重组 (阈值: {threshold})")
     print("🔭 " * 20)
 
     engine = create_async_engine(settings.DATABASE_URL)
@@ -52,7 +52,7 @@ async def generate_industrial_thesaurus(threshold: float = 0.72):
         galaxies = res.scalars().all()
         
         if not galaxies:
-            print("⚠️ 没有活跃星系")
+            print(" 没有活跃星系")
             return
 
         galaxy_vectors = {
@@ -104,7 +104,7 @@ async def generate_industrial_thesaurus(threshold: float = 0.72):
             # 聚合关键词 (统计词频)
             word_cloud = {}
             for gid in members:
-                # 🚀 跨表查询：从该星系关联的所有 Chunk 中捞取关键词
+                #  跨表查询：从该星系关联的所有 Chunk 中捞取关键词
                 chunk_stmt = select(Chunk.logic_tags).join(
                     DocumentGalaxyLink, DocumentGalaxyLink.document_id == Chunk.document_id
                 ).where(DocumentGalaxyLink.galaxy_id == gid)
@@ -136,7 +136,7 @@ async def generate_industrial_thesaurus(threshold: float = 0.72):
                     } for m in members
                 ]
             }
-            print(f"   ✅ {cluster_id}: {anchor_keywords}")
+            print(f"    {cluster_id}: {anchor_keywords}")
 
         # 4. 保存到物理存储
         output_path = os.path.join(settings.STORAGE_ROOT, "thesaurus_map.json")
@@ -145,9 +145,9 @@ async def generate_industrial_thesaurus(threshold: float = 0.72):
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(industrial_map, f, ensure_ascii=False, indent=2)
 
-    print(f"\n💾 [4] 工业级地图已保存至: {output_path}")
+    print(f"\n [4] 工业级地图已保存至: {output_path}")
     print(f"   共生成 {len(industrial_map)} 个逻辑集群。")
-    print("\n✨ 完成。")
+    print("\n 完成。")
 
 if __name__ == "__main__":
     # 允许通过命令行指定阈值

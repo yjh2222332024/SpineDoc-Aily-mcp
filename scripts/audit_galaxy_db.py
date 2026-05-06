@@ -1,5 +1,5 @@
 """
-🔍 SpineDoc 星系数据库审计脚本 (只读模式)
+ SpineDoc 星系数据库审计脚本 (只读模式)
 =========================================
 使命：安全检查 Galaxy 表、DocumentGalaxyLink 表的实际状态
 纪律：绝对不执行任何 DELETE/UPDATE 操作，只读 SELECT
@@ -18,7 +18,7 @@ async def audit_galaxy_database():
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     print("=" * 80)
-    print("🔍 SpineDoc 星系数据库审计 (只读模式)")
+    print(" SpineDoc 星系数据库审计 (只读模式)")
     print("=" * 80)
 
     async with async_session() as session:
@@ -99,10 +99,10 @@ async def audit_galaxy_database():
 
             if links:
                 galaxy_names = [link[1].name for link in links]
-                print(f"   📄 {doc.filename}")
+                print(f"    {doc.filename}")
                 print(f"      ↳ 关联星系：{', '.join(galaxy_names)}")
             else:
-                print(f"   📄 {doc.filename} [⚠️ 未关联任何星系]")
+                print(f"    {doc.filename} [ 未关联任何星系]")
 
         # --- 5. 孤立文档检测 ---
         print("\n🏝️ [5] 孤立文档检测")
@@ -121,10 +121,10 @@ async def audit_galaxy_database():
             for doc in isolated_docs:
                 print(f"      - {doc.filename}")
         else:
-            print("   ✅ 所有已完成文档都已关联星系")
+            print("    所有已完成文档都已关联星系")
 
         # --- 6. 星系成员详情 ---
-        print("\n🌟 [6] 星系成员详情")
+        print("\n [6] 星系成员详情")
         print("-" * 40)
 
         if galaxies:
@@ -146,7 +146,7 @@ async def audit_galaxy_database():
                     print(f"      ... 还有 {len(members) - 10} 个成员")
 
     print("\n" + "=" * 80)
-    print("✅ 审计完成 (只读模式，未执行任何修改操作)")
+    print(" 审计完成 (只读模式，未执行任何修改操作)")
     print("=" * 80)
 
 if __name__ == "__main__":

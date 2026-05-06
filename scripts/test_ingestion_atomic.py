@@ -23,7 +23,7 @@ async def test_step1_save_chunks():
         total_pages=1,
         force=True
     )
-    print(f"✅ Created doc: {doc_id}")
+    print(f" Created doc: {doc_id}")
 
     # 写入一个测试 chunk
     test_chunks = [{
@@ -33,7 +33,7 @@ async def test_step1_save_chunks():
     }]
 
     await bitable_ledger.save_chunks_batch(doc_id, test_chunks)
-    print(f"✅ save_chunks_batch called with {len(test_chunks)} chunk")
+    print(f" save_chunks_batch called with {len(test_chunks)} chunk")
 
     return doc_id
 
@@ -47,11 +47,11 @@ async def test_step2_wait_for_tags(doc_id):
     # 只等 10 秒，因为还没有 AI 会填充摘要
     try:
         result = await bitable_ledger.wait_for_tags(doc_id, timeout=10)
-        print(f"✅ wait_for_tags returned {len(result)} items")
+        print(f" wait_for_tags returned {len(result)} items")
         print(f"   Items: {result}")
         return result
     except Exception as e:
-        print(f"⚠️ wait_for_tags timed out or errored: {e}")
+        print(f" wait_for_tags timed out or errored: {e}")
         return []
 
 
@@ -64,10 +64,10 @@ async def test_step3_embedding():
     texts = ["这是测试文本", "另一个测试文本"]
     try:
         embeddings = await embedding_service.get_embeddings(texts)
-        print(f"✅ Got {len(embeddings)} embeddings")
+        print(f" Got {len(embeddings)} embeddings")
         print(f"   Dim: {len(embeddings[0]) if embeddings else 'N/A'}")
     except Exception as e:
-        print(f"❌ Embedding failed: {e}")
+        print(f" Embedding failed: {e}")
 
     return embeddings
 
@@ -89,15 +89,15 @@ async def test_step4_cluster_engine():
 
     try:
         await engine.assign_chunk(test_chunk["id"], test_chunk)
-        print(f"✅ assign_chunk called successfully")
+        print(f" assign_chunk called successfully")
     except Exception as e:
-        print(f"❌ assign_chunk failed: {e}")
+        print(f" assign_chunk failed: {e}")
         import traceback
         traceback.print_exc()
 
 
 async def run_all_tests():
-    print("🚀 Starting atomic test suite for ingestion pipeline")
+    print(" Starting atomic test suite for ingestion pipeline")
     print("=" * 50)
 
     # Step 1
@@ -113,7 +113,7 @@ async def run_all_tests():
     await test_step4_cluster_engine()
 
     print("\n" + "=" * 50)
-    print("✅ All tests completed")
+    print(" All tests completed")
     print("=" * 50)
 
 

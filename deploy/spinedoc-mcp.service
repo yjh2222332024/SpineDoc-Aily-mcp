@@ -1,0 +1,12 @@
+[Unit]
+Description=SpineDoc MCP Server
+After=network.target
+
+[Service]
+ExecStart=/path/to/.venv/bin/python /path/to/spine_setup.py --aily
+Restart=always
+RestartSec=5
+EnvironmentFile=/path/to/.env
+
+[Install]
+WantedBy=multi-user.target

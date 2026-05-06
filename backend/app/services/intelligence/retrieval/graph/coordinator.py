@@ -24,24 +24,38 @@ logger = logging.getLogger(__name__)
 
 class RetrievalGraphOrchestrator:
     """
-    🚀 [V205.0] 检索图编排器：主权检索系统的中央引擎。
+     [V205.0] 检索图编排器：主权检索系统的中央引擎。
     替代旧名称：LogicCourtCoordinator
     """
-    def __init__(self, memory=None):
+    def __init__(self, 
+                 planner=None, 
+                 harvester=None, 
+                 auditor=None, 
+                 synthesizer=None, 
+                 evolution=None, 
+                 memory=None):
+        from .planner import planner_agent
+        from .harvester import harvester_node
+        from .auditor import auditor_node
+        from .synthesizer import synthesizer_node
+        from .evolution import evolution_node
+
         self.nodes = {
-            RetrievalPhase.PLAN: planner_agent.plan,
-            RetrievalPhase.HARVEST: harvester_node.harvest,
-            RetrievalPhase.AUDIT: auditor_node.audit,
-            RetrievalPhase.SYNTHESIZE: synthesizer_node.synthesize,
-            RetrievalPhase.EVOLVE: evolution_node.evolve
+            RetrievalPhase.PLAN: (planner or planner_agent).plan,
+            RetrievalPhase.HARVEST: (harvester or harvester_node).harvest,
+            RetrievalPhase.AUDIT: (auditor or auditor_node).audit,
+            RetrievalPhase.SYNTHESIZE: (synthesizer or synthesizer_node).synthesize,
+            RetrievalPhase.EVOLVE: (evolution or evolution_node).evolve
         }
+        # 传递内存组件
+        self.harvester = harvester or harvester_node
         if memory:
-            harvester_node.memory = memory
+            self.harvester.memory = memory
 
     async def run(self, query: str, memory=None) -> Dict[str, Any]:
         """驱动检索图执行全链路"""
         if memory:
-            harvester_node.memory = memory
+            self.harvester.memory = memory
 
         state: GraphExecutionState = {
             "query": query,
@@ -60,12 +74,12 @@ class RetrievalGraphOrchestrator:
             "re_harvest_count": 0,
         }
 
-        print(f"🏛️ [RetrievalGraph] 开始执行: {query[:30]}...")
+        print(f" [RetrievalGraph] 开始执行: {query[:30]}...")
         return await self._graph_loop(state)
 
     async def run_from_state(self, state: GraphExecutionState) -> GraphExecutionState:
         """从预填充状态继续执行"""
-        print(f"🏛️ [RetrievalGraph] 从 {state.get('next_step', '?')} 阶段继续...")
+        print(f" [RetrievalGraph] 从 {state.get('next_step', '?')} 阶段继续...")
         return await self._graph_loop(state)
 
     async def _graph_loop(self, state: GraphExecutionState, max_duration: int = 600) -> GraphExecutionState:
@@ -80,7 +94,7 @@ class RetrievalGraphOrchestrator:
             node_func = self.nodes.get(current_step)
 
             if not node_func:
-                logger.error(f"❌ [RetrievalGraph] 未定义的节点步骤: {current_step}")
+                logger.error(f" [RetrievalGraph] 未定义的节点步骤: {current_step}")
                 break
 
             phase_start = time.time()
@@ -97,7 +111,7 @@ class RetrievalGraphOrchestrator:
                 break
 
             update = await node_func(state)
-            state.update(update)
+            self._reduce_state(state, update)
 
             state["phase_log"].append({
                 "step": current_step,
@@ -108,10 +122,28 @@ class RetrievalGraphOrchestrator:
 
         return state
 
+    def _reduce_state(self, state: GraphExecutionState, update: Dict[str, Any]):
+        """
+        [V280.0] 状态合并器 (State Reducer)
+        evidence_pool 替换（Auditor 返回裁剪版），L3_archive 追加去重，其余键覆盖。
+        """
+        for key, value in update.items():
+            if key == "evidence_pool":
+                # 替换而非追加：Auditor 返回裁剪后的活跃证据
+                state[key] = value
+            elif key == "L3_archive" and key in state and isinstance(value, list):
+                # 去重追加（归档累积）
+                existing_ids = {e.get("id") for e in state[key] if e.get("id")}
+                for item in value:
+                    if item.get("id") not in existing_ids:
+                        state[key].append(item)
+            else:
+                state[key] = value
+
     @staticmethod
     def _force_finalize(state: GraphExecutionState) -> GraphExecutionState:
         """强制终结：超时或达到最大迭代时，返回当前状态作为最终结果。"""
-        print(f"⚠️ [RetrievalGraph] 执行强制终结，当前迭代次数: {state.get('iteration', 0)}")
+        print(f" [RetrievalGraph] 执行强制终结，当前迭代次数: {state.get('iteration', 0)}")
 
         state["next_step"] = RetrievalPhase.FINALIZED
         if not state.get("final_answer"):
@@ -120,9 +152,6 @@ class RetrievalGraphOrchestrator:
         return state
 
 
-# 向后兼容别名
-CourtState = GraphExecutionState
-LogicCourtCoordinator = RetrievalGraphOrchestrator
 
 retrieval_graph = RetrievalGraphOrchestrator()
 # 向后兼容别名

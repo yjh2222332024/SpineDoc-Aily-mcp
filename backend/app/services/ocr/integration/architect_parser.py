@@ -1,8 +1,8 @@
 import asyncio
-# 🔥 修复 Python 路径问题（Windows 专用）
+#  修复 Python 路径问题（Windows 专用）
 import sys
 from pathlib import Path
-# 🏛️ 顶级架构师：必须精准回退 5 级才能到达项目根目录 (E:\study\code\spine-close\Spine-close)
+#  顶级架构师：必须精准回退 5 级才能到达项目根目录 (E:\study\code\spine-close\Spine-close)
 project_root = Path(__file__).resolve().parent.parent.parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
@@ -37,7 +37,7 @@ class ArchitectVisualParser:
     """
     def __init__(self, mode="auto", **kwargs):
         from backend.app.version import get_version
-        print(f"🚀 [System] ArchitectVisualParser v{get_version()} (Ready) 启动...")
+        print(f" [System] ArchitectVisualParser v{get_version()} (Ready) 启动...")
         self.worker = None 
         self.queue = asyncio.Queue(maxsize=64)
         self.semaphore = asyncio.Semaphore(16)
@@ -68,21 +68,21 @@ class ArchitectVisualParser:
                     md_content = await worker.ocr_to_markdown(img_np, high_precision=high_precision)
                     raw_texts[page_idx] = md_content
                     mode_tag = "VLM" if high_precision else "GLM"
-                    print(f"📄 [TOC-Sense] 页面 P{page_idx+1} 识别完成 ({mode_tag})")
+                    print(f" [TOC-Sense] 页面 P{page_idx+1} 识别完成 ({mode_tag})")
                     
                     if high_precision:
                         await asyncio.sleep(1.0) # 冷却
                         
                 except Exception as e:
-                    print(f"⚠️ Page {page_idx+1} OCR 异常: {e}")
+                    print(f" Page {page_idx+1} OCR 异常: {e}")
             self.queue.task_done()
 
     async def _structure_toc_with_agent(self, page_texts: Dict[int, str], allowed_pages: Optional[List[int]]) -> List[Dict[str, Any]]:
-        from openai import AsyncOpenAI
         from backend.app.core.config import settings
+        from backend.app.infra.llm_client import get_llm_client
         import json
 
-        client = AsyncOpenAI(api_key=settings.LLM_API_KEY, base_url=settings.LLM_BASE_URL)
+        client = get_llm_client()
         model_name = settings.REAL_LLM_MODEL
 
         async def process_single_page(p_idx, text):
@@ -124,7 +124,7 @@ class ArchitectVisualParser:
                         valid_items.append(it)
                 return valid_items
             except Exception as e:
-                print(f"⚠️ P{p_idx+1} 语义解析失败: {e}")
+                print(f" P{p_idx+1} 语义解析失败: {e}")
                 return []
 
         tasks = [process_single_page(i, page_texts[i]) for i in sorted(page_texts.keys())]
@@ -150,7 +150,7 @@ class ArchitectVisualParser:
                                          manual_range: Optional[List[int]] = None,
                                          is_toc_task: bool = False) -> List[SpineNode]:
         """
-        🚀 [V34.7] 资源敏感型流式识别入口
+         [V34.7] 资源敏感型流式识别入口
         """
         start_time = time.time()
         try:
@@ -178,7 +178,7 @@ class ArchitectVisualParser:
                         import gc
                         gc.collect()
             except Exception as e:
-                print(f"❌ [Render] 流式渲染中断: {e}")
+                print(f" [Render] 流式渲染中断: {e}")
 
             for _ in range(num_workers): await self.queue.put(None)
             await asyncio.gather(*workers)
@@ -191,7 +191,7 @@ class ArchitectVisualParser:
 
     async def harvest_text_async(self, file_path: str, page_range: List[int]) -> str:
         """
-        🚀 [V1.5.0] 纯净收割：仅提取文本流，为语义分片提供原材料。
+         [V1.5.0] 纯净收割：仅提取文本流，为语义分片提供原材料。
         """
         start_time = time.time()
         target_indices = sorted([p - 1 for p in page_range])
@@ -212,7 +212,7 @@ class ArchitectVisualParser:
                     import gc
                     gc.collect()
         except Exception as e:
-            print(f"❌ [Harvest] 渲染异常: {e}")
+            print(f" [Harvest] 渲染异常: {e}")
 
         for _ in range(num_workers): await self.queue.put(None)
         await asyncio.gather(*workers)
@@ -222,11 +222,11 @@ class ArchitectVisualParser:
             if i in raw_page_texts:
                 page_text = raw_page_texts[i] or ""
                 if re.search(r'(\d+\.){5,}', page_text):
-                    print(f"⚠️ [Sanitizer] 检测到 P{i+1} 产生复读幻觉，执行拦截清洗。")
+                    print(f" [Sanitizer] 检测到 P{i+1} 产生复读幻觉，执行拦截清洗。")
                     page_text = re.sub(r'(\d+\.){5,}.*', ' [检测到 OCR 幻觉，已自动清理] ', page_text)
                 full_text += f"\n【物理页码：P{i+1}】\n" + page_text
         
-        print(f"✅ [Harvest-Done] 范围 P{min(page_range)}-P{max(page_range)} 收割完成 | 耗时: {time.time()-start_time:.2f}s")
+        print(f" [Harvest-Done] 范围 P{min(page_range)}-P{max(page_range)} 收割完成 | 耗时: {time.time()-start_time:.2f}s")
         return full_text
 
     def extract_toc_async(self, file_path: str, manual_range: Optional[List[int]] = None):

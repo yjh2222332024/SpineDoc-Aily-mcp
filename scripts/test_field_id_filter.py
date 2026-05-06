@@ -18,16 +18,16 @@ async def test_field_id_filter():
         "page_size": 20
     }
     
-    print(f"🚀 [Probe] Testing Field ID filter for Galaxy Link...")
+    print(f" [Probe] Testing Field ID filter for Galaxy Link...")
     resp = await bitable_ledger._api_request("POST", url, json_data=payload)
     
     if resp.get("code") == 0:
         items = resp.get("data", {}).get("items", [])
-        print(f"✅ Success! Found {len(items)} chunks linked to the Galaxy.")
+        print(f" Success! Found {len(items)} chunks linked to the Galaxy.")
         for it in items:
             print(f"   - Chunk {it['record_id']} | Text: {bitable_ledger._plain_text(it['fields'].get('正文内容'))[:30]}...")
     else:
-        print(f"❌ Failed: {resp.get('msg')}")
+        print(f" Failed: {resp.get('msg')}")
 
 if __name__ == "__main__":
     asyncio.run(test_field_id_filter())

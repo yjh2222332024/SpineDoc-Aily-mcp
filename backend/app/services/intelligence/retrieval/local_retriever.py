@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 class LocalRetriever:
     """
-    🚀 [V150.0] 本地检索器：金字塔重排检索。
+     [V150.0] 本地检索器：金字塔重排检索。
     替代旧名称：SovereignSentry
     """
     def __init__(self):
@@ -40,7 +40,7 @@ class LocalRetriever:
 
     async def route_query(self, query: str, limit: int = 3, pre_located_galaxies: List[Dict] = None) -> List[Dict[str, Any]]:
         """
-        🚀 [V150.0] 主权哨兵：金字塔重排检索
+         [V150.0] 主权哨兵：金字塔重排检索
         逻辑：星系撞击 -> 领地收割 -> 云端重排 -> 金字塔回退
 
         Args:
@@ -48,7 +48,7 @@ class LocalRetriever:
         """
         from backend.app.services.ingestion.zhipu_reranker import zhipu_reranker
 
-        print(f"🛡️ [SovereignSentry] 哨兵就位，开始主权质询: {query[:30]}...")
+        print(f" [SovereignSentry] 哨兵就位，开始主权质询: {query[:30]}...")
 
         # 1. 物理专家与星系专家：锁定主权领地（如果有预定位则跳过）
         if pre_located_galaxies:
@@ -58,19 +58,19 @@ class LocalRetriever:
                 locked_territories = [{"source_id": gid, "source_name": "Pre-located"} for gid in pre_located_galaxies]
             else:
                 locked_territories = pre_located_galaxies
-            print(f"📡 [SemanticExpert] 复用预定位领地 {len(locked_territories)} 个")
+            print(f" [SemanticExpert] 复用预定位领地 {len(locked_territories)} 个")
         else:
             physical_hits = await self._physical_expert(query)
             galaxy_hits = await self._galaxy_expert(query)
             locked_territories = self._gate_decision(physical_hits, galaxy_hits)
         
         if not locked_territories:
-            print("⚠️ [SovereignSentry] 撞击微弱，主权定位失败。")
+            print(" [SovereignSentry] 撞击微弱，主权定位失败。")
             return []
 
         # 2. 语义专家：主权领地收割
         galaxy_ids = [t["source_id"] for t in locked_territories]
-        print(f"📡 [SemanticExpert] 正在领地 {', '.join([t['source_name'] for t in locked_territories])} 内执行物理采样...")
+        print(f" [SemanticExpert] 正在领地 {', '.join([t['source_name'] for t in locked_territories])} 内执行物理采样...")
         
         # 利用 V150.0 的反向收割逻辑，直接拉取分片内容
         candidates = await bitable_ledger.search_chunks(
@@ -79,7 +79,7 @@ class LocalRetriever:
         )
         
         if not candidates:
-            print("⚠️ [SemanticExpert] 领地内未发现原始证据。")
+            print(" [SemanticExpert] 领地内未发现原始证据。")
             return []
 
         # 3. 云端质证：语义重排 (Rerank)
@@ -101,14 +101,14 @@ class LocalRetriever:
         scored_chunks.sort(key=lambda x: x["score"], reverse=True)
         top_score = scored_chunks[0]["score"] if scored_chunks else 0.0
         
-        # 🚀 [金字塔回退] 如果细节分片得分不足，上浮到星系共识摘要 (Level 1)
+        #  [金字塔回退] 如果细节分片得分不足，上浮到星系共识摘要 (Level 1)
         if top_score < PYRAMID_FALLBACK_THRESHOLD:
             print(f"🔼 [PyramidFallback] 细节匹配度过低 ({top_score:.2f})，正在上浮至星系共识层...")
             # 搜索该星系内的 L1 节点 (Level=1)
             # 注意：此处的 search_chunks 逻辑需支持 Level 过滤或通过坐标匹配
             consensus_chunks = await self._fetch_galaxy_consensus(galaxy_ids)
             if consensus_chunks:
-                print(f"✅ [PyramidFallback] 已锁定 {len(consensus_chunks)} 条星系级共识。")
+                print(f" [PyramidFallback] 已锁定 {len(consensus_chunks)} 条星系级共识。")
                 return consensus_chunks[:limit]
 
         final_evidence = scored_chunks[:limit]
@@ -116,14 +116,17 @@ class LocalRetriever:
         return final_evidence
 
     async def route_query_by_document(self, doc_id: str, query: str, limit: int = 5) -> List[Dict]:
-        """🚀 [V220.0] 单文档直路：跳过星系定位，在目标文档分片内直接语义重排。"""
+        """ [V220.0] 单文档直路：跳过星系定位，在目标文档分片内直接语义重排。"""
+        if not doc_id or doc_id == "all":
+            return []
+
         from backend.app.services.ingestion.zhipu_reranker import zhipu_reranker
 
-        print(f"🛡️ [SovereignSentry] 单文档直路 | doc_id={doc_id[:8]}... | query={query[:30]}...")
+        print(f" [SovereignSentry] 单文档直路 | doc_id={doc_id[:8]}... | query={query[:30]}...")
 
         candidates = await bitable_ledger.fetch_chunks_by_document(doc_id, limit=15)
         if not candidates:
-            print("⚠️ [SovereignSentry] 文档内未发现分片。")
+            print(" [SovereignSentry] 文档内未发现分片。")
             return []
 
         candidate_texts = [c.get("content", "") for c in candidates]
@@ -153,7 +156,7 @@ class LocalRetriever:
         return final
 
     async def pre_locate_galaxies(self, query: str) -> List[Dict]:
-        """🚀 [Dedupe] 预先定位星系，返回锁定领土列表"""
+        """ [Dedupe] 预先定位星系，返回锁定领土列表"""
         physical_hits = await self._physical_expert(query)
         galaxy_hits = await self._galaxy_expert(query)
         locked = self._gate_decision(physical_hits, galaxy_hits)
@@ -223,7 +226,7 @@ class LocalRetriever:
         """
         星系专家：Query Vector vs Galaxy Centroids
         """
-        # 🚀 [V110.1] 修复接口调用：EmbeddingService 使用 get_embeddings (复数)
+        #  [V110.1] 修复接口调用：EmbeddingService 使用 get_embeddings (复数)
         embeddings = await embedding_service.get_embeddings([query])
         if not embeddings: return []
         query_vector = embeddings[0]

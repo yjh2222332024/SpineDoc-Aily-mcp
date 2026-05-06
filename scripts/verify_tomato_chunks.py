@@ -4,7 +4,7 @@ from backend.app.services.feishu.bitable_ledger import bitable_ledger
 
 async def verify_tomato_chunks():
     doc_id = "recvisQaciYfIF" # 1.md 的 ID
-    print(f"🚀 [Verify] Checking chunks for Document: {doc_id}")
+    print(f" [Verify] Checking chunks for Document: {doc_id}")
     
     # 强制拉取该文档的所有分片
     table_id = bitable_ledger.tables['chunks']['id']
@@ -20,7 +20,7 @@ async def verify_tomato_chunks():
     resp = await bitable_ledger._api_request("POST", url, json_data=payload)
     items = resp.get("data", {}).get("items", [])
     
-    print(f"📦 Results: {len(items)} chunks found.")
+    print(f" Results: {len(items)} chunks found.")
     for it in items:
         f = it.get("fields", {})
         print(f"\n--- Chunk {it['record_id']} ---")

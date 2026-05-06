@@ -45,7 +45,7 @@ class StructuredTextOrchestrator(BaseIngestOrchestrator):
             raw_chunks = self._emergent_slice(p.name, content_md)
             synthetic_spine = []
 
-        print(f"📦 [StructuredText] 已生成 {len(raw_chunks)} 个分片，准备入库...")
+        print(f" [StructuredText] 已生成 {len(raw_chunks)} 个分片，准备入库...")
         for i, c in enumerate(raw_chunks[:2]): # 采样日志
              print(f"  ↳ 分片 {i} 预览: {c.get('content', '')[:30]}...")
 
@@ -56,7 +56,7 @@ class StructuredTextOrchestrator(BaseIngestOrchestrator):
             db_doc, synthetic_spine, raw_chunks, engine,
             skip_bitable=False, store=self.store, tag_timeout=tag_timeout
         )
-        print(f"✅ [StructuredText] 落库完成。")
+        print(f" [StructuredText] 落库完成。")
         return result
 
 
@@ -87,7 +87,7 @@ class StructuredTextOrchestrator(BaseIngestOrchestrator):
         for node in toc:
             block = "\n".join(lines[node.physical_start - 1 : node.physical_end]).strip()
             if block:
-                # 🚀 物理确权：生成逻辑座标
+                #  物理确权：生成逻辑座标
                 logic_coord = f"P{node.logical_page}-{node.physical_start}"
                 segments.append({
                     "content": block, 

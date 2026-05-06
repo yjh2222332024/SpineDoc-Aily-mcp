@@ -18,15 +18,15 @@ async def test_cloud_ingestion():
     engine = SpineEngine()
     url = "https://jcneyh7qlo8i.feishu.cn/wiki/O27CwF9hiidqkskJixYc3rAFndc?from=from_copylink"
     
-    print(f"\n🚀 [CloudAudit] 启动云端知识收割：{url}")
-    print(f"🛠️ [CloudAudit] 策略：识别 Wiki URL -> 捕获内容 -> 逻辑确权 -> 影子镜像\n")
+    print(f"\n [CloudAudit] 启动云端知识收割：{url}")
+    print(f" [CloudAudit] 策略：识别 Wiki URL -> 捕获内容 -> 逻辑确权 -> 影子镜像\n")
 
     try:
         # 使用 force=True 触发新逻辑
         result = await engine.ingest_document(url, force=True)
         
         print("\n" + "☁️" * 20)
-        print(f"✅ [CloudAudit] 知识已成功收缴归库！")
+        print(f" [CloudAudit] 知识已成功收缴归库！")
         print(f"🔗 Bitable ID: {result.get('bitable_id')}")
         
         toc = result.get('toc', [])
@@ -36,7 +36,7 @@ async def test_cloud_ingestion():
         print("☁️" * 20)
         
     except Exception as e:
-        print(f"\n❌ [CloudAudit] 任务崩溃: {e}")
+        print(f"\n [CloudAudit] 任务崩溃: {e}")
         import traceback
         traceback.print_exc()
 

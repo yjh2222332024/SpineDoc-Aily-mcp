@@ -45,14 +45,14 @@ def check_table_exists(engine, table_name: str) -> bool:
 def migrate():
     """执行 V7.0 迁移"""
     print("╔═══════════════════════════════════════════════════════════╗")
-    print("║  🕸️  SpineDoc V7.0 - 逻辑织网协议数据库迁移                ║")
+    print("║    SpineDoc V7.0 - 逻辑织网协议数据库迁移                ║")
     print("╚═══════════════════════════════════════════════════════════╝")
 
     engine = create_engine(SYNC_DATABASE_URL)
 
     # 检查是否已迁移
     if check_table_exists(engine, "chunk_relationships"):
-        print("\n⚠️   chunk_relationships 表已存在，跳过迁移")
+        print("\n   chunk_relationships 表已存在，跳过迁移")
         print("    如需重新迁移，请先删除表：DROP TABLE chunk_relationships CASCADE;")
         return
 
@@ -147,7 +147,7 @@ def migrate():
         print("   [4/5] 添加表注释...")
         conn.execute(text("""
             COMMENT ON TABLE chunk_relationships IS
-            '🕸️ [V7.0] 逻辑织网协议 - Chunk 关系表，承载审判后的质证结论';
+            ' [V7.0] 逻辑织网协议 - Chunk 关系表，承载审判后的质证结论';
 
             COMMENT ON COLUMN chunk_relationships.rel_type IS
             '关系谓词：causality(因果), contradiction(矛盾), support(证据), evolution(演进), complement(补充)';
@@ -166,7 +166,7 @@ def migrate():
         print("   ✓ 事务提交成功")
 
     print("\n" + "═" * 65)
-    print("✅ V7.0 迁移完成！")
+    print(" V7.0 迁移完成！")
     print("\n📊 新增内容:")
     print("   - chunk_relationships 表")
     print("   - relationship_type 枚举类型")
@@ -182,7 +182,7 @@ if __name__ == "__main__":
     try:
         migrate()
     except Exception as e:
-        print(f"\n❌ 迁移失败：{e}")
+        print(f"\n 迁移失败：{e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

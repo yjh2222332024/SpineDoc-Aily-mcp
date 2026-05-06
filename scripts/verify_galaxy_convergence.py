@@ -55,7 +55,7 @@ async def verify_galaxy_convergence():
             print(f"      - {word}: {count} 次")
 
         # --- 3. 模拟汇聚场景 ---
-        print("\n🎯 [3] 模拟场景：入库新文档 'RAG_Optimization.pdf'")
+        print("\n [3] 模拟场景：入库新文档 'RAG_Optimization.pdf'")
         print("-" * 40)
 
         # 假设新文档的锚点
@@ -68,7 +68,7 @@ async def verify_galaxy_convergence():
             # 模糊匹配现有星系名称
             matches = [g for g in galaxies if anchor.lower() in g.name.lower()]
             if matches:
-                print(f"   ✅ '{anchor}' → 将汇聚到:")
+                print(f"    '{anchor}' → 将汇聚到:")
                 for m in matches:
                     print(f"      - {m.name} (当前成员：{m.member_count})")
             else:
@@ -86,7 +86,7 @@ async def verify_galaxy_convergence():
             print(f"   成员数为 {size} 的星系：{galaxy_count} 个")
 
         # --- 5. 汇聚潜力评估 ---
-        print("\n💡 [5] 汇聚潜力评估")
+        print("\n [5] 汇聚潜力评估")
         print("-" * 40)
 
         # 计算：如果新文档的锚点与现有星系重叠，汇聚概率
@@ -98,16 +98,16 @@ async def verify_galaxy_convergence():
         print(f"   平均每个词根对应星系数：{total_galaxies / unique_unigrams:.2f}")
 
         if total_galaxies / unique_unigrams > 1:
-            print("   ✅ 已存在词根重叠，说明汇聚逻辑正在工作")
+            print("    已存在词根重叠，说明汇聚逻辑正在工作")
         else:
-            print("   ⚠️ 词根与星系一一对应，说明文档主题差异较大")
+            print("    词根与星系一一对应，说明文档主题差异较大")
 
         print("\n   📊 建议：")
         print("      当入库更多文档时，汇聚效应会逐渐显现")
         print("      特别是当新文档与现有文档有共同主题时")
 
     print("\n" + "=" * 80)
-    print("✅ 验证完成 (只读模式)")
+    print(" 验证完成 (只读模式)")
     print("=" * 80)
 
 if __name__ == "__main__":

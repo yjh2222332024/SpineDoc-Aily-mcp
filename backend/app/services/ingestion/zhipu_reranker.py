@@ -14,19 +14,21 @@ from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+_semaphore = asyncio.Semaphore(10)
+
 class ZhipuReranker:
     """
-    🚀 [V130.1] 智谱重排专家：借用云端算力，无需数据同步。
+     [V130.1] 智谱重排专家：借用云端算力，无需数据同步。
     """
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or settings.ZHIPU_API_KEY
-        # 🛡️ 架构师校对：智谱标准重排接口
+        #  架构师校对：智谱标准重排接口
         self.url = "https://open.bigmodel.cn/api/paas/v4/rerank"
         self.timeout = 20.0
 
     async def rerank(self, query: str, documents: List[str]) -> List[Dict[str, Any]]:
         """
-        🚀 质询云端：对候选文档进行重排序
+         质询云端：对候选文档进行重排序
         """
         if not documents: return []
         
@@ -43,16 +45,17 @@ class ZhipuReranker:
         }
         
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                resp = await client.post(self.url, json=payload, headers=headers)
+            async with _semaphore:
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    resp = await client.post(self.url, json=payload, headers=headers)
                 if resp.status_code != 200:
-                    logger.error(f"❌ [Zhipu-Rerank] Failed: {resp.text}")
+                    logger.error(f" [Zhipu-Rerank] Failed: {resp.text}")
                     return []
                 
                 data = resp.json()
                 return data.get("results", [])
         except Exception as e:
-            logger.error(f"⚠️ [Zhipu-Rerank] 异常: {e}")
+            logger.error(f" [Zhipu-Rerank] 异常: {e}")
             return []
 
 zhipu_reranker = ZhipuReranker()

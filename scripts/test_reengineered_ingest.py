@@ -12,7 +12,7 @@ async def calculate_file_hash(path: Path) -> str:
 
 async def test_ingest():
     file_path = "docs/1.md"
-    print(f"🚀 [Test] Starting re-engineered ingestion for: {file_path}")
+    print(f" [Test] Starting re-engineered ingestion for: {file_path}")
     
     engine = SpineEngine()
     file_hash = await calculate_file_hash(Path(file_path))

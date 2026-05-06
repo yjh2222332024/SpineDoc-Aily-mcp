@@ -13,13 +13,13 @@ def test_ark():
         "messages": [{"role": "user", "content": "ping"}]
     }
 
-    print(f"🚀 [Test] Sending request to {url}...")
+    print(f" [Test] Sending request to {url}...")
     try:
         resp = httpx.post(url, headers=headers, json=payload, timeout=20.0)
-        print(f"✅ [Test] Status Code: {resp.status_code}")
-        print(f"✅ [Test] Response: {resp.text}")
+        print(f" [Test] Status Code: {resp.status_code}")
+        print(f" [Test] Response: {resp.text}")
     except Exception as e:
-        print(f"❌ [Test] Request failed: {e}")
+        print(f" [Test] Request failed: {e}")
 
 if __name__ == "__main__":
     test_ark()

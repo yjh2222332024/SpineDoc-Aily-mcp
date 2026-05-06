@@ -12,7 +12,7 @@ from pathlib import Path
 
 def audit_test_velocity():
     """度量测试代谢速度"""
-    print("🚀 [Audit] 正在启动原子测试...")
+    print(" [Audit] 正在启动原子测试...")
     start = time.time()
     # 仅运行 unit 目录下的原子测试
     result = subprocess.run(
@@ -21,13 +21,13 @@ def audit_test_velocity():
     )
     duration = time.time() - start
     
-    status = "✅ PASS" if duration < 1.0 else "⚠️ SLOW"
+    status = " PASS" if duration < 1.0 else " SLOW"
     print(f"  ↳ 测试速度: {duration:.2f}s ({status})")
     return duration
 
 def audit_logical_isolation():
     """检查核心逻辑是否‘与 IO 结婚’"""
-    print("🚀 [Audit] 检查逻辑隔离度...")
+    print(" [Audit] 检查逻辑隔离度...")
     core_logic_files = [
         "backend/app/services/intelligence/galaxy/cluster_engine.py",
         "backend/app/services/intelligence/consensus/moderator.py"
@@ -41,16 +41,16 @@ def audit_logical_isolation():
         content = Path(file_path).read_text(encoding="utf-8")
         for forbidden in forbidden_imports:
             if f"import {forbidden}" in content or f"from {forbidden}" in content:
-                print(f"  ❌ 违规: {file_path} 直接引入了 {forbidden}！")
+                print(f"   违规: {file_path} 直接引入了 {forbidden}！")
                 violations += 1
                 
     if violations == 0:
-        print("  ✅ 隔离度良好：业务规则未被 IO 细节污染。")
+        print("   隔离度良好：业务规则未被 IO 细节污染。")
     return violations
 
 def audit_function_discipline():
     """度量函数规模 (Uncle Bob's Law: 10 lines max)"""
-    print("🚀 [Audit] 检查函数纪律...")
+    print(" [Audit] 检查函数纪律...")
     target_dir = "backend/app/services"
     large_functions = 0
     
@@ -64,7 +64,7 @@ def audit_function_discipline():
                 for line in content:
                     # 简化：仅检查是否存在明显的巨型类
                     if len(content) > 300:
-                        print(f"  ⚠️ 警报: {path} 超过 300 行，可能需要拆分类。")
+                        print(f"   警报: {path} 超过 300 行，可能需要拆分类。")
                         large_functions += 1
                         break
     return large_functions

@@ -1,5 +1,5 @@
 """
-🏛️ Lark CLI Client - 飞书命令行客户端
+ Lark CLI Client - 飞书命令行客户端
 ========================================
 职责：原子化封装对 bin/lark-cli.exe 的调用，不包含业务逻辑。
 """
@@ -21,22 +21,35 @@ class LarkCliClient:
             self.cli_path = str(Path(os.getcwd()) / cli_path)
 
     async def _run_command(self, args: List[str]) -> (bool, str):
+        from backend.app.core.config import settings
+        
+        # 环境变量对齐：lark-cli 常用 LARK_APP_ID 或通过 config init
+        # 架构师指令：我们直接通过环境变量注入，确保原子化操作无需事先 login
+        env = os.environ.copy()
+        if settings.FEISHU_APP_ID:
+            env["LARK_APP_ID"] = settings.FEISHU_APP_ID
+            env["FEISHU_APP_ID"] = settings.FEISHU_APP_ID
+        if settings.FEISHU_APP_SECRET:
+            env["LARK_APP_SECRET"] = settings.FEISHU_APP_SECRET
+            env["FEISHU_APP_SECRET"] = settings.FEISHU_APP_SECRET
+
         cmd = [self.cli_path] + args
         try:
             process = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
+                env=env
             )
             stdout, stderr = await process.communicate()
             if process.returncode == 0:
                 return True, stdout.decode().strip()
             else:
                 error_msg = stderr.decode().strip()
-                logger.error(f"❌ [LarkCLI] 命令失败: {error_msg}")
+                logger.error(f" [LarkCLI] 命令失败: {error_msg}")
                 return False, error_msg
         except Exception as e:
-            logger.error(f"❌ [LarkCLI] 执行异常: {e}")
+            logger.error(f" [LarkCLI] 执行异常: {e}")
             return False, str(e)
 
     async def download_drive_file(self, file_token: str, output_path: str) -> bool:
