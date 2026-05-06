@@ -62,16 +62,15 @@ pip install -r requirements.txt
 
 | 服务 | 用途 | 怎么注册 |
 |------|------|----------|
-| **火山引擎** | LLM 推理（豆包 2.0） | 打开 https://console.volcengine.com/ark → 创建 API Key → 创建推理接入点（Endpoint） |
+| **DeepSeek** | LLM 推理 | 打开 https://platform.deepseek.com/ → 注册 → 创建 API Key |
 | **SiliconFlow** | 向量嵌入 + 视觉模型 | 打开 https://cloud.siliconflow.cn/ → 注册 → 创建 API Key |
 | **智谱** | 联网搜索 | 打开 https://open.bigmodel.cn/ → 注册 → 创建 API Key |
 
-**火山引擎特别注意**：
-1. 进入「推理接入点」页面
-2. 点击「创建推理接入点」
-3. 选择模型 `doubao-2.0-pro-256k`（或其他豆包模型）
-4. 创建完成后会得到一个 `ep-xxxxxxxxxxxx` 格式的 Endpoint ID
-5. 这个 Endpoint ID 就是 `LLM_ENDPOINT`
+**DeepSeek 特别注意**：
+1. 注册后进入 API Keys 页面
+2. 创建 API Key，复制以 `sk-` 开头的密钥
+3. 建议使用 `deepseek-chat` 模型（性价比最高，支持 64K 上下文）
+4. 如果希望使用最新模型，在 API 页面查看可用模型列表
 
 ### 2.4 下载 lark-cli
 
@@ -180,10 +179,10 @@ mkdir bin
 # SpineDoc 环境配置（手工填写版）
 # ═══════════════════════════════════════════
 
-# ─── LLM（火山引擎豆包） ───
-LLM_API_KEY=<你的火山引擎 API Key>
-LLM_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
-LLM_ENDPOINT=ep-xxxxxxxxxxxx     ← 推理接入点 ID，不是模型名
+# ─── LLM（DeepSeek） ───
+LLM_API_KEY=<你的 DeepSeek API Key>
+LLM_BASE_URL=https://api.deepseek.com/v1
+LLM_MODEL_NAME=deepseek-chat     ← 模型名，可选 deepseek-chat / deepseek-reasoner
 
 # ─── 向量嵌入（SiliconFlow） ───
 EMBEDDING_API_KEY=sk-xxxxxxxxxxxx
