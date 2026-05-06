@@ -24,7 +24,7 @@ class VectorizedTitleSanitizer:
                 self.model = SentenceTransformer("BAAI/bge-small-zh-v1.5", device="cpu")
                 logger.info("🧠 TitleSanitizer: BGE-Small (CPU) Ready.")
             except Exception as e:
-                logger.error(f"❌ Failed to load model: {e}")
+                logger.error(f" Failed to load model: {e}")
         return self.model
 
     def _levenshtein_sim(self, s1: str, s2: str) -> float:
@@ -86,7 +86,7 @@ class VectorizedTitleSanitizer:
                     l_sim = self._levenshtein_sim(group[i].title, group[j].title)
                     
                     if v_sim >= self.vector_threshold or l_sim >= self.edit_threshold:
-                        logger.info(f"✨ [Sanitizer] 合并重影: '{group[j].title}' (L{group[j].level}) -> '{group[i].title}' (L{group[i].level}) | V:{v_sim:.2f} L:{l_sim:.2f}")
+                        logger.info(f" [Sanitizer] 合并重影: '{group[j].title}' (L{group[j].level}) -> '{group[i].title}' (L{group[i].level}) | V:{v_sim:.2f} L:{l_sim:.2f}")
                         to_skip.add(j)
                         
                         # 权重策略：保留层级最浅的（通常是更准确的章节定义）

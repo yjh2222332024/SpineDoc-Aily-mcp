@@ -11,22 +11,23 @@ import uuid
 import json
 import re
 from typing import List, Dict, Any, Optional, Tuple
-from openai import AsyncOpenAI
 from backend.app.core.config import settings
 from backend.app.services.toc.base import SpineNode
+from backend.app.infra.llm_client import get_llm_client
 
 logger = logging.getLogger(__name__)
 
 class LatentSpineDistiller:
     def __init__(self):
-        self.client = AsyncOpenAI(api_key=settings.LLM_API_KEY, base_url=settings.LLM_BASE_URL)
-        self.model = settings.LLM_MODEL_NAME
+        #  [V60.0] 动态路由：自动适配火山引擎/OpenAI 接口
+        self.client = get_llm_client()
+        self.model = settings.REAL_LLM_MODEL
 
     async def distill_emergent_spine(self, 
                                     doc_id: uuid.UUID, 
                                     refined_chunks: List[Dict[str, Any]]) -> List[SpineNode]:
         """
-        🚀 核心入口：构建三层逻辑金字塔 (-1 -> -2 -> -3)
+         核心入口：构建三层逻辑金字塔 (-1 -> -2 -> -3)
         """
         if not refined_chunks: return []
         
@@ -35,11 +36,16 @@ class LatentSpineDistiller:
         # 1. 准备 Level -1 指纹 (Atoms)
         fingerprints = []
         for idx, c in enumerate(refined_chunks):
+            #  [V63.0] 优先使用 Bitable AI 反哺的云端摘要
+            hook_content = c.get("summary", "")
+            if not hook_content:
+                hook_content = c.get("content", "")[:settings.CONTEXT_CHUNK_PREVIEW_CONTENT]
+                
             fingerprints.append({
                 "index": idx,
                 "p": c.get("page_number", 0),
                 "tags": c.get("logic_tags", [])[:8],
-                "hook": c["content"][:settings.CONTEXT_CHUNK_PREVIEW_CONTENT].strip()
+                "summary": hook_content.strip()
             })
 
         # 2. 蒸馏 Level -2 (Sections)
@@ -61,7 +67,7 @@ class LatentSpineDistiller:
 
     def _fallback_partition(self, fingerprints: List[Dict], level: int) -> List[SpineNode]:
         """
-        🚀 架构师的降级方案：物理暴力分区，确保系统不挂起。
+         架构师的降级方案：物理暴力分区，确保系统不挂起。
         """
         nodes = []
         batch_size = 10
@@ -84,14 +90,18 @@ class LatentSpineDistiller:
                                  fingerprints: List[Dict], 
                                  target_level: int) -> List[SpineNode]:
         """
-        利用 LLM 寻找逻辑边界
+        利用 LLM 寻找逻辑边界 (V4.0 标签驱动聚类版)
         """
-        prompt = f"""你是一个文档结构审计专家。请根据以下文档分片的指纹（页码、关键词、首句摘要），将其划分为具有逻辑意义的【子章节】。
+        prompt = f"""你是一个顶级的文档结构架构师。请根据以下文档分片的指纹（物理页码 p、语义标签 tags、逻辑摘要 summary），将其划分为具有逻辑意义的【子章节】。
+        
+         核心聚类法则：
+        1. 重点观察【语义标签 tags】的聚集效应。如果连续多个分片具有相同或高度相关的标签，它们必须被划入同一个子章节。
+        2. 当标签的主题发生明显转换时，即为切断边界。
         
         约束要求：
         1. 必须保持物理页码的顺序，不能跨页聚合。
-        2. 每个章节至少包含 3 个分片，至多包含 15 个分片。
-        3. 标题必须精炼（15字以内），反映该区域的核心技术或业务逻辑。
+        2. 每个章节至少包含 2 个分片，至多包含 15 个分片。
+        3. 标题必须精炼（15字以内），必须高度概括该区域的核心【语义标签】。
         4. 严格输出 JSON 数组格式：[{"{"}"title": "...", "start_idx": 0, "end_idx": 5{"}"}, ...]
         
         指纹列表：
@@ -135,7 +145,7 @@ class LatentSpineDistiller:
 
     async def _aggregate_to_level_3(self, doc_id: uuid.UUID, sub_nodes: List[SpineNode]) -> List[SpineNode]:
         """
-        🚀 [V3.5] 主权聚合：将子章节 (Level -2) 归并为大章节 (Level -3)
+         [V3.5] 主权聚合：将子章节 (Level -2) 归并为大章节 (Level -3)
         """
         if len(sub_nodes) <= 3: 
             return [] # 规模太小，不进行二次分层
@@ -194,7 +204,7 @@ class LatentSpineDistiller:
 
     def _ensure_physical_integrity(self, nodes: List[SpineNode], chunks: List[Dict]):
         """
-        🚀 架构师铁律：强制执行物理区间闭合
+         架构师铁律：强制执行物理区间闭合
         1. 确保所有节点的物理页码与对应的 Chunk 严格对齐。
         2. 确保同一层级的节点之间没有物理空隙。
         """

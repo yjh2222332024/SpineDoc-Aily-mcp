@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 class LogicAligner:
     """
-    🚀 SpineDoc 物理/逻辑页码对齐器 (V46.1)
+     SpineDoc 物理/逻辑页码对齐器 (V46.1)
     职责：计算逻辑页码与物理页码之间的常数偏移量。
     """
     
@@ -30,7 +30,7 @@ class LogicAligner:
             return 0
             
         target_phys_page = int(np.median(logic_1_phys_candidates))
-        # 🚀 关键：offset = 物理起点 - 逻辑 1 = P45 - 1 = 44
+        #  关键：offset = 物理起点 - 逻辑 1 = P45 - 1 = 44
         return target_phys_page - 1
 
     @staticmethod

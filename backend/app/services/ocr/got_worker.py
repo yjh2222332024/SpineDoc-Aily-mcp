@@ -7,9 +7,7 @@ SpineDoc GOT-OCR 2.0 精修专家 (V1.0)
 3. 显存友好：FP16 模式下仅占 ~1.5GB 显存。
 """
 
-import torch
 import os
-from transformers import AutoModelForImageTextToText, AutoProcessor
 from PIL import Image
 import numpy as np
 import cv2
@@ -19,33 +17,47 @@ from backend.app.core.config import settings
 
 class GOTWorker:
     def __init__(self, model_id: str = "stepfun-ai/GOT-OCR-2.0-hf"):
+        self.device = None
+        self.dtype = None
+        self.model = None
+        self.processor = None
+        self.model_id = model_id
+        self._loaded = False
+
+    def _ensure_model(self):
+        """延迟加载：首次使用时才初始化模型"""
+        if self._loaded:
+            return
+        import torch
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.dtype = torch.bfloat16 if self.device == "cuda" else torch.float32
-        
-        # 🏛️ 持久化存储：使用全局配置中的 CACHE_DIR
+
         base_cache = Path(settings.CACHE_DIR)
         cache_dir = str(base_cache / "GOT-OCR-2.0")
         os.makedirs(cache_dir, exist_ok=True)
-        
-        print(f"🚀 [OCR-GOT] 正在加载模型 {model_id} (Cache: {cache_dir}) 到 {self.device}...")
-        
+
+        print(f" [OCR-GOT] 正在加载模型 {self.model_id} (Cache: {cache_dir}) 到 {self.device}...")
+
         try:
+            from transformers import AutoModelForImageTextToText, AutoProcessor
             self.model = AutoModelForImageTextToText.from_pretrained(
-                model_id,
+                self.model_id,
                 torch_dtype=self.dtype,
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
                 cache_dir=cache_dir
             ).to(self.device)
-            
+
             self.processor = AutoProcessor.from_pretrained(
-                model_id, 
+                self.model_id,
                 trust_remote_code=True,
                 cache_dir=cache_dir
             )
-            print(f"✅ [OCR-GOT] 模型加载完成 (Device: {self.device})")
+            self._loaded = True
+            print(f" [OCR-GOT] 模型加载完成 (Device: {self.device})")
         except Exception as e:
-            print(f"❌ [OCR-GOT] 模型加载失败: {e}")
+            print(f" [OCR-GOT] 模型加载失败: {e}")
+            self._loaded = True  # 标记已尝试，防止重复尝试
             raise e
 
     def refine_content(self, crop_np: np.ndarray) -> str:
@@ -54,12 +66,17 @@ class GOTWorker:
         """
         if crop_np is None or crop_np.size == 0:
             return ""
+
+        self._ensure_model()
+
+        if self.model is None or self.processor is None:
+            return ""
         
         try:
-            # 🏛️ 转换为 PIL Image
+            #  转换为 PIL Image
             image = Image.fromarray(cv2.cvtColor(crop_np, cv2.COLOR_BGR2RGB))
             
-            # 🏛️ 关键配置：format=True 开启公式/表格的 Markdown 渲染
+            #  关键配置：format=True 开启公式/表格的 Markdown 渲染
             inputs = self.processor(image, return_tensors="pt", format=True).to(self.device, self.dtype)
             
             # 执行推理
@@ -75,7 +92,7 @@ class GOTWorker:
             # 解码
             content = self.processor.decode(generate_ids[0], skip_special_tokens=True).strip()
             
-            # 🏛️ 专业的后处理：移除 Chat Template 泄露产生的冗余标签
+            #  专业的后处理：移除 Chat Template 泄露产生的冗余标签
             # GOT-OCR-2.0-hf 有时会输出 system/user/assistant 的对话结构
             if "assistant" in content:
                 content = content.split("assistant")[-1].strip()
@@ -85,5 +102,5 @@ class GOTWorker:
             
             return content
         except Exception as e:
-            print(f"⚠️ [OCR-GOT] 精修失败: {e}")
+            print(f" [OCR-GOT] 精修失败: {e}")
             return ""

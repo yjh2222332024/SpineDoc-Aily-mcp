@@ -1,51 +1,34 @@
-# Core Framework
+# 🏛️ SpineDoc 轻量化工业级依赖清单 (V55.0)
+# 彻底移除本地算力依赖，拥抱移动端与轻薄本。
+
+# 核心框架
 fastapi
 uvicorn[standard]
 python-multipart
 pydantic-settings
 aiofiles
 aiohttp
-uvloop
-mcp[cli]
 
-# Database
+# 飞书生态集成 (基于 lark-cli)
+# 我们直接驱动二进制的 lark-cli.exe，无需安装复杂的 SDK
+
+# 数据库驱动 (支持 SQLite 或 Bitable 代理)
 sqlmodel
-sqlalchemy[asyncio]
-asyncpg
-pgvector
-# redis[hiredis]>=5.0.0  # 🗑️ 未使用，已移除
-# celery>=5.3.0  # 🗑️ 未使用，已移除
+aiosqlite
+# sqlalchemy[asyncio] 已包含在 sqlmodel 中
 
-# LLM / API / Orchestration
-openai
-langgraph
-langchain
-langchain-openai
-langchain-community
+# AI 推理 API (SiliconFlow & DeepSeek & Doubao)
+openai>=1.12.0
+httpx
 
-# OCR & Layout (Deterministic Pipeline)
-rapidocr_onnxruntime>=1.3.0
-transformers>=4.45.0
-accelerate
-tiktoken
-pyclipper
-shapely
-opencv-python
-
-# Retrieval & Semantic Tagging
-keybert>=0.8.0
-
-# Retrieval (Lightweight)
-sentence-transformers==5.3.0
-rank-bm25>=0.2.2
-jieba>=0.42.1  # 中文分词与关键词提取
-tavily-python>=0.3.0  # 🚀 [V50.x] 联网证人 SDK
-
-# Scientific Computing
+# 逻辑计算
 numpy>=1.24.0
-scikit-learn>=1.3.0
+scikit-learn>=1.3.0  # 用于本地轻量重排 (Rerank)
 
-# Testing
+# 格式解析
+python-docx
+PyMuPDF  # 用于提取物理坐标，不含 OCR，非常轻量
+
+# 自动化与工程化
 pytest
 pytest-asyncio
-zai-sdk==0.2.2

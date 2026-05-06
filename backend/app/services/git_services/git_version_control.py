@@ -4,6 +4,7 @@
 封装 Git 版本管理操作，供 SpineEngine 调用。
 """
 
+import asyncio
 from typing import List, Dict, Optional
 from backend.app.services.knowledge.git_manager import get_git_manager, GitManager
 from backend.app.services.knowledge.metabolism_manager import get_metabolism_manager, MetabolismManager
@@ -23,8 +24,10 @@ class GitVersionControl:
     def __init__(self):
         self.git_manager = get_git_manager()
         self.metabolism_manager = get_metabolism_manager()
+        self._write_lock = asyncio.Lock()  #  [V52.9] 并发主权锁，防止多用户同时修改仓库
 
     def get_chunk_history(self, chunk_id: str, limit: int = 20) -> List[Dict]:
+        # ... (原有逻辑保持不变)
         """
         获取 Chunk 的 Git 历史
 
@@ -113,15 +116,10 @@ class GitVersionControl:
 
     async def apply_knowledge_delta(self, delta: Dict) -> Dict[str, str]:
         """
-        应用知识增量到 Git
-
-        Args:
-            delta: knowledge_delta 字典
-
-        Returns:
-            {chunk_id: commit_hash}
+        应用知识增量到 Git (带并发锁保护)
         """
-        return await self.metabolism_manager.apply(delta)
+        async with self._write_lock:
+            return await self.metabolism_manager.apply(delta)
 
 
 # 全局单例

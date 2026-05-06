@@ -10,29 +10,23 @@ import asyncio
 import logging
 import uuid
 from typing import List, Dict, Any, Optional, Tuple
-from backend.app.services.rag.splitter import structural_splitter
+from backend.app.services.ingestion.splitter import structural_splitter
 
 logger = logging.getLogger(__name__)
-
-from backend.app.services.rag.splitter import structural_splitter
-from backend.app.services.rag.logic_refiner import LogicRefiner
-from .latent_distiller import latent_distiller
 from backend.app.services.toc.base import SpineNode
 
 logger = logging.getLogger(__name__)
 
 class EmergentSpineOrchestrator:
     """
-    🚀 [V3.5] 涌现指挥官：ISR 领域的调度中枢。
+     [V3.5] 涌现指挥官：ISR 领域的调度中枢。
     职责：
     1. 驱动全量收割。
-    2. 执行语义精炼 (KeyBERT 打标)。
-    3. 执行三层逻辑蒸馏。
-    4. 路径回填与主权对齐。
+    2. 执行三层逻辑蒸馏。
+    3. 路径回填与主权对齐。
     """
     def __init__(self):
         self.splitter = structural_splitter
-        self.refiner = LogicRefiner(threshold=0.25)
 
     async def run_full_emergent_pipeline(self, 
                                         doc_id: str, 
@@ -40,7 +34,7 @@ class EmergentSpineOrchestrator:
                                         doc_obj: Any, 
                                         ocr_context: Optional[Dict[int, str]] = None) -> Tuple[List[Dict], List[SpineNode]]:
         """
-        🚀 核心：全自动逻辑涌现流水线
+         核心：全自动逻辑涌现流水线
         """
         print(f"🌊 [Orchestrator] 启动全自动逻辑涌现流水线: {filename}")
 
@@ -49,30 +43,22 @@ class EmergentSpineOrchestrator:
         if not raw_chunks:
             return [], []
 
-        # 2. 语义精炼 (KeyBERT 打标)
-        # 这一步是蒸馏的燃料，必须保证每个 Chunk 都有 logic_tags
-        print(f"💎 [Orchestrator] 正在为 {len(raw_chunks)} 个切片注入语义指纹...")
-        # 转换格式以适配 LogicRefiner (它需要 SpineNode 列表，这里我们传一个伪造的 Root)
-        mock_toc = [SpineNode(title="Full Document", logical_page=1, level=1)]
-        refined_chunks = await self.refiner.refine_batch(filename, mock_toc, raw_chunks)
-
-        # 3. 逻辑蒸馏 (Building the Pyramid)
+        # 2. 逻辑蒸馏 (Building the Pyramid)
         import uuid
         u_doc_id = uuid.UUID(doc_id) if isinstance(doc_id, str) else doc_id
-        synthetic_spine = await latent_distiller.distill_emergent_spine(u_doc_id, refined_chunks)
+        synthetic_spine = await latent_distiller.distill_emergent_spine(u_doc_id, raw_chunks)
 
-        # 4. 路径回填 (Path Back-filling)
-        # 将生成的 level -2, -3 路径注入到每个 chunk 的 breadcrumb 中
+        # 3. 路径回填 (Path Back-filling)
         print(f"🔗 [Orchestrator] 正在执行逻辑主权反哺...")
-        self._backfill_breadcrumbs(refined_chunks, synthetic_spine)
+        self._backfill_breadcrumbs(raw_chunks, synthetic_spine)
 
-        return refined_chunks, synthetic_spine
+        return raw_chunks, synthetic_spine
 
     async def harvest_atomic_chunks(self, 
                                    doc_obj: Any, 
                                    ocr_context: Optional[Dict[int, str]] = None) -> List[Dict[str, Any]]:
         """
-        🚀 第一阶段：原子级数据采样
+         第一阶段：原子级数据采样
         """
         print(f"📥 [Emergent] 执行暴力全量收割...")
         raw_chunks = []

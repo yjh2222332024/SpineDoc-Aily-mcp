@@ -52,15 +52,22 @@ backend/app/storage/git-repo/
 ceshi_ocr/
 backups/
 temp_ocr_*.jpg
-image.png
-image copy *.png
+ image.png
+ image copy *.png
 gemini-clip/
 
 # 7. Docker 数据卷 (本地开发用)
 docker-compose.override.yml
 docker_data/
 
+# 8. 未来规划 (训练代码/模型架构 - 暂时不推送)
+backend/app/services/protocol_parser/_future_plans/
+docs/_future_*.md
+
 # 以下目录已启用 - 核心文档和脚本需要版本控制
-# scripts/
-# tests/
-# docs/
+ scripts/
+ tests/
+docs/
+# 🔬 [V53.5] 科研冷库 (隔离区)
+research_lab/
+ai_models/

@@ -5,8 +5,8 @@ from datetime import datetime
 from enum import Enum
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import Column, JSON
-from sqlalchemy.dialects.postgresql import JSONB # 🚀 保持 JSONB 兼容性
-from app.core.config import settings 
+from sqlalchemy.dialects.postgresql import JSONB # Keep JSONB compatibility
+from backend.app.core.config import settings 
 
 class ProcessingStatus(str, Enum):
     """文档处理状态枚举"""
@@ -16,7 +16,7 @@ class ProcessingStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
 
-# --- 🚀 [V1.0] 基础关联与用户体系 ---
+# --- Basic relations and user system ---
 
 class DocumentTagLink(SQLModel, table=True):
     __table_args__ = {"extend_existing": True}
@@ -63,15 +63,15 @@ class Tag(SQLModel, table=True):
     workspace_id: UUID = Field(foreign_key="workspace.id")
     documents: List["Document"] = Relationship(back_populates="tags", link_model=DocumentTagLink)
 
-# --- 🚀 [V5.0] 知识星系核心架构 (作为新表存在，不影响旧表物理结构) ---
+# --- Knowledge Clusters Core Architecture ---
 
 class Galaxy(SQLModel, table=True):
     __table_args__ = {"extend_existing": True}
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    name: str = Field(unique=True) # 🚀 移除 index=True，保持简洁，避免索引冲突
+    name: str = Field(unique=True) # Remove index=True to maintain simplicity and avoid conflicts
     description: str
     centroid_embedding: List[float] = Field(sa_column=Column(Vector(settings.EMBEDDING_DIMENSION)))
-    member_count: int = Field(default=0) # 🚀 记录成员总数，支撑人口加权演化
+    member_count: int = Field(default=0) # Record total member count to support evolution
     created_at: datetime = Field(default_factory=datetime.utcnow)
     document_links: List["DocumentGalaxyLink"] = Relationship(back_populates="galaxy")
 
@@ -86,7 +86,7 @@ class DocumentGalaxyLink(SQLModel, table=True):
     document: "Document" = Relationship(back_populates="galaxy_links")
     galaxy: "Galaxy" = Relationship(back_populates="document_links")
 
-# --- 🚀 [V3.0] 文档与逻辑脊梁 (100% 物理还原) ---
+# --- Document and Logical Backbone ---
 
 class Document(SQLModel, table=True):
     __table_args__ = {"extend_existing": True}
@@ -155,7 +155,7 @@ class Chunk(SQLModel, table=True):
     toc_item_id: Optional[UUID] = Field(default=None, foreign_key="tocitem.id", ondelete="SET NULL")
     level: int = Field(default=1)
 
-    confidence_score: float = Field(default=1.0) # 🚀 保持物理一致
+    confidence_score: float = Field(default=1.0) # Keep physical consistency
 
     logic_tags: Optional[List[str]] = Field(default_factory=list, sa_column=Column(JSONB))
     metadata_json: Optional[Dict[str, Any]] = Field(default_factory=dict, sa_column=Column(JSON))
@@ -164,7 +164,130 @@ class Chunk(SQLModel, table=True):
     document: Document = Relationship(back_populates="chunks")
     revisions: List["ChunkRevision"] = Relationship(back_populates="chunk")
 
-# --- 🚀 [V6.0] 知识代谢账本 (作为新表存在，承载代谢状态) ---
+    # Graph Integration - Outgoing relationships
+    outgoing_relationships: List["ChunkRelationship"] = Relationship(
+        back_populates="source_chunk",
+        sa_relationship_kwargs={"foreign_keys": "ChunkRelationship.source_chunk_id"}
+    )
+    # Graph Integration - Incoming relationships
+    incoming_relationships: List["ChunkRelationship"] = Relationship(
+        back_populates="target_chunk",
+        sa_relationship_kwargs={"foreign_keys": "ChunkRelationship.target_chunk_id"}
+    )
+
+
+# --- Graph Integration Protocol ---
+
+class RelationshipType(str, Enum):
+    """
+    Chunk 关系谓词枚举 - 不可变的关系 Schema
+
+    每一条"边"都必须喊出它的逻辑意义，拒绝廉价的联想。
+    """
+    CAUSALITY = "causality"        # A 导致 B，或 A 是 B 的前提
+    CONTRADICTION = "contradiction" # A 与 B 存在逻辑冲突（触发法庭记录）
+    SUPPORT = "support"            # A 为 B 提供物理层面的证据支撑
+    EVOLUTION = "evolution"        # B 是 A 的修正版本（跨文档知识更迭）
+    COMPLEMENT = "complement"      # A 和 B 描述同一实体的不同维度
+
+
+class ChunkRelationship(SQLModel, table=True):
+    """
+    Graph Integration Protocol - Added Evolution extensions
+    设计哲学：模拟神经突触的动态可塑性（Synaptic Plasticity）。
+    """
+    __table_args__ = {"extend_existing": True}
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+
+    source_chunk_id: UUID = Field(foreign_key="chunk.id", index=True)
+    target_chunk_id: UUID = Field(foreign_key="chunk.id", index=True)
+
+    rel_type: RelationshipType = Field(index=True)
+
+    # Evolution Weight System
+
+    # 【辩护：最大熵原则】 
+    # 依据：Jaynes (1957) 信息论最大熵原理 & BAKE (Han et al. 2025) 贝叶斯先验。
+    # 设定 0.5 理由：在 [0,1] 概率区间内，0.5 代表系统的最大不确定性状态（Prior Uncertainty）。
+    # 既不假设关联成立，也不假设其不成立，等待“多巴胺”或“内啡肽”信号进行后验修正。
+    strength: float = Field(default=0.5) 
+    
+    # 【辩护：奖励预测误差 RPE】
+    # 依据：Schultz (1997) & Berry (Cell 2015) 的 Dopamine RPE 模型。
+    # 设定 0.0 理由：多巴胺记录的是“预期之外的增量”。初始状态下无预测误差，
+    # 仅当布朗运动碰撞出“远端节点”且法庭判定有效时，该值才会激增，驱动灵感产生。
+    dopamine_reward: float = Field(default=0.0) 
+    
+    # 【辩护：阿片类固化机制】
+    # 依据：Trezza (PNAS 2007) & Hebbian Learning (1949) "Wire together, Fire together"。
+    # 设定 0.0 理由：内啡肽代表系统的“镇静与稳定”力量。稳定性是随时间（重复激活）累积的，
+    # 初始状态为 0（Tabula Rasa），随验证次数增加而单调上升。
+    endorphin_stability: float = Field(default=0.0) 
+
+    description: Optional[str] = None
+    verdict_id: Optional[UUID] = Field(default=None, index=True)
+
+    created_by: str = Field(default="GraphWeaver")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # 【辩护：突触稳态缩放】
+    # 依据：Turrigiano (2012) & Physiological Reviews (2013) 的 Synaptic Scaling 模型。
+    # 作用：记录时间锚点，用于计算公式 Δw = -λ * w 中的衰减系数 λ，实现“选择性遗忘”。
+    last_activated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # Relationships
+    source_chunk: Chunk = Relationship(
+        back_populates="outgoing_relationships",
+        sa_relationship_kwargs={"foreign_keys": "[ChunkRelationship.source_chunk_id]"}
+    )
+    target_chunk: Chunk = Relationship(
+        back_populates="incoming_relationships",
+        sa_relationship_kwargs={"foreign_keys": "[ChunkRelationship.target_chunk_id]"}
+    )
+
+
+# --- Evolution Core Carrier ---
+
+class MetabolicTrace(SQLModel, table=True):
+    """
+    Trace Log: Record drift paths.
+    依据：Mastering Diverse Domains through World Models (Nature 2023) 中的 Latent Imagination 轨迹。
+    """
+    __table_args__ = {"extend_existing": True}
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    
+    seed_chunk_id: UUID = Field(foreign_key="chunk.id", index=True)
+    path_nodes: List[UUID] = Field(default_factory=list, sa_column=Column(JSONB)) 
+    
+    drift_distance: float = Field(default=0.0) # 向量空间漂移距离
+    innovation_score: float = Field(default=0.0) # 潜在逻辑张力
+    
+    is_merged: bool = Field(default=False) 
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class LogicTension(SQLModel, table=True):
+    """
+    Tension Audit: Quantify conflict between novel ideas and established facts.
+    依据：SpineDoc 原创量化公式 LT = Novelty * Validity。
+    支撑论文中的 [LT] 指标，作为多巴胺奖励的计算输入。
+    """
+    __table_args__ = {"extend_existing": True}
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    
+    trace_id: Optional[UUID] = Field(default=None, foreign_key="metabolictrace.id")
+    verdict_id: UUID = Field(foreign_key="courtverdict.id")
+    
+    novelty_score: float = Field(default=0.0) 
+    validity_score: float = Field(default=0.0) 
+    tension_value: float = Field(default=0.0) 
+    
+    analysis_text: str 
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+# --- Knowledge Evolution Ledger ---
 
 class ChunkRevision(SQLModel, table=True):
     __table_args__ = {"extend_existing": True}
@@ -177,7 +300,7 @@ class ChunkRevision(SQLModel, table=True):
     change_reason: str
     contributor_agent: str
     
-    # 🚀 代谢状态：挪到这里，不再污染 Chunk 物理表
+    # Evolution Status: Moved here to keep Chunk table clean
     veracity_score: float = 1.0
     is_deprecated: bool = False
     
@@ -187,7 +310,33 @@ class ChunkRevision(SQLModel, table=True):
     # Relationships
     chunk: Chunk = Relationship(back_populates="revisions")
 
-# --- 🚀 [V1.0] 后台监控与性能 ---
+# --- Retrieval Result Archive ---
+
+class RetrievalResult(SQLModel, table=True):
+    """
+    Retrieval Result: Record complete overview of retrieval synthesis.
+    职责：为 Refinery 提供推理迹语料，为用户提供审计溯源。
+    """
+    __table_args__ = {"extend_existing": True}
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    
+    query: str = Field(index=True)
+    
+    # Core outputs
+    final_answer: str
+    reasoning_thought: Optional[str] = Field(default=None, sa_column=Column(JSONB)) # 存储完整的思考链
+    result_status: str = Field(default="ACCEPTED") # ACCEPTED | CONFLICT | PARTIAL
+    
+    # Evidence traceability
+    cited_galaxies: List[str] = Field(default_factory=list, sa_column=Column(JSONB))
+    confidence_score: float = Field(default=0.0)
+    
+    # Metadata
+    duration_ms: int = Field(default=0)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # 可选：关联具体的文档链接（用于深度跳转）
+    # metadata_json: Optional[Dict[str, Any]] = Field(default_factory=dict, sa_column=Column(JSON))
 
 class ProcessingMetric(SQLModel, table=True):
     __table_args__ = {"extend_existing": True}

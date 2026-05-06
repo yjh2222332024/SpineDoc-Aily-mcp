@@ -19,7 +19,7 @@ class SiliconVLMWorker:
 
     async def ocr_to_markdown(self, img_np: np.ndarray, high_precision: bool = False) -> Optional[str]:
         """
-        🚀 核心：图像转 JSON。虽然函数名带 markdown，但为了契约对齐，我们输出 JSON 字符串。
+         核心：图像转 JSON。虽然函数名带 markdown，但为了契约对齐，我们输出 JSON 字符串。
         """
         try:
             # 1. 编码图片
@@ -31,7 +31,7 @@ class SiliconVLMWorker:
             prompt = """你是一个高精度的【文档结构提取器】。
 请识别图中所有的章节标题和对应的逻辑页码。
 
-✅ 输出规范：
+ 输出规范：
 1. 仅返回一个 JSON 数组。
 2. 每个对象包含：'title'(字符串), 'logical_page'(整数), 'level'(1/2/3)。
 3. 严禁任何 Markdown 标记、Markdown 块（```json）或多余的文字说明。
@@ -66,5 +66,5 @@ class SiliconVLMWorker:
             return raw_content # 兜底返回
             
         except Exception as e:
-            print(f"❌ [SiliconVLM] 结构化 OCR 失败: {e}")
+            print(f" [SiliconVLM] 结构化 OCR 失败: {e}")
             return None

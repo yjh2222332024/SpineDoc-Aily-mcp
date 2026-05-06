@@ -90,23 +90,59 @@ class GitManager:
         metadata: Optional[Dict] = None,
         message: str = ""
     ) -> Optional[str]:
+        """提交 Chunk 快照到 Git（单文件提交，用于零星更新）"""
+        return self._write_chunk_file(chunk_id, content, metadata)
+
+    def commit_chunks_batch(
+        self,
+        chunks: List[Dict],
+        message: str = "知识库批量更新"
+    ) -> Dict[str, str]:
         """
-        提交 Chunk 快照到 Git
+        批量提交多个 Chunk 到 Git（一次提交，避免每分片一个 commit）。
 
         Args:
-            chunk_id: Chunk ID
-            content: 文本内容
-            metadata: 元数据（页码、breadcrumb 等）
+            chunks: [{"chunk_id": str, "content": str, "metadata": dict}, ...]
             message: 提交消息
 
         Returns:
-            commit_hash 或 None（无变更）
+            {chunk_id: commit_hash}
         """
         chunks_dir = self.repo_path / "chunks"
         chunks_dir.mkdir(exist_ok=True)
 
-        # 🚑 [FIX] Windows 文件名 sanitization: 替换非法字符 (: \ / ? * | " < >)
-        # 联网证据的 chunk_id 可能包含 URL，需要清理
+        results = {}
+        has_changes = False
+
+        for item in chunks:
+            chunk_id = item.get("chunk_id")
+            content = item.get("content", "")
+            metadata = item.get("metadata", {})
+            if not chunk_id:
+                continue
+
+            hash_val = self._write_chunk_file(chunk_id, content, metadata)
+            if hash_val:
+                has_changes = True
+                results[chunk_id] = hash_val
+
+        if not has_changes:
+            return {}
+
+        self._git("add", str(chunks_dir))
+        self._git("commit", "-m", message)
+        commit_hash = self._git("rev-parse", "HEAD")
+        for cid in results:
+            results[cid] = commit_hash
+
+        logger.info(f"Git 批量提交成功：{commit_hash[:8]} - {message} ({len(chunks)} chunks)")
+        return results
+
+    def _write_chunk_file(self, chunk_id: str, content: str, metadata: Optional[Dict] = None) -> Optional[str]:
+        """写入单个 chunk 文件到磁盘，返回非空表示有变更"""
+        chunks_dir = self.repo_path / "chunks"
+        chunks_dir.mkdir(exist_ok=True)
+
         safe_chunk_id = chunk_id.replace(":", "_").replace("/", "_").replace("\\", "_")
         safe_chunk_id = safe_chunk_id.replace("?", "_").replace("*", "_")
         safe_chunk_id = safe_chunk_id.replace("|", "_").replace("<", "_").replace(">", "_")
@@ -114,7 +150,6 @@ class GitManager:
 
         filepath = chunks_dir / f"{safe_chunk_id}.json"
 
-        # 检查是否有变更
         old_content = None
         if filepath.exists():
             with open(filepath, "r", encoding="utf-8") as f:
@@ -122,34 +157,19 @@ class GitManager:
                 old_content = old_data.get("content")
 
         if old_content == content:
-            logger.debug(f"Chunk {chunk_id[:settings.CONTEXT_COMMIT_DOC_ID_PREFIX]} 无变更，跳过提交")
+            logger.debug(f"Chunk {chunk_id[:8]} 无变更，跳过")
             return None
 
-        # 写入新快照
         data = {
             "id": chunk_id,
             "content": content,
             "metadata": metadata or {},
             "updated_at": datetime.utcnow().isoformat()
         }
-
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
-        # Git 提交
-        self._git("add", str(filepath))
-
-        status = self._git("status", "--porcelain")
-        if not status.strip():
-            return None
-
-        commit_msg = message or f"更新 Chunk {chunk_id[:settings.CONTEXT_COMMIT_DOC_ID_PREFIX]}"
-        self._git("commit", "-m", commit_msg)
-
-        commit_hash = self._git("rev-parse", "HEAD")
-        logger.info(f"📜 Git 提交成功：{commit_hash[:settings.CONTEXT_COMMIT_DOC_ID_PREFIX]} - {commit_msg}")
-
-        return commit_hash
+        return chunk_id  # 非空表示有变更
 
     def get_chunk_history(self, chunk_id: str, limit: int = 20) -> List[GitCommit]:
         """
@@ -198,8 +218,10 @@ class GitManager:
         filepath = f"chunks/{chunk_id}.json"
         try:
             content = self._git("show", f"{commit_hash}:{filepath}")
+            if not content:
+                return None
             return json.loads(content)
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, json.JSONDecodeError):
             return None
 
     def revert_chunk(self, chunk_id: str, commit_hash: str) -> bool:
@@ -223,7 +245,7 @@ class GitManager:
             self._git("add", str(self.repo_path / filepath))
             self._git("commit", "-m", f"revert: 回滚 Chunk {chunk_id[:settings.CONTEXT_COMMIT_DOC_ID_PREFIX]} 到 {commit_hash[:settings.CONTEXT_COMMIT_DOC_ID_PREFIX]}")
 
-            logger.info(f"✅ Chunk {chunk_id[:settings.CONTEXT_COMMIT_DOC_ID_PREFIX]} 已回滚到 {commit_hash[:settings.CONTEXT_COMMIT_DOC_ID_PREFIX]}")
+            logger.info(f" Chunk {chunk_id[:settings.CONTEXT_COMMIT_DOC_ID_PREFIX]} 已回滚到 {commit_hash[:settings.CONTEXT_COMMIT_DOC_ID_PREFIX]}")
             return True
         except subprocess.CalledProcessError as e:
             logger.error(f"回滚失败：{e}")
@@ -248,6 +270,202 @@ class GitManager:
         """
         filepath = f"chunks/{chunk_id}.json"
         return self._git("diff", old_commit, new_commit, "--", filepath)
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    #  [V7.0] 关系网络版本控制
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    def commit_relationship(
+        self,
+        rel_id: str,
+        source_chunk_id: str,
+        target_chunk_id: str,
+        rel_type: str,
+        strength: float,
+        description: Optional[str],
+        verdict_id: Optional[str],
+        operation: str = "create",
+        message: str = ""
+    ) -> Optional[str]:
+        """
+        提交关系快照到 Git
+
+        Args:
+            rel_id: 关系 ID
+            source_chunk_id: 源 Chunk ID
+            target_chunk_id: 目标 Chunk ID
+            rel_type: 关系类型
+            strength: 关系强度
+            description: 关系描述
+            verdict_id: 触发关系的 Verdict ID
+            operation: 操作类型 (create/update/delete)
+            message: 提交消息
+
+        Returns:
+            commit_hash 或 None
+        """
+        relationships_dir = self.repo_path / "relationships"
+        relationships_dir.mkdir(exist_ok=True)
+
+        # 文件名使用 rel_id（清理 UUID 格式）
+        safe_rel_id = rel_id.replace("-", "_")
+        filepath = relationships_dir / f"{safe_rel_id}.json"
+
+        # 检查是否有变更
+        old_data = None
+        if filepath.exists():
+            with open(filepath, "r", encoding="utf-8") as f:
+                old_data = json.load(f)
+
+        # 删除操作
+        if operation == "delete":
+            if filepath.exists():
+                os.remove(filepath)
+                self._git("add", "-A", str(filepath))
+                commit_msg = message or f"[delete] 删除关系 {rel_id[:8]}"
+                self._git("commit", "-m", commit_msg)
+                commit_hash = self._git("rev-parse", "HEAD")
+                logger.info(f"📜 Git 删除成功：{commit_hash[:8]} - {commit_msg}")
+                return commit_hash
+            return None
+
+        # 检查变更（create/update）
+        if old_data:
+            new_data = {
+                "id": str(rel_id),
+                "source_chunk_id": str(source_chunk_id),
+                "target_chunk_id": str(target_chunk_id),
+                "rel_type": rel_type,
+                "strength": strength,
+                "description": description,
+                "verdict_id": str(verdict_id) if verdict_id else None,
+                "updated_at": datetime.utcnow().isoformat()
+            }
+
+            # 如果只有 updated_at 不同，跳过提交
+            old_data_no_time = {k: v for k, v in old_data.items() if k != "updated_at"}
+            new_data_no_time = {k: v for k, v in new_data.items() if k != "updated_at"}
+            if old_data_no_time == new_data_no_time:
+                logger.debug(f"关系 {rel_id[:8]} 无变更，跳过提交")
+                return None
+
+            data = new_data
+        else:
+            data = {
+                "id": str(rel_id),
+                "source_chunk_id": str(source_chunk_id),
+                "target_chunk_id": str(target_chunk_id),
+                "rel_type": rel_type,
+                "strength": strength,
+                "description": description,
+                "verdict_id": str(verdict_id) if verdict_id else None,
+                "created_at": datetime.utcnow().isoformat(),
+                "updated_at": datetime.utcnow().isoformat()
+            }
+
+        # 写入快照
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+        # Git 提交
+        self._git("add", str(filepath))
+
+        status = self._git("status", "--porcelain")
+        if not status.strip():
+            return None
+
+        commit_msg = message or f"[{operation}] 关系 {rel_id[:8]}: {source_chunk_id[:8]} -[{rel_type}]-> {target_chunk_id[:8]}"
+        self._git("commit", "-m", commit_msg)
+
+        commit_hash = self._git("rev-parse", "HEAD")
+        logger.info(f"📜 Git 提交成功：{commit_hash[:8]} - {commit_msg}")
+
+        return commit_hash
+
+    def get_relationship_history(self, rel_id: str, limit: int = 20) -> List[GitCommit]:
+        """
+        获取关系的 Git 历史
+
+        Args:
+            rel_id: 关系 ID
+            limit: 返回数量
+
+        Returns:
+            提交记录列表
+        """
+        filepath = f"relationships/{rel_id}.json"
+        return self._get_file_history(filepath, limit)
+
+    def _get_file_history(self, filepath: str, limit: int = 20) -> List[GitCommit]:
+        """通用文件历史查询"""
+        output = self._git(
+            "log", f"-n{limit}", "--pretty=format:%H|%h|%s|%ai|%an",
+            "--", filepath
+        )
+
+        commits = []
+        for line in output.split("\n"):
+            if not line.strip():
+                continue
+            parts = line.split("|", 4)
+            if len(parts) == 5:
+                commits.append(GitCommit(
+                    hash=parts[0],
+                    short_hash=parts[1],
+                    message=parts[2],
+                    timestamp=datetime.fromisoformat(parts[3]),
+                    author=parts[4]
+                ))
+
+        return commits
+
+    def get_relationship_network_snapshot(
+        self,
+        chunk_id: str,
+        commit_hash: Optional[str] = None
+    ) -> Dict:
+        """
+        获取指定 Chunk 的关系网络快照
+
+        Args:
+            chunk_id: Chunk ID
+            commit_hash: 提交哈希（None 表示当前版本）
+
+        Returns:
+            网络字典 {nodes: [...], edges: [...]}
+        """
+        relationships_dir = self.repo_path / "relationships"
+        if not relationships_dir.exists():
+            return {"nodes": [], "edges": []}
+
+        # 找到所有涉及该 chunk_id 的关系文件
+        edges = []
+        node_set = {chunk_id}
+
+        for filepath in relationships_dir.glob("*.json"):
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    rel = json.load(f)
+
+                # 检查是否涉及该 chunk
+                if rel["source_chunk_id"] == chunk_id or rel["target_chunk_id"] == chunk_id:
+                    edges.append({
+                        "source": rel["source_chunk_id"],
+                        "target": rel["target_chunk_id"],
+                        "type": rel["rel_type"],
+                        "strength": rel["strength"],
+                        "description": rel.get("description")
+                    })
+                    node_set.add(rel["source_chunk_id"])
+                    node_set.add(rel["target_chunk_id"])
+
+            except Exception as e:
+                logger.warning(f"读取关系文件失败：{filepath} - {e}")
+
+        return {
+            "nodes": list(node_set),
+            "edges": edges
+        }
 
 
 # 全局单例

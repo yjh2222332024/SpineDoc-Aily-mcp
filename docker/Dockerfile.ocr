@@ -1,5 +1,0 @@
-# 🏛️ 基于官方 vLLM 镜像
-FROM vllm/vllm-openai:latest
-
-# 🚀 刻录指令：在镜像里永久安装新依赖 (构建时运行一次，以后启动秒开)
-RUN pip install --no-cache-dir --upgrade transformers>=5.0.0 pydantic>=2.0.0

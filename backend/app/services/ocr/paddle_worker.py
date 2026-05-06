@@ -15,23 +15,28 @@ from rapidocr_onnxruntime import RapidOCR
 
 class PaddleWorker:
     def __init__(self):
-        # 🚀 [V50.2] 算力自适应：优先使用 GPU，拒绝 CPU 磨洋工
-        import torch
-        use_gpu = torch.cuda.is_available()
-        
-        self.engine = RapidOCR(
-            det_use_cuda=use_gpu, 
-            cls_use_cuda=use_gpu, 
-            rec_use_cuda=use_gpu
-        )
-        mode_tag = "CUDA" if use_gpu else "CPU"
-        print(f"🔍 [OCR-Paddle] 确定性感知工兵已就绪 (RapidOCR-ONNX | Device: {mode_tag})")
+        self._engine = None
+        self._use_gpu = None
+
+    @property
+    def engine(self):
+        if self._engine is None:
+            import torch
+            self._use_gpu = torch.cuda.is_available()
+            self._engine = RapidOCR(
+                det_use_cuda=self._use_gpu,
+                cls_use_cuda=self._use_gpu,
+                rec_use_cuda=self._use_gpu
+            )
+            mode_tag = "CUDA" if self._use_gpu else "CPU"
+            print(f" [OCR-Paddle] 确定性感知工兵已就绪 (RapidOCR-ONNX | Device: {mode_tag})")
+        return self._engine
 
     async def ocr_with_layout(self, image_np: np.ndarray) -> List[Dict[str, Any]]:
         """
         提取带坐标的文字块 (The Scout's Duty)
         """
-        # 🏛️ 专业的代码不应该在主线程阻塞
+        #  专业的代码不应该在主线程阻塞
         start_time = time.time()
         
         # 确保图像格式正确
@@ -47,7 +52,7 @@ class PaddleWorker:
         if results:
             for res in results:
                 bbox, text, conf = res
-                # 🏛️ 通过置信度和正则，嗅探潜在的公式块
+                #  通过置信度和正则，嗅探潜在的公式块
                 is_potential_formula = self._is_math_heavy(text, float(conf))
                 
                 blocks.append({
@@ -58,7 +63,7 @@ class PaddleWorker:
                 })
         
         elapsed = time.time() - start_time
-        print(f"⚡ [OCR-Paddle] 页面嗅探完成，捕获 {len(blocks)} 个区块，耗时 {elapsed:.2f}s")
+        print(f" [OCR-Paddle] 页面嗅探完成，捕获 {len(blocks)} 个区块，耗时 {elapsed:.2f}s")
         return blocks
 
     def _is_math_heavy(self, text: str, conf: float) -> bool:
@@ -68,5 +73,5 @@ class PaddleWorker:
         math_symbols = ['\\', '{', '}', '^', '_', '=', '+', '-', '*', '/', '(', ')', '[', ']', '<', '>', '|']
         symbol_count = sum(1 for char in text if char in math_symbols)
         
-        # 🏛️ 启发式算法：高符号密度或极低置信度的文本块通常是公式
+        #  启发式算法：高符号密度或极低置信度的文本块通常是公式
         return symbol_count > 3 or (conf < 0.6 and symbol_count > 0)

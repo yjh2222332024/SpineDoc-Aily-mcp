@@ -1,358 +1,328 @@
-# 🛡️ SpineDoc (阅脊)
+# SpineDoc (阅脊) — 逻辑刺客级文档审计引擎
 
-**逻辑刺客级文档审计引擎** - 专为审计合同、论文、法律文书等长文档设计
+专为审计合同、论文、法律文书等长文档设计。不是"跟 PDF 聊天"那种玩具——它提取逻辑脊梁、检测矛盾、溯源证据，最后给出有置信度的判决书。
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-> **"不要只是与 PDF 聊天，去重构它们的逻辑。"**
+```
+Python 3.10+  |  飞书多维表格  |  MIT License
+```
 
 ---
 
-## 📖 什么是 SpineDoc？
+## 一、这玩意能干什么？
 
-SpineDoc 是一个面向**长文档审计**的智能知识引擎。它不仅能回答"文档说了什么"，更能揭示"逻辑是否自洽"、"证据是否充分"、"是否有隐藏矛盾"。
-
-### 核心能力
-
-| 能力 | 说明 |
+| 能力 | 本质 |
 |------|------|
-| 🦴 **逻辑脊梁提取** | 自动识别文档的 implicit structure，提取核心论证链条 |
-| ⚖️ **联邦法庭质证** | 多智能体辩论 + 四色置信度评估，暴露逻辑漏洞 |
-| 🌐 **联网证人** | 自动检索外部证据，触发知识库自我更新 |
-| 📜 **Git 版本追溯** | 每个语义切片都有 Git 历史，支持回滚和审计 |
-| 🎯 **精准定位** | 答案精确到页码和段落，附带逻辑溯源证据链 |
+| **逻辑脊梁提取** | 从文档里抽出论证结构，不是简单的关键词匹配 |
+| **LogicCourt 联邦法庭** | PLAN → 采集 → 审计 → 判决 → 演化，每一步可追溯 |
+| **联网证人** | 本地证据不够？自动上网找，交叉验证 |
+| **证据溯源** | 每个结论带原文引用和置信度颜色标记 |
+| **主权演化** | AI 提演化方案，你核准了才落地，不做黑盒自动化 |
+| **Git 版本追溯** | 语义切片有 Git 历史，能回滚 |
 
-### 适用场景
-
-- 📄 **合同审查**：发现条款矛盾、责任不清、风险漏洞
-- 📑 **论文审计**：验证论证链条、检查引用完整性
-- ⚖️ **法律文书**：比对证据链、发现逻辑断层
-- 📊 **招股书/财报**：交叉验证数据一致性
+**适用场景**：合同审查找矛盾条款、论文审计查论证链条、法律文书比对证据链、招股书交叉验证数据。
 
 ---
 
-## 🚀 快速开始
+## 二、快速开始（手工配置）
 
-### 系统要求
+以下步骤从零开始，每步都确认了再做下一步。
 
-- Python 3.10+
-- Docker（用于 PostgreSQL）
-- Windows 11 / macOS / Linux
+### 2.1 系统要求
 
-### 第一步：安装 PostgreSQL
+- Windows 10/11
+- Python 3.10 或更高（[下载](https://www.python.org/downloads/)）
+- 一个飞书企业账号
+- 网络能访问飞书 API
 
-使用 Docker 一键安装：
+### 2.2 克隆项目并创建虚拟环境
 
-```bash
-# Windows (PowerShell)
-docker run -d --name spinedoc-postgres ^
-  -e POSTGRES_PASSWORD=spinedoc123 ^
-  -p 5432:5432 postgres:15
+打开命令提示符（cmd），执行：
 
-# macOS / Linux
-docker run -d --name spinedoc-postgres \
-  -e POSTGRES_PASSWORD=spinedoc123 \
-  -p 5432:5432 postgres:15
+```batch
+git clone <你的仓库地址> SpineDoc
+cd SpineDoc
+
+:: 创建虚拟环境（重要！不要把依赖装到全局）
+python -m venv .venv
+
+:: 激活虚拟环境
+.venv\Scripts\activate
+
+:: 安装依赖
+pip install -r requirements.txt
 ```
 
-验证安装：
-```bash
-docker ps | grep postgres
+看见 `(.venv)` 出现在行首说明环境激活成功。
+
+如果 `pip install` 报错，检查 Python 版本是否 >= 3.10。
+
+### 2.3 注册 API Key
+
+你需要注册以下三个服务，**全部免费额度够用**：
+
+| 服务 | 用途 | 怎么注册 |
+|------|------|----------|
+| **火山引擎** | LLM 推理（豆包 2.0） | 打开 https://console.volcengine.com/ark → 创建 API Key → 创建推理接入点（Endpoint） |
+| **SiliconFlow** | 向量嵌入 + 视觉模型 | 打开 https://cloud.siliconflow.cn/ → 注册 → 创建 API Key |
+| **智谱** | 联网搜索 | 打开 https://open.bigmodel.cn/ → 注册 → 创建 API Key |
+
+**火山引擎特别注意**：
+1. 进入「推理接入点」页面
+2. 点击「创建推理接入点」
+3. 选择模型 `doubao-2.0-pro-256k`（或其他豆包模型）
+4. 创建完成后会得到一个 `ep-xxxxxxxxxxxx` 格式的 Endpoint ID
+5. 这个 Endpoint ID 就是 `LLM_ENDPOINT`
+
+### 2.4 下载 lark-cli
+
+SpineDoc 需要 `lark-cli.exe` 来下载飞书文档和发送消息。
+
+```batch
+:: 访问 Releases 页面下载最新版
+:: https://github.com/ConnectAI-E/Lark-CLI/releases
+
+:: 下载后把 lark-cli.exe 放到项目根目录的 bin/ 文件夹
+:: （没有就创建）
+mkdir bin
+:: 把下载的 lark-cli.exe 移动到 bin/ 目录下
 ```
 
-### 第二步：获取 API Key
+飞书开放平台需要配置 App 权限。去 https://open.feishu.cn/app 创建企业自建应用：
+1. 创建应用 → 填写名称
+2. 「权限管理」→ 添加权限：
+   - `bitable:app`（多维表格）
+   - `drive:drive`（云文档）
+   - `im:message`（消息推送）
+   - `search:search`（搜索）
+3. 「安全设置」→ 添加服务器 IP（生产环境需要）
+4. 「凭证与基础信息」→ 拿到 `App ID` 和 `App Secret`
+5. **发布应用**（否则 API 调用会返回权限错误）
 
-SpineDoc 使用以下云服务：
+### 2.5 创建飞书多维表格
 
-| 服务 | 用途 | 注册地址 |
-|------|------|---------|
-| DeepSeek | LLM（逻辑推理） | https://platform.deepseek.com/ |
-| SiliconFlow | 向量模型 + VLM | https://cloud.siliconflow.cn/ |
-| Tavily (可选) | 联网搜索 | https://tavily.com/ |
+#### 2.5.1 创建一个多维表格
 
-### 第三步：一键配置
+1. 打开飞书 → 新建 → 多维表格
+2. 命名为 `SpineDoc`（你可以随意命名）
+3. 创建完成后，URL 里找到 `base_token`：
+   - URL 格式：`https://xxx.feishu.cn/base/BASE_TOKEN?table=...`
+   - 复制 `BASE_TOKEN` 这串字符
 
-```bash
-# 运行交互式配置向导
-spine setup
-```
+#### 2.5.2 创建数据表
 
-按提示输入：
-1. 数据库连接字符串（直接回车使用默认值）
-2. DeepSeek API Key
-3. SiliconFlow API Key
-4. Tavily API Key（可选，直接回车跳过）
+你需要创建 4 个数据表。点击多维表格底部的 `+` 号新建表：
 
-### 第四步：下载 AI 模型
+**表 1：文档表**（记录导入的文档）
+| 字段名 | 字段类型 |
+|--------|----------|
+| 文件名 | 文本 |
+| 文件哈希 | 文本 |
+| 处理状态 | 文本（填入：PROCESSING / COMPLETED / FAILED） |
+| 总页数 | 数字 |
 
-```bash
-# 下载必需模型（约 2.7GB）
-spine models download --mirror
+**表 2：Chunk表**（存语义切片）
+| 字段名 | 字段类型 |
+|--------|----------|
+| 正文内容 | 文本 |
+| 逻辑摘要 | 文本 |
+| 语义标签 | 多选 |
+| 逻辑坐标 | 文本 |
+| 逻辑面包屑 | 文本 |
+| 逻辑指纹 | 文本 |
+| 向量表征 | 文本 |
+| Git版本 | 文本 |
+| 物理页码 | 数字 |
+| 元数据 | 文本 |
+| 记忆ID | 文本 |
+| 文档关联 | 关联 → 关联到「文档表」，单选 |
+| 星系关联 | 关联 → 关联到「星系表」，多选 |
+| 父级关联 | 关联 → 关联到本表（Chunk表），多选 |
 
-# 或下载所有模型（约 5GB，包括可选模型）
-spine models download --all --mirror
-```
+创建「关联字段」时，系统会提示选择关联哪个表和是否多选，按上面表格配。
 
-`--mirror` 使用国内镜像加速下载。
+**表 3：脊梁表**（存文档目录结构）
+| 字段名 | 字段类型 |
+|--------|----------|
+| 标题 | 文本 |
+| 层级 | 数字 |
+| 逻辑页码 | 数字 |
+| 逻辑坐标 | 文本 |
+| 文档关联 | 关联 → 关联到「文档表」，单选 |
 
-### 第五步：检查配置
+**表 4：星系表**（跨文档聚类）
+| 字段名 | 字段类型 |
+|--------|----------|
+| 星系名称 | 文本 |
+| 重心向量 | 文本 |
+| 锚点关键词 | 多选 |
+| 成员总数 | 数字 |
+| 描述 | 文本 |
+| 锚点标签云 | 文本 |
 
-```bash
-spine check
-```
+**表 5：记忆表**（A-MEM 记忆层，可选）
+| 字段名 | 字段类型 |
+|--------|----------|
+| 记忆ID | 文本 |
+| 正文内容 | 文本 |
+| 元数据 | 文本 |
+| 向量表征 | 文本 |
 
-输出示例：
-```
-📋 配置检查
+创建完成后，每个表的 URL 里找到 `tblxxxxxxxx` 格式的 table_id。
 
-必需配置：4/4
-可选配置：1/1
+自己核对一下表名和字段是否完全一致。大小写也要对上。
 
-  ✓ 数据库配置 [必需]
-  ✓ LLM 配置 [必需]
-  ✓ 向量模型配置 [必需]
-  ✓ VLM 配置 [必需]
-  ✓ 联网搜索 (可选) [可选]
-```
+### 2.6 配置 .env 文件
 
-### 第六步：开始使用
-
-```bash
-# 导入 PDF 文档
-spine ingest your_document.pdf
-
-# 提问（多文档检索）
-spine ask "文档的核心论点是什么？"
-
-# 提问（单文档）
-spine ask "SM4 的密钥长度" -d 9b1d1195
-
-# 提问（联网搜索，可能更新知识库）
-spine ask "最新的密码学标准" --online
-
-# 查看文档脊梁
-spine tree <文档 ID>
-
-# 查看语义切片
-spine chunks <文档 ID>
-
-# Git 版本管理
-spine git history <ChunkID>
-spine git revert <ChunkID> --to <commit_hash>
-```
-
----
-
-## 📚 命令行参考
-
-### 核心命令
-
-| 命令 | 说明 | 示例 |
-|------|------|------|
-| `spine ingest <pdf>` | 导入 PDF 文档 | `spine ingest contract.pdf` |
-| `spine ask "<问题>"` | 提问（多文档） | `spine ask "核心论点是什么"` |
-| `spine ask "<问题>" -d <ID>` | 提问（单文档） | `spine ask "密钥长度" -d 9b1d1195` |
-| `spine ask "<问题>" --online` | 提问（联网） | `spine ask "最新标准" --online` |
-| `spine tree <ID>` | 查看文档脊梁 | `spine tree 9b1d1195` |
-| `spine chunks <ID>` | 查看语义切片 | `spine chunks 9b1d1195` |
-| `spine list` | 列出所有文档 | `spine list` |
-| `spine preview <ID>` | 预览切片 | `spine preview 9b1d1195` |
-
-### 配置命令
-
-| 命令 | 说明 |
-|------|------|
-| `spine setup` | 运行配置向导 |
-| `spine check` | 检查配置状态 |
-| `spine models list` | 显示模型列表 |
-| `spine models download` | 下载必需模型 |
-| `spine models download --all` | 下载所有模型 |
-| `spine models download --mirror` | 使用镜像加速 |
-| `spine models clean` | 清理模型缓存 |
-
-### Git 命令
-
-| 命令 | 说明 |
-|------|------|
-| `spine git history <ChunkID>` | 查看 Git 历史 |
-| `spine git show <ChunkID> --to <commit>` | 查看指定版本 |
-| `spine git revert <ChunkID> --to <commit>` | 回滚到指定版本 |
-| `spine git diff <ChunkID> -o <old> -n <new>` | 比较差异 |
-
----
-
-## 🏛️ 架构概览
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     SpineDoc 架构                            │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
-│  │   用户 CLI   │    │  配置管理   │    │  模型管理   │     │
-│  │  (spine)    │    │  (.env)     │    │ (HuggingFace)│    │
-│  └──────┬──────┘    └──────┬──────┘    └──────┬──────┘     │
-│         │                  │                  │             │
-│         └──────────────────┼──────────────────┘             │
-│                            │                                │
-│                   ┌────────▼────────┐                       │
-│                   │  SpineEngine    │                       │
-│                   │  (核心引擎)      │                       │
-│                   └────────┬────────┘                       │
-│                            │                                │
-│         ┌──────────────────┼──────────────────┐             │
-│         │                  │                  │             │
-│  ┌──────▼──────┐   ┌──────▼──────┐   ┌──────▼──────┐       │
-│  │  向量检索    │   │  联邦法庭   │   │  Git 版本   │       │
-│  │  (RAG)      │   │  (Collector)│   │  (Manager)  │       │
-│  └──────┬──────┘   └──────┬──────┘   └──────┬──────┘       │
-│         │                  │                  │             │
-│         │         ┌────────▼────────┐        │             │
-│         │         │  Internet       │        │             │
-│         │         │  Witness        │        │             │
-│         │         └─────────────────┘        │             │
-│         │                                    │             │
-│  ┌──────▼────────────────────────────────────▼──────┐     │
-│  │              PostgreSQL + pgvector                │     │
-│  │              (向量数据库 + Git 存储)               │     │
-│  └───────────────────────────────────────────────────┘     │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 核心组件
-
-| 组件 | 说明 |
-|------|------|
-| **SpineEngine** | 核心引擎，协调所有子模块 |
-| **RAG (Retrieval-Augmented Generation)** | 向量检索 + 语义理解 |
-| **Federated Court** | 多智能体辩论系统 |
-| **Internet Witness** | 联网证据检索 |
-| **Git Manager** | 版本控制和审计追溯 |
-| **TOC Distiller** | 目录结构提取和验证 |
-
----
-
-## 🔧 高级配置
-
-### 环境变量详解
-
-`.env` 文件包含以下配置：
+在项目根目录创建 `.env` 文件，填入以下内容（尖括号替换成你的实际值）：
 
 ```ini
-# 数据库（必需）
-DATABASE_URL=postgresql+asyncpg://spinedoc:spinedoc123@localhost:5432/spinedoc
+# ═══════════════════════════════════════════
+# SpineDoc 环境配置（手工填写版）
+# ═══════════════════════════════════════════
 
-# LLM 配置（必需）
-LLM_API_KEY=sk-xxxxxxxxx
-LLM_BASE_URL=https://api.deepseek.com/v1
-LLM_MODEL_NAME=deepseek-chat
+# ─── LLM（火山引擎豆包） ───
+LLM_API_KEY=<你的火山引擎 API Key>
+LLM_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
+LLM_ENDPOINT=ep-xxxxxxxxxxxx     ← 推理接入点 ID，不是模型名
 
-# 向量模型（必需）
-EMBEDDING_API_KEY=sk-xxxxxxxxx
-EMBEDDING_BASE_URL=https://api.siliconflow.cn/v1
-EMBEDDING_MODEL_NAME=BAAI/bge-m3
-EMBEDDING_DIMENSION=1024
+# ─── 向量嵌入（SiliconFlow） ───
+EMBEDDING_API_KEY=sk-xxxxxxxxxxxx
 
-# VLM 配置（必需）
-VLM_API_KEY=sk-xxxxxxxxx
-VLM_BASE_URL=https://api.siliconflow.cn/v1
-VLM_MODEL_NAME=Qwen/Qwen2.5-VL-72B-Instruct
+# ─── 联网搜索（智谱） ───
+ZHIPU_API_KEY=xxxxxxxxxx
 
-# 联网搜索（可选）
-TAVILY_API_KEY=xxxxxxxxx
-TAVILY_MAX_RESULTS=3
+# ─── 飞书集成 ───
+FEISHU_APP_ID=cli_xxxxxxxxxxxx
+FEISHU_APP_SECRET=xxxxxxxxxxxx
+FEISHU_BITABLE_TOKEN=<Base Token>     ← 多维表格 URL 里的那串
+FEISHU_BITABLE_TABLE_ID=tblxxxxxxxx   ← 文档表的 table_id
+FEISHU_BITABLE_CHUNK_TABLE_ID=tblxxx ← Chunk表的 table_id
+FEISHU_BITABLE_TOC_TABLE_ID=tblxxx   ← 脊梁表的 table_id
+FEISHU_BITABLE_MEMORY_TABLE_ID=tblxxx← 记忆表的 table_id（和 FEISHU_BITABLE_CHUNK_TABLE_ID 可以填一样的值，共用 Chunk 表）
+FEISHU_BITABLE_GALAXY_TABLE_ID=tblxxx← 星系表的 table_id
+FEISHU_DEFAULT_CHAT_ID=oc_xxxxxxxxx  ← 通知消息发送到的群 ID（选填）
+
+# ─── OCR 熔炼（选填，处理 PDF 需要） ───
+ARK_API_KEY=
+ARK_ENDPOINT=
+
+# ─── Aily 桥接（选填） ───
+FEISHU_AILY_TOKEN=
 ```
 
-### 自定义模型缓存目录
+建好后用脚本来验证配置：
 
-```bash
-# 设置环境变量
-export SPINEDOC_CACHE_DIR=/path/to/your/cache
+```batch
+:: 激活虚拟环境（如果还没激活）
+.venv\Scripts\activate
 
-# 或在 .env 中配置
-CACHE_DIR=/path/to/your/cache
+:: 验证配置完整性
+python scripts/diagnose_config.py
 ```
 
-### 使用其他 LLM 提供商
+如果报错说缺少某个配置项，回 2.5 和 2.6 对照填。
 
-SpineDoc 支持所有兼容 OpenAI API 格式的服务商：
+### 2.7 检查配置
 
-```ini
-# OpenAI
-LLM_BASE_URL=https://api.openai.com/v1
-LLM_MODEL_NAME=gpt-4o
+所有配置完成后，用脚本验证：
 
-# Moonshot
-LLM_BASE_URL=https://api.moonshot.cn/v1
-LLM_MODEL_NAME=moonshot-v1-128k
-
-# 自定义
-LLM_BASE_URL=https://your-custom-api.com/v1
-LLM_MODEL_NAME=your-model-name
+```batch
+python scripts/diagnose_config.py
 ```
+
+如果报错说缺少某个配置项，回 2.5 和 2.6 对照填。
 
 ---
 
-## ❓ 常见问题
+## 三、快速开始（一键脚本）
 
-### Q: 为什么置信度都是 0.40？
-A: 0.40 是单文档检索的基准置信度。更高置信度需要：
-- 多文档 corroboration（0.60-0.80）
-- 联网证据支持（0.80-0.95）
-- 同行评审/权威来源（0.95+）
+**⚠️ 自动脚本尚未完全验证，推荐优先用手工配置。**
 
-### Q: 导入文档后状态一直是 "Processing…"？
-A: 可能原因：
-1. PostgreSQL 未启动：`docker ps` 检查
-2. API Key 无效：运行 `spine check` 验证
-3. 模型未下载：运行 `spine models download`
+如果仍想尝试：
 
-### Q: 联网搜索失败？
-A: 检查：
-1. Tavily API Key 是否配置
-2. 网络连接是否正常
-3. 查看日志中的详细错误信息
-
-### Q: 如何清理所有数据重新开始？
-```bash
-# 停止并删除数据库容器
-docker stop spinedoc-postgres && docker rm spinedoc-postgres
-
-# 删除配置文件
-rm .env
-
-# 删除模型缓存
-spine models clean
-
-# 重新运行配置
-spine setup
+```batch
+:: 先确认 .venv 已激活，然后：
+setup_env.bat
 ```
+
+按提示填入 App ID 和 App Secret，询问「是否一键创建」时输入 `y`。
+脚本会自动创建多维表格和数据表，写入 `.env` 和 manifest。
+
+但之前提到的表字段仍建议对照 2.5.2 手动核对。
 
 ---
 
-## 📄 许可证
+## 四、启动
+
+### 4.1 启动 MCP Server
+
+```batch
+start_mcp.bat
+```
+
+看到 `MCP server running on port 7000` 说明启动成功。这个 Server 供 Aily 等 AI 代理调用，也用于调试。
+
+如果不走 Aily，直接用命令行：
+
+```batch
+:: 导入文档
+.venv\Scripts\python.exe spine_setup.py --ingest <你的文档.pdf>
+
+:: 启动网页交互界面
+.venv\Scripts\python.exe spine_setup.py --interactive
+```
+
+### 4.2 Aily 集成
+
+详见 `spine_interaction/aily/SKILL.md` 和 `spinedoc-logic-assassin.skill`。
+
+大致流程：
+1. MCP Server 跑在公网可访问的地址（或配合 FRP 内网穿透）
+2. 在 Aily 后台导入 `.skill` 文件作为 Agent 技能
+3. 用户发消息 → Aily 调用 MCP 工具 → SpineDoc 执行审计 → 返回判决书
+
+---
+
+## 五、架构（几句话讲清楚）
+
+```
+用户输入
+   │
+   ▼
+交互层：CLI / MCP / 飞书卡片
+   │
+   ▼
+逻辑层：LogicCourt 联邦法庭
+   ├─ PLAN      路由拆分
+   ├─ HARVEST   取证（本地 + 联网）
+   ├─ AUDIT     冲突审计 + 置信度计算
+   ├─ SYNTHESIZE 判决签署
+   └─ EVOLVE    演化提案（你核准才落地）
+   │
+   ▼
+持久层：Bitable 表 + Git 版本控制 + A-MEM 记忆
+```
+
+每个阶段产出结构化的 `phase_log`，从推理到响应全链路可追踪。
+
+---
+
+## 六、常见问题
+
+**Q：置信度全是 0.40？**
+A：0.40 是单文档检索基准。多文档交叉验证能到 0.60-0.80，加联网证据能到 0.95。
+
+**Q：文档导入后状态一直是 Processing？**
+A：检查：Bitable Token 对不对、API Key 有没有额度、飞书应用是否已发布。
+
+**Q：Chunk 表里的字段 API 报错？**
+A：检查字段名是否完全一致，特别是「文档关联」这类关联字段的关联配置。
+
+**Q：一键脚本报错？**
+A：截图日志，提 Issue。目前脚本还没完全验证，手工配置更可靠。
+
+---
+
+## 许可证
 
 MIT License
-
----
-
-## 🙏 致谢
-
-- **DeepSeek** - 提供高性价比的 LLM 服务
-- **SiliconFlow** - 提供向量模型和 VLM
-- **智源研究院** - BAAI/bge 系列向量模型
-- **PaddlePaddle** - PaddleOCR
-- **HuggingFace** - 模型托管平台
-
----
-
-## 📬 联系方式
-
-- GitHub Issues: [提交问题或建议](https://github.com/yjh2222332024/Spine-open/issues)
-- 邮箱：2857922968@qq.com
-
----
-
-**🚀 SpineDoc - 让逻辑漏洞无所遁形**

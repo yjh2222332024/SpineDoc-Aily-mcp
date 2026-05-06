@@ -2,7 +2,7 @@ import asyncio
 import sys
 from pathlib import Path
 
-# 🏛️ 顶级架构锚定
+#  顶级架构锚定
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.append(str(PROJECT_ROOT))
 
@@ -13,10 +13,10 @@ async def restore_spine_only():
     # 使用绝对路径确保不出错
     test_pdf = PROJECT_ROOT / "ceshi_ocr" / "1.pdf"
     
-    print(f"🚀 [Restore] 正在恢复 {test_pdf.name} 的逻辑脊梁 (TOC Only)...")
+    print(f" [Restore] 正在恢复 {test_pdf.name} 的逻辑脊梁 (TOC Only)...")
     
     try:
-        # 🏛️ 极致克制模式：force=False, force_ocr=False
+        #  极致克制模式：force=False, force_ocr=False
         # 这将触发系统的自愈逻辑：如果 TOC 没了就补 TOC
         await engine.ingest_document(
             file_path=str(test_pdf.absolute()),
@@ -27,7 +27,7 @@ async def restore_spine_only():
             limit_pages=20,       # 仅运行前几页以触发 TOC 逻辑
           
         )
-        print("\n[bold green]✅ 脊梁复活完成！数据库中的 TOC 树已对齐。[/bold green]")
+        print("\n[bold green] 脊梁复活完成！数据库中的 TOC 树已对齐。[/bold green]")
     except Exception as e:
         print(f"🚨 恢复失败: {e}")
 

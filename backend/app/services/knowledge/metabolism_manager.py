@@ -5,7 +5,7 @@
 
 职责分离：
 - SpineEngine: 只负责问答分发
-- FederatedCourt: 只负责裁决
+- RetrievalCoordinator: Responsible only for synthesis
 - MetabolismManager: 只负责知识更新（Git 事务）
 """
 
@@ -32,7 +32,7 @@ class MetabolismManager:
 
     async def apply(self, delta: Dict) -> Dict[str, str]:
         """
-        应用知识增量到 Git
+        应用知识增量到 Git（批量提交，避免每分片一个 commit）
 
         Args:
             delta: {
@@ -47,31 +47,28 @@ class MetabolismManager:
         if not delta.get("has_delta"):
             return {}
 
-        results = {}
-        print(f"🧬 [Metabolism] 正在应用知识增量...")
+        updated = delta.get("updated_chunks", [])
+        if not updated:
+            return {}
 
-        for chunk_change in delta.get("updated_chunks", []):
+        message = delta.get("commit_message", "知识库更新")
+        print(f"[Metabolism] 批量提交 {len(updated)} 个分片...")
+
+        # 批量写入 + 一次 git commit
+        chunk_items = []
+        for chunk_change in updated:
             chunk_id = chunk_change.get("chunk_id")
             if not chunk_id:
                 continue
+            chunk_items.append({
+                "chunk_id": chunk_id,
+                "content": chunk_change.get("new_content") or chunk_change.get("old_content", ""),
+                "metadata": chunk_change.get("metadata", {}),
+            })
 
-            # 提交到 Git
-            content = chunk_change.get("new_content") or chunk_change.get("old_content", "")
-            metadata = chunk_change.get("metadata", {})
-            message = delta.get("commit_message", "知识库更新")
-
-            commit_hash = self.git_manager.commit_chunk(
-                chunk_id=chunk_id,
-                content=content,
-                metadata=metadata,
-                message=message
-            )
-
-            if commit_hash:
-                results[chunk_id] = commit_hash[:settings.CONTEXT_COMMIT_DOC_ID_PREFIX]
-                print(f"  ✓ Chunk {chunk_id[:settings.CONTEXT_COMMIT_DOC_ID_PREFIX]} → git:{commit_hash[:settings.CONTEXT_COMMIT_DOC_ID_PREFIX]}")
-            else:
-                print(f"  ⚠️ Chunk {chunk_id[:settings.CONTEXT_COMMIT_DOC_ID_PREFIX]} 无变更，跳过提交")
+        results = self.git_manager.commit_chunks_batch(chunk_items, message=message)
+        for cid in results:
+            print(f"  Chunk {cid[:settings.CONTEXT_COMMIT_DOC_ID_PREFIX]} 已提交")
 
         return results
 
