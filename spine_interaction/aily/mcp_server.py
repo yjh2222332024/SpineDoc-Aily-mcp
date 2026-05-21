@@ -23,6 +23,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
 from backend.app.services.spine_engine import SpineEngine
+from backend.app.services.spine_agent import SpineAgent
 from backend.app.infra.lark_cli_reporter import LarkCliReporter
 from backend.app.infra.memory.amem_adapter import AmemAdapter
 from backend.app.services.feishu.bitable_ledger import bitable_ledger
@@ -32,6 +33,24 @@ from backend.app.services.knowledge.git_manager import get_git_manager
 from backend.app.services.ingestion.zhipu_reranker import zhipu_reranker
 
 import logging
+
+# ── SpineAgent Singleton ──────────────────────────────────────
+_agent: Optional[SpineAgent] = None
+_agent_lock = asyncio.Lock()
+
+async def get_agent() -> SpineAgent:
+    """Return a singleton SpineAgent, creating it on first call."""
+    global _agent
+    if _agent is None:
+        async with _agent_lock:
+            if _agent is None:
+                _agent = SpineAgent(
+                    memory=AmemAdapter(),
+                    reporter=LarkCliReporter(),
+                    store=bitable_ledger,
+                )
+    return _agent
+
 
 # 文档搜索缓存：key=doc_id, value={"text": str, "vector": ndarray}
 # 首次搜索后缓存文档向量，后续搜索跳过 embedding 已缓存的文档
@@ -152,12 +171,10 @@ async def spinedoc_plan(query: str, doc_id: str = "all") -> str:
     """
     logger.info(f" [MCP] 正在制定质证计划: {query[:40]}...")
     try:
-        memory = AmemAdapter()
-        engine = SpineEngine(memory=memory)
+        agent = await get_agent()
+        agent.reset(query, doc_id=doc_id)
+        plan = await agent.plan()
 
-        # 仅执行 Planner 阶段
-        plan = await engine.plan_investigation(query, doc_id=doc_id)
-        
         return json.dumps({
             "query": query,
             "sub_queries": plan.get("sub_queries", []),
@@ -176,16 +193,17 @@ async def spinedoc_plan(query: str, doc_id: str = "all") -> str:
 async def spinedoc_collect(query: str, sub_queries: list[str], doc_id: str = "all") -> str:
     """
     根据质证计划，从本地星系和互联网证人处收割证据片。
-    这是逻辑质证的第二步。
+    这是逻辑质证的第二步。使用并发子智能体并行召回。
     """
     logger.info(f" [MCP] 正在收割证据: {len(sub_queries)} 个子查询")
     try:
-        memory = AmemAdapter()
-        engine = SpineEngine(memory=memory)
-        
-        # 执行 Harvester 阶段
-        harvest_result = await engine.harvest_evidence(query, sub_queries, doc_id=doc_id)
-        pool = harvest_result.get("evidence_pool", [])
+        agent = await get_agent()
+        # Sync sub_queries from previous plan step into agent state
+        agent._state["sub_queries"] = sub_queries
+        agent._state["doc_id"] = doc_id
+
+        harvest_result = await agent.harvest()
+        pool = agent.get_evidence_pool()
 
         return json.dumps({
             "evidence_count": len(pool),
@@ -211,34 +229,18 @@ async def spinedoc_audit(query: str, evidence_ids: list[str], evidence_pool_json
     """
     logger.info(f" [MCP] 正在审计证据: {len(evidence_ids)} 条, pool_json={'有' if evidence_pool_json else '无'}")
     try:
-        memory = AmemAdapter()
-        engine = SpineEngine(memory=memory)
+        agent = await get_agent()
 
-        # 解析完整证据池（如果提供），否则回退到旧路径
-        evidence_pool = None
+        # Backward compat: if evidence_pool_json provided, merge into agent state
         if evidence_pool_json:
             try:
                 evidence_pool = json.loads(evidence_pool_json)
+                agent._state["evidence_pool"] = evidence_pool
                 logger.info(f" [MCP] 使用完整证据池 ({len(evidence_pool)} 条，含元数据)")
             except json.JSONDecodeError:
-                logger.warning(" [MCP] evidence_pool_json 解析失败，回退到 evidence_ids")
+                logger.warning(" [MCP] evidence_pool_json 解析失败，使用 agent 内部状态")
 
-        # 回退：按 evidence_ids 从 bitable 恢复本地证据元数据
-        if not evidence_pool and evidence_ids:
-            recv_ids = [eid for eid in evidence_ids if eid.startswith("rec")]
-            if recv_ids:
-                async def _fetch_chunk(rid):
-                    return await bitable_ledger.get_chunk(rid)
-                tasks = [_fetch_chunk(rid) for rid in recv_ids]
-                fetched = await asyncio.gather(*tasks)
-                fetched = [f for f in fetched if f]
-                if fetched:
-                    evidence_pool = fetched
-                    logger.info(f" [MCP] 从 bitable 恢复 {len(fetched)} 条本地证据元数据")
-
-        # 执行 Auditor 阶段
-        audit_res = await engine.audit_evidence(query, evidence_ids, evidence_pool=evidence_pool,
-                                                 doc_id=doc_id)
+        audit_res = await agent.audit()
 
         return json.dumps({
             "conflicts": audit_res.get("conflicts", []),
@@ -436,47 +438,50 @@ async def spinedoc_summarize(query: str, evidence_ids: list[str],
     """
     logger.info(f" [MCP] 正在生成判决书, evidence_ids={len(evidence_ids)}")
     try:
-        # 1. 从小参数重建 audited_data，避免 MCP 长字符串截断
-        weights = json.loads(weights_json) if weights_json else {}
-        conflicts = json.loads(conflicts_json) if conflicts_json else []
+        agent = await get_agent()
 
-        # 2. 从 bitable 恢复证据池（仅本地证据 recvix*）
-        evidence_pool = []
-        recv_ids = [eid for eid in evidence_ids if eid.startswith("rec")]
-        if recv_ids:
-            async def _fetch(rid):
-                return await bitable_ledger.get_chunk(rid)
-            tasks = [_fetch(rid) for rid in recv_ids]
-            fetched = [f for f in await asyncio.gather(*tasks) if f]
-            evidence_pool = fetched
-            logger.info(f" [MCP] 从 bitable 恢复 {len(fetched)}/{len(recv_ids)} 条证据")
+        # Backward compat: merge weights/conflicts from MCP params into agent state
+        if weights_json:
+            try:
+                agent._state["claim_weights"] = json.loads(weights_json)
+            except json.JSONDecodeError:
+                pass
+        if conflicts_json:
+            try:
+                agent._state["conflicts"] = json.loads(conflicts_json)
+            except json.JSONDecodeError:
+                pass
 
-        audited_data = {
-            "evidence_pool": evidence_pool,
-            "conflicts": conflicts,
-            "claim_weights": weights,
-        }
+        # Synthesize
+        synth_res = await agent.synthesize()
+        verdict = agent._export_result()
 
-        memory = AmemAdapter()
-        engine = SpineEngine(memory=memory)
-
-        # 3. 执行 Synthesizer 阶段
-        verdict = await engine.synthesize_verdict(query, audited_data, doc_id=doc_id)
-
-        # 4. 为 evolution_proposal 每项补充 old_content（用于 diff 对比卡片）
+        # Add evolution_proposal with old_content for diff cards
         git_mgr = get_git_manager()
-        for item in verdict.get("evolution_proposal", []):
-            chunk_id = item.get("chunk_id")
-            if chunk_id:
-                old = git_mgr.get_chunk_at_commit(chunk_id, "HEAD")
-                item["old_content"] = (old or {}).get("content", "")
-            else:
-                item["old_content"] = ""
+        evolution_proposal = []
+        for chunk in agent.get_evidence_pool():
+            if chunk.get("origin") != "TEMP":
+                item = {
+                    "chunk_id": chunk.get("id", ""),
+                    "content": chunk.get("content", ""),
+                    "logic_tags": chunk.get("claims", []),
+                    "document_id": chunk.get("doc_id", ""),
+                }
+                chunk_id = item["chunk_id"]
+                if chunk_id:
+                    old = git_mgr.get_chunk_at_commit(chunk_id, "HEAD")
+                    item["old_content"] = (old or {}).get("content", "")
+                else:
+                    item["old_content"] = ""
+                evolution_proposal.append(item)
 
-        # 5. 白盒化：附上证据池（含原文）
+        verdict["evolution_proposal"] = evolution_proposal
+
+        # Attach evidence pool with original content
+        evidence_pool = agent.get_evidence_pool()
         verdict["evidence_pool"] = evidence_pool
 
-        # ===== 白盒化补捞：按 doc_id 分组批量捞 chunk 原文 =====
+        # Fetch original content for evidence items
         if evidence_pool:
             doc_to_evidence = {}
             for e in evidence_pool:
@@ -497,7 +502,6 @@ async def spinedoc_summarize(query: str, evidence_ids: list[str],
                 for e in evidence_pool:
                     e["original_content"] = chunk_map.get(e["id"], "")
 
-            # 降级：doc_id 缺失时按 record_id 单条捞
             unmatched = [e for e in evidence_pool
                          if not e.get("original_content") and e["id"].startswith("rec")]
             if unmatched:
@@ -511,6 +515,49 @@ async def spinedoc_summarize(query: str, evidence_ids: list[str],
                         e["original_content"] = single_map.get(e["id"], "")
 
         return json.dumps(verdict, ensure_ascii=False, indent=2)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+# ─────────────────────────────────────────────────
+#  工具 5.5: 一键质证 (Single-Agent Full Pipeline)
+# ─────────────────────────────────────────────────
+
+@mcp.tool()
+async def spinedoc_run(query: str, doc_id: str = "all") -> str:
+    """
+    一键执行完整逻辑质证流程（PLAN→HARVEST→AUDIT→SYNTHESIZE）。
+    使用单智能体 + 并发子智能体召回，无需分步调用。
+    """
+    logger.info(f" [MCP] 一键质证: {query[:40]}...")
+    try:
+        agent = await get_agent()
+        result = await agent.run_full(query, doc_id=doc_id)
+
+        # Attach evolution_proposal
+        git_mgr = get_git_manager()
+        evolution_proposal = []
+        for chunk in agent.get_evidence_pool():
+            if chunk.get("origin") != "TEMP":
+                item = {
+                    "chunk_id": chunk.get("id", ""),
+                    "content": chunk.get("content", ""),
+                    "logic_tags": chunk.get("claims", []),
+                    "document_id": chunk.get("doc_id", ""),
+                }
+                chunk_id = item["chunk_id"]
+                if chunk_id:
+                    old = git_mgr.get_chunk_at_commit(chunk_id, "HEAD")
+                    item["old_content"] = (old or {}).get("content", "")
+                else:
+                    item["old_content"] = ""
+                evolution_proposal.append(item)
+
+        result["evolution_proposal"] = evolution_proposal
+        result["evidence_pool"] = agent.get_evidence_pool()
+        result["phase_log"] = agent.get_phase_log()
+
+        return json.dumps(result, ensure_ascii=False, indent=2)
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 

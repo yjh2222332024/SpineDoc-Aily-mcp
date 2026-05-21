@@ -47,10 +47,10 @@ class RetrievalGraphOrchestrator:
             RetrievalPhase.SYNTHESIZE: (synthesizer or synthesizer_node).synthesize,
             RetrievalPhase.EVOLVE: (evolution or evolution_node).evolve
         }
-        # 传递内存组件
+        # 传递内存组件，用于跨节点通信
         self.harvester = harvester or harvester_node
         if memory:
-            self.harvester.memory = memory
+            self.harvester.memory = memory  
 
     async def run(self, query: str, memory=None) -> Dict[str, Any]:
         """驱动检索图执行全链路"""
