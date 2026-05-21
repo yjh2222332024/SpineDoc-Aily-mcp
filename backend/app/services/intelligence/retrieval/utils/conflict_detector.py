@@ -76,7 +76,7 @@ Your tasks:
 - evolution: B is a correction of A (cross-document knowledge evolution)
 - complement: A and B describe different dimensions of the same entity
 
-Output format (strict JSON）：
+Output format (strict JSON):
 {{
     "conflicts": [
         {{
